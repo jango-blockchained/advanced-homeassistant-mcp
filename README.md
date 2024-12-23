@@ -1,4 +1,3 @@
-```markdown
 # A Model Context Protocol Server for Home Assistant
 
 [![smithery badge](https://smithery.ai/badge/@strandbrown/homeassistant-mcp)](https://smithery.ai/server/@strandbrown/homeassistant-mcp)
@@ -62,4 +61,3 @@ Get one using this guide: https://community.home-assistant.io/t/how-to-get-long-
 - [ ] Testing / writing custom prompts
 - [ ] Testing using resources for high-level context
 - [ ] Test varying tool organization
-```
