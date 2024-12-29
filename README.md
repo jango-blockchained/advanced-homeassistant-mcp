@@ -54,10 +54,10 @@ Get one using this guide: https://community.home-assistant.io/t/how-to-get-long-
 - [x] Access to entities
 - [x] Access to Floors
 - [x] Access to Areas
-- [ ] Control for entities
-    - [ ] Lights
-    - [ ] Thermostats
-    - [ ] Covers
+- [x] Control for entities
+    - [x] Lights
+    - [x] Thermostats
+    - [x] Covers
 - [ ] Testing / writing custom prompts
 - [ ] Testing using resources for high-level context
 - [ ] Test varying tool organization
