@@ -24,19 +24,25 @@ export const securityHeaders = helmet({
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", 'data:', 'https:'],
             connectSrc: ["'self'", process.env.HASS_HOST || ''],
-            upgradeInsecureRequests: []
+            upgradeInsecureRequests: true
         }
     },
     crossOriginEmbedderPolicy: true,
     crossOriginOpenerPolicy: true,
     crossOriginResourcePolicy: { policy: 'same-site' },
     dnsPrefetchControl: true,
-    frameguard: { action: 'deny' },
+    frameguard: {
+        action: 'deny'
+    },
     hidePoweredBy: true,
-    hsts: true,
+    hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+    },
     ieNoOpen: true,
     noSniff: true,
-    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    referrerPolicy: { policy: 'no-referrer' },
     xssFilter: true
 });
 
@@ -172,8 +178,32 @@ export function errorHandler(err: Error, req: Request, res: Response, next: Next
 
 // Export security middleware chain
 export const securityMiddleware = [
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "'unsafe-inline'"],
+                styleSrc: ["'self'", "'unsafe-inline'"],
+                imgSrc: ["'self'", 'data:', 'https:'],
+                connectSrc: ["'self'", process.env.HASS_HOST || ''],
+                upgradeInsecureRequests: true
+            }
+        },
+        dnsPrefetchControl: true,
+        frameguard: {
+            action: 'deny'
+        },
+        hidePoweredBy: true,
+        hsts: {
+            maxAge: 31536000,
+            includeSubDomains: true,
+            preload: true
+        },
+        noSniff: true,
+        referrerPolicy: { policy: 'no-referrer' },
+        xssFilter: true
+    }),
     rateLimiter,
-    securityHeaders,
     validateRequest,
     sanitizeInput,
     errorHandler
