@@ -1,5 +1,4 @@
 import { PerformanceMonitor, PerformanceOptimizer, Metric } from '../../src/performance/index.js';
-import type { MemoryUsage } from 'node:process';
 
 describe('Performance Module', () => {
     describe('PerformanceMonitor', () => {
@@ -165,20 +164,27 @@ describe('Performance Module', () => {
             global.gc = jest.fn();
 
             const memoryUsage = process.memoryUsage;
-            process.memoryUsage = jest.fn().mockImplementation((): MemoryUsage => ({
+            const mockMemoryUsage = () => ({
                 heapUsed: 900,
                 heapTotal: 1000,
                 rss: 2000,
                 external: 0,
                 arrayBuffers: 0
-            }));
+            });
+            Object.defineProperty(process, 'memoryUsage', {
+                value: mockMemoryUsage,
+                writable: true
+            });
 
             await PerformanceOptimizer.optimizeMemory();
 
             expect(global.gc).toHaveBeenCalled();
 
             // Cleanup
-            process.memoryUsage = memoryUsage;
+            Object.defineProperty(process, 'memoryUsage', {
+                value: memoryUsage,
+                writable: true
+            });
             if (originalGc) {
                 global.gc = originalGc;
             } else {

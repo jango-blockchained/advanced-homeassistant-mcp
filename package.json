@@ -23,7 +23,10 @@
     "@digital-alchemy/hass": "^24.11.4",
     "ajv": "^8.17.1",
     "dotenv": "^16.3.1",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
     "litemcp": "^0.7.0",
+    "ws": "^8.18.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

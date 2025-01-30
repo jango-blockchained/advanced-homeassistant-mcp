@@ -1,32 +1,47 @@
 import { jest, describe, beforeEach, afterEach, it, expect } from '@jest/globals';
 import type { Mock } from 'jest-mock';
 import { LiteMCP } from 'litemcp';
+import { get_hass } from '../src/hass/index.js';
+import type { WebSocket } from 'ws';
 
 // Mock environment variables
 process.env.HASS_HOST = 'http://localhost:8123';
 process.env.HASS_TOKEN = 'test_token';
 
 // Mock fetch
-const mockFetch = jest.fn().mockImplementation(
-    async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-        return {} as Response;
-    }
-) as unknown as jest.MockedFunction<typeof fetch>;
-global.fetch = mockFetch;
+const mockFetchResponse = {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    json: async () => ({ automation_id: 'test_automation' }),
+    text: async () => '{"automation_id":"test_automation"}',
+    headers: new Headers(),
+    body: null,
+    bodyUsed: false,
+    arrayBuffer: async () => new ArrayBuffer(0),
+    blob: async () => new Blob([]),
+    formData: async () => new FormData(),
+    clone: function () { return { ...this }; },
+    type: 'default',
+    url: '',
+    redirected: false,
+    redirect: () => Promise.resolve(new Response())
+} as Response;
+
+const mockFetch = jest.fn(async (_input: string | URL | Request, _init?: RequestInit) => mockFetchResponse) as jest.MockedFunction<typeof fetch>;
+(global as any).fetch = mockFetch;
 
 // Mock LiteMCP
-jest.mock('litemcp', () => {
-    return {
-        LiteMCP: jest.fn().mockImplementation(() => ({
-            addTool: jest.fn(),
-            start: jest.fn().mockResolvedValue(undefined)
-        }))
-    };
-});
+jest.mock('litemcp', () => ({
+    LiteMCP: jest.fn().mockImplementation(() => ({
+        addTool: jest.fn(),
+        start: jest.fn()
+    }))
+}));
 
 // Mock get_hass
 jest.unstable_mockModule('../src/hass/index.js', () => ({
-    get_hass: jest.fn().mockResolvedValue({
+    get_hass: jest.fn().mockReturnValue({
         services: {
             light: {
                 turn_on: jest.fn(),
@@ -38,17 +53,88 @@ jest.unstable_mockModule('../src/hass/index.js', () => ({
 
 interface Tool {
     name: string;
-    execute: (...args: any[]) => Promise<any>;
+    description: string;
+    parameters: Record<string, unknown>;
+    execute: (params: Record<string, unknown>) => Promise<unknown>;
 }
+
+interface TestResponse {
+    success: boolean;
+    message?: string;
+    devices?: Record<string, unknown>;
+    history?: unknown[];
+    scenes?: unknown[];
+    automations?: unknown[];
+    addons?: unknown[];
+    packages?: unknown[];
+    automation_id?: string;
+    new_automation_id?: string;
+}
+
+type WebSocketEventMap = {
+    message: MessageEvent;
+    open: Event;
+    close: Event;
+    error: Event;
+};
+
+type WebSocketEventListener = (event: Event) => void;
+type WebSocketMessageListener = (event: MessageEvent) => void;
+
+interface MockWebSocketInstance {
+    addEventListener: jest.MockedFunction<typeof Function>;
+    removeEventListener: jest.MockedFunction<typeof Function>;
+    send: jest.MockedFunction<typeof Function>;
+    close: jest.MockedFunction<typeof Function>;
+    readyState: number;
+    binaryType: 'blob' | 'arraybuffer';
+    bufferedAmount: number;
+    extensions: string;
+    protocol: string;
+    url: string;
+    onopen: WebSocketEventListener | null;
+    onerror: WebSocketEventListener | null;
+    onclose: WebSocketEventListener | null;
+    onmessage: WebSocketMessageListener | null;
+    CONNECTING: number;
+    OPEN: number;
+    CLOSING: number;
+    CLOSED: number;
+}
+
+const createMockWebSocket = (): MockWebSocketInstance => ({
+    addEventListener: jest.fn() as jest.MockedFunction<typeof Function>,
+    removeEventListener: jest.fn() as jest.MockedFunction<typeof Function>,
+    send: jest.fn() as jest.MockedFunction<typeof Function>,
+    close: jest.fn() as jest.MockedFunction<typeof Function>,
+    readyState: 0,
+    binaryType: 'blob',
+    bufferedAmount: 0,
+    extensions: '',
+    protocol: '',
+    url: '',
+    onopen: null,
+    onerror: null,
+    onclose: null,
+    onmessage: null,
+    CONNECTING: 0,
+    OPEN: 1,
+    CLOSING: 2,
+    CLOSED: 3
+});
 
 describe('Home Assistant MCP Server', () => {
     beforeEach(async () => {
         // Reset all mocks
         jest.clearAllMocks();
-        mockFetch.mockReset();
+        mockFetch.mockClear();
 
         // Import the module which will execute the main function
         await import('../src/index.js');
+
+        // Mock WebSocket
+        const mockWs = createMockWebSocket();
+        (global as any).WebSocket = jest.fn(() => mockWs);
     });
 
     afterEach(() => {
@@ -82,7 +168,7 @@ describe('Home Assistant MCP Server', () => {
             const listDevicesTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'list_devices')?.[0] as Tool;
 
             // Execute the tool
-            const result = await listDevicesTool.execute({});
+            const result = (await listDevicesTool.execute({})) as TestResponse;
 
             // Verify the results
             expect(result.success).toBe(true);
@@ -110,7 +196,7 @@ describe('Home Assistant MCP Server', () => {
             const listDevicesTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'list_devices')?.[0] as Tool;
 
             // Execute the tool
-            const result = await listDevicesTool.execute({});
+            const result = (await listDevicesTool.execute({})) as TestResponse;
 
             // Verify error handling
             expect(result.success).toBe(false);
@@ -132,11 +218,11 @@ describe('Home Assistant MCP Server', () => {
             const controlTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'control')?.[0] as Tool;
 
             // Execute the tool
-            const result = await controlTool.execute({
+            const result = (await controlTool.execute({
                 command: 'turn_on',
                 entity_id: 'light.living_room',
                 brightness: 255
-            });
+            })) as TestResponse;
 
             // Verify the results
             expect(result.success).toBe(true);
@@ -166,10 +252,10 @@ describe('Home Assistant MCP Server', () => {
             const controlTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'control')?.[0] as Tool;
 
             // Execute the tool with an unsupported domain
-            const result = await controlTool.execute({
+            const result = (await controlTool.execute({
                 command: 'turn_on',
                 entity_id: 'unsupported.device'
-            });
+            })) as TestResponse;
 
             // Verify error handling
             expect(result.success).toBe(false);
@@ -189,10 +275,10 @@ describe('Home Assistant MCP Server', () => {
             const controlTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'control')?.[0] as Tool;
 
             // Execute the tool
-            const result = await controlTool.execute({
+            const result = (await controlTool.execute({
                 command: 'turn_on',
                 entity_id: 'light.living_room'
-            });
+            })) as TestResponse;
 
             // Verify error handling
             expect(result.success).toBe(false);
@@ -212,13 +298,13 @@ describe('Home Assistant MCP Server', () => {
             const controlTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'control')?.[0] as Tool;
 
             // Execute the tool
-            const result = await controlTool.execute({
+            const result = (await controlTool.execute({
                 command: 'set_temperature',
                 entity_id: 'climate.bedroom',
                 temperature: 22,
                 target_temp_high: 24,
                 target_temp_low: 20
-            });
+            })) as TestResponse;
 
             // Verify the results
             expect(result.success).toBe(true);
@@ -256,11 +342,11 @@ describe('Home Assistant MCP Server', () => {
             const controlTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'control')?.[0] as Tool;
 
             // Execute the tool
-            const result = await controlTool.execute({
+            const result = (await controlTool.execute({
                 command: 'set_position',
                 entity_id: 'cover.living_room',
                 position: 50
-            });
+            })) as TestResponse;
 
             // Verify the results
             expect(result.success).toBe(true);
@@ -312,13 +398,13 @@ describe('Home Assistant MCP Server', () => {
             const historyTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'get_history')?.[0] as Tool;
 
             // Execute the tool
-            const result = await historyTool.execute({
+            const result = (await historyTool.execute({
                 entity_id: 'light.living_room',
                 start_time: '2024-01-01T00:00:00Z',
                 end_time: '2024-01-01T02:00:00Z',
                 minimal_response: true,
                 significant_changes_only: true
-            });
+            })) as TestResponse;
 
             // Verify the results
             expect(result.success).toBe(true);
@@ -350,9 +436,9 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const historyTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'get_history')?.[0] as Tool;
 
-            const result = await historyTool.execute({
+            const result = (await historyTool.execute({
                 entity_id: 'light.living_room'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(false);
             expect(result.message).toBe('Network error');
@@ -389,9 +475,9 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const sceneTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'scene')?.[0] as Tool;
 
-            const result = await sceneTool.execute({
+            const result = (await sceneTool.execute({
                 action: 'list'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(true);
             expect(result.scenes).toEqual([
@@ -418,10 +504,10 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const sceneTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'scene')?.[0] as Tool;
 
-            const result = await sceneTool.execute({
+            const result = (await sceneTool.execute({
                 action: 'activate',
                 scene_id: 'scene.movie_time'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('Successfully activated scene scene.movie_time');
@@ -453,12 +539,12 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const notifyTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'notify')?.[0] as Tool;
 
-            const result = await notifyTool.execute({
+            const result = (await notifyTool.execute({
                 message: 'Test notification',
                 title: 'Test Title',
                 target: 'mobile_app_phone',
                 data: { priority: 'high' }
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('Notification sent successfully');
@@ -531,9 +617,9 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const automationTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation')?.[0] as Tool;
 
-            const result = await automationTool.execute({
+            const result = (await automationTool.execute({
                 action: 'list'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(true);
             expect(result.automations).toEqual([
@@ -562,10 +648,10 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const automationTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation')?.[0] as Tool;
 
-            const result = await automationTool.execute({
+            const result = (await automationTool.execute({
                 action: 'toggle',
                 automation_id: 'automation.morning_routine'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('Successfully toggled automation automation.morning_routine');
@@ -595,10 +681,10 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const automationTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation')?.[0] as Tool;
 
-            const result = await automationTool.execute({
+            const result = (await automationTool.execute({
                 action: 'trigger',
                 automation_id: 'automation.morning_routine'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('Successfully triggered automation automation.morning_routine');
@@ -623,9 +709,9 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const automationTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation')?.[0] as Tool;
 
-            const result = await automationTool.execute({
+            const result = (await automationTool.execute({
                 action: 'toggle'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(false);
             expect(result.message).toBe('Automation ID is required for toggle and trigger actions');
@@ -668,9 +754,9 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const addonTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'addon')?.[0] as Tool;
 
-            const result = await addonTool.execute({
+            const result = (await addonTool.execute({
                 action: 'list'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(true);
             expect(result.addons).toEqual(mockAddons.data.addons);
@@ -686,11 +772,11 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const addonTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'addon')?.[0] as Tool;
 
-            const result = await addonTool.execute({
+            const result = (await addonTool.execute({
                 action: 'install',
                 slug: 'core_configurator',
                 version: '5.6.0'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('Successfully installed add-on core_configurator');
@@ -735,10 +821,10 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const packageTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'package')?.[0] as Tool;
 
-            const result = await packageTool.execute({
+            const result = (await packageTool.execute({
                 action: 'list',
                 category: 'integration'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(true);
             expect(result.packages).toEqual(mockPackages.repositories);
@@ -754,12 +840,12 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const packageTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'package')?.[0] as Tool;
 
-            const result = await packageTool.execute({
+            const result = (await packageTool.execute({
                 action: 'install',
                 category: 'integration',
                 repository: 'hacs/integration',
                 version: '1.32.0'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('Successfully installed package hacs/integration');
@@ -814,10 +900,10 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const automationConfigTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation_config')?.[0] as Tool;
 
-            const result = await automationConfigTool.execute({
+            const result = (await automationConfigTool.execute({
                 action: 'create',
                 config: mockAutomationConfig
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('Successfully created automation');
@@ -853,10 +939,10 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const automationConfigTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation_config')?.[0] as Tool;
 
-            const result = await automationConfigTool.execute({
+            const result = (await automationConfigTool.execute({
                 action: 'duplicate',
                 automation_id: 'automation.test'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('Successfully duplicated automation automation.test');
@@ -887,9 +973,9 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const automationConfigTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation_config')?.[0] as Tool;
 
-            const result = await automationConfigTool.execute({
+            const result = (await automationConfigTool.execute({
                 action: 'create'
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(false);
             expect(result.message).toBe('Configuration is required for creating automation');
@@ -900,10 +986,10 @@ describe('Home Assistant MCP Server', () => {
             const addToolCalls = liteMcpInstance.addTool.mock.calls;
             const automationConfigTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation_config')?.[0] as Tool;
 
-            const result = await automationConfigTool.execute({
+            const result = (await automationConfigTool.execute({
                 action: 'update',
                 config: mockAutomationConfig
-            });
+            })) as TestResponse;
 
             expect(result.success).toBe(false);
             expect(result.message).toBe('Automation ID and configuration are required for updating automation');

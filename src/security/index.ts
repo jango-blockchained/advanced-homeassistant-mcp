@@ -15,8 +15,8 @@ export const rateLimiter = rateLimit({
     message: 'Too many requests from this IP, please try again later'
 });
 
-// Security headers middleware
-export const securityHeaders = helmet({
+// Security configuration
+const helmetConfig = {
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
@@ -27,9 +27,6 @@ export const securityHeaders = helmet({
             upgradeInsecureRequests: true
         }
     },
-    crossOriginEmbedderPolicy: true,
-    crossOriginOpenerPolicy: true,
-    crossOriginResourcePolicy: { policy: 'same-site' },
     dnsPrefetchControl: true,
     frameguard: {
         action: 'deny'
@@ -40,11 +37,12 @@ export const securityHeaders = helmet({
         includeSubDomains: true,
         preload: true
     },
-    ieNoOpen: true,
     noSniff: true,
-    referrerPolicy: { policy: 'no-referrer' },
-    xssFilter: true
-});
+    referrerPolicy: { policy: 'no-referrer' }
+};
+
+// Security headers middleware
+export const securityHeaders = helmet(helmetConfig);
 
 // Token validation and encryption
 export class TokenManager {
@@ -178,7 +176,7 @@ export function errorHandler(err: Error, req: Request, res: Response, next: Next
 
 // Export security middleware chain
 export const securityMiddleware = [
-    helmet(),
+    helmet(helmetConfig),
     rateLimit({
         windowMs: 15 * 60 * 1000,
         max: 100
