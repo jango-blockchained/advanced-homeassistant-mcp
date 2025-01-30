@@ -136,12 +136,43 @@ npm run build
     # Server Configuration
     PORT=3000
     NODE_ENV=production
+    DEBUG=false
+
+    # Test Configuration
+    TEST_HASS_HOST=http://localhost:8123
+    TEST_HASS_TOKEN=test_token
     ```
 
 3. **Launch with Docker Compose:**
     ```bash
     docker-compose up -d
     ```
+
+## Configuration
+
+### Environment Variables
+
+```env
+# Home Assistant Configuration
+HASS_HOST=http://homeassistant.local:8123  # Your Home Assistant instance URL
+HASS_TOKEN=your_home_assistant_token       # Long-lived access token
+HASS_SOCKET_URL=ws://homeassistant.local:8123/api/websocket  # WebSocket URL
+
+# Server Configuration
+PORT=3000                # Server port (default: 3000)
+NODE_ENV=production     # Environment (production/development)
+DEBUG=false            # Enable debug mode
+
+# Test Configuration
+TEST_HASS_HOST=http://localhost:8123  # Test instance URL
+TEST_HASS_TOKEN=test_token           # Test token
+```
+
+### Configuration Files
+
+1. **Development**: Copy `.env.example` to `.env.development`
+2. **Production**: Copy `.env.example` to `.env.production`
+3. **Testing**: Copy `.env.example` to `.env.test`
 
 ## API Reference
 
@@ -255,6 +286,268 @@ npm run build
   "tool": "automation_config",
   "action": "duplicate",
   "automation_id": "automation.motion_light"
+}
+```
+
+### Core Functions
+
+#### State Management
+```http
+GET /api/state
+POST /api/state
+```
+
+Manages the current state of the system.
+
+**Example Request:**
+```json
+POST /api/state
+{
+  "context": "living_room",
+  "state": {
+    "lights": "on",
+    "temperature": 22
+  }
+}
+```
+
+#### Context Updates
+```http
+POST /api/context
+```
+
+Updates the current context with new information.
+
+**Example Request:**
+```json
+POST /api/context
+{
+  "user": "john",
+  "location": "kitchen",
+  "time": "morning",
+  "activity": "cooking"
+}
+```
+
+### Action Endpoints
+
+#### Execute Action
+```http
+POST /api/action
+```
+
+Executes a specified action with given parameters.
+
+**Example Request:**
+```json
+POST /api/action
+{
+  "action": "turn_on_lights",
+  "parameters": {
+    "room": "living_room",
+    "brightness": 80
+  }
+}
+```
+
+#### Batch Actions
+```http
+POST /api/actions/batch
+```
+
+Executes multiple actions in sequence.
+
+**Example Request:**
+```json
+POST /api/actions/batch
+{
+  "actions": [
+    {
+      "action": "turn_on_lights",
+      "parameters": {
+        "room": "living_room"
+      }
+    },
+    {
+      "action": "set_temperature",
+      "parameters": {
+        "temperature": 22
+      }
+    }
+  ]
+}
+```
+
+### Query Functions
+
+#### Get Available Actions
+```http
+GET /api/actions
+```
+
+Returns a list of all available actions.
+
+**Example Response:**
+```json
+{
+  "actions": [
+    {
+      "name": "turn_on_lights",
+      "parameters": ["room", "brightness"],
+      "description": "Turns on lights in specified room"
+    },
+    {
+      "name": "set_temperature",
+      "parameters": ["temperature"],
+      "description": "Sets temperature in current context"
+    }
+  ]
+}
+```
+
+#### Context Query
+```http
+GET /api/context?type=current
+```
+
+Retrieves context information.
+
+**Example Response:**
+```json
+{
+  "current_context": {
+    "user": "john",
+    "location": "kitchen",
+    "time": "morning",
+    "activity": "cooking"
+  }
+}
+```
+
+### WebSocket Events
+
+The server supports real-time updates via WebSocket connections.
+
+```javascript
+// Client-side connection example
+const ws = new WebSocket('ws://localhost:3000/ws');
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Received update:', data);
+};
+```
+
+#### Supported Events
+
+- `state_change`: Emitted when system state changes
+- `context_update`: Emitted when context is updated
+- `action_executed`: Emitted when an action is completed
+- `error`: Emitted when an error occurs
+
+**Example Event Data:**
+```json
+{
+  "event": "state_change",
+  "data": {
+    "previous_state": {
+      "lights": "off"
+    },
+    "current_state": {
+      "lights": "on"
+    },
+    "timestamp": "2024-03-20T10:30:00Z"
+  }
+}
+```
+
+### Error Handling
+
+All endpoints return standard HTTP status codes:
+
+- 200: Success
+- 400: Bad Request
+- 401: Unauthorized
+- 403: Forbidden
+- 404: Not Found
+- 500: Internal Server Error
+
+**Error Response Format:**
+```json
+{
+  "error": {
+    "code": "INVALID_PARAMETERS",
+    "message": "Missing required parameter: room",
+    "details": {
+      "missing_fields": ["room"]
+    }
+  }
+}
+```
+
+### Rate Limiting
+
+The API implements rate limiting to prevent abuse:
+
+- 100 requests per minute per IP for regular endpoints
+- 1000 requests per minute per IP for WebSocket connections
+
+When rate limit is exceeded, the server returns:
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Too many requests",
+    "reset_time": "2024-03-20T10:31:00Z"
+  }
+}
+```
+
+### Example Usage
+
+#### Using curl
+```bash
+# Get current state
+curl -X GET \
+  http://localhost:3000/api/state \
+  -H 'Authorization: ApiKey your_api_key_here'
+
+# Execute action
+curl -X POST \
+  http://localhost:3000/api/action \
+  -H 'Authorization: ApiKey your_api_key_here' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "action": "turn_on_lights",
+    "parameters": {
+      "room": "living_room",
+      "brightness": 80
+    }
+  }'
+```
+
+#### Using JavaScript
+```javascript
+// Execute action
+async function executeAction() {
+  const response = await fetch('http://localhost:3000/api/action', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'ApiKey your_api_key_here',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      action: 'turn_on_lights',
+      parameters: {
+        room: 'living_room',
+        brightness: 80
+      }
+    })
+  });
+  
+  const data = await response.json();
+  console.log('Action result:', data);
 }
 ```
 

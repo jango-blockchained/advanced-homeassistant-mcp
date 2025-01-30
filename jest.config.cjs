@@ -1,9 +1,8 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
-    preset: 'ts-jest/presets/default-esm',
+    preset: 'ts-jest',
     testEnvironment: 'node',
-    moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-    extensionsToTreatAsEsm: ['.ts', '.tsx'],
+    setupFiles: ['./jest.setup.ts'],
     moduleNameMapper: {
         '^(\\.{1,2}/.*)\\.js$': '$1',
         '#(.*)': '<rootDir>/node_modules/$1',
@@ -13,20 +12,15 @@ module.exports = {
         '#supports-color': '<rootDir>/node_modules/supports-color/index.js'
     },
     transform: {
-        '^.+\\.(ts|tsx|js|jsx)$': [
-            'ts-jest',
-            {
-                useESM: true,
-                tsconfig: 'tsconfig.json'
-            },
-        ],
+        '^.+\\.tsx?$': ['ts-jest', {
+            useESM: true,
+        }],
     },
     transformIgnorePatterns: [
         'node_modules/(?!(@digital-alchemy|chalk|#ansi-styles|#supports-color)/)'
     ],
     resolver: '<rootDir>/jest-resolver.cjs',
     testMatch: ['**/__tests__/**/*.test.ts'],
-    setupFilesAfterEnv: ['<rootDir>/jest.setup.cjs'],
     globals: {
         'ts-jest': {
             useESM: true,
@@ -36,9 +30,9 @@ module.exports = {
     coverageDirectory: 'coverage',
     coverageReporters: ['text', 'lcov', 'clover', 'html'],
     collectCoverageFrom: [
-        'src/**/*.{ts,tsx}',
+        'src/**/*.ts',
         '!src/**/*.d.ts',
-        '!src/**/*.test.{ts,tsx}',
+        '!src/**/*.test.ts',
         '!src/types/**/*',
         '!src/polyfills.ts'
     ],
@@ -49,5 +43,6 @@ module.exports = {
             lines: 80,
             statements: 80
         }
-    }
+    },
+    verbose: true
 }; 

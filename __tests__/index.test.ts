@@ -4,9 +4,15 @@ import { LiteMCP } from 'litemcp';
 import { get_hass } from '../src/hass/index.js';
 import type { WebSocket } from 'ws';
 
-// Mock environment variables
-process.env.HASS_HOST = 'http://localhost:8123';
-process.env.HASS_TOKEN = 'test_token';
+// Load test environment variables with defaults
+const TEST_HASS_HOST = process.env.TEST_HASS_HOST || 'http://localhost:8123';
+const TEST_HASS_TOKEN = process.env.TEST_HASS_TOKEN || 'test_token';
+const TEST_HASS_SOCKET_URL = process.env.TEST_HASS_SOCKET_URL || 'ws://localhost:8123/api/websocket';
+
+// Set environment variables for testing
+process.env.HASS_HOST = TEST_HASS_HOST;
+process.env.HASS_TOKEN = TEST_HASS_TOKEN;
+process.env.HASS_SOCKET_URL = TEST_HASS_SOCKET_URL;
 
 // Mock fetch
 const mockFetchResponse = {
@@ -230,11 +236,11 @@ describe('Home Assistant MCP Server', () => {
 
             // Verify the fetch call
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/services/light/turn_on',
+                `${TEST_HASS_HOST}/api/services/light/turn_on`,
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: 'Bearer test_token',
+                        Authorization: `Bearer ${TEST_HASS_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -312,11 +318,11 @@ describe('Home Assistant MCP Server', () => {
 
             // Verify the fetch call
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/services/climate/set_temperature',
+                `${TEST_HASS_HOST}/api/services/climate/set_temperature`,
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: 'Bearer test_token',
+                        Authorization: `Bearer ${TEST_HASS_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -354,11 +360,11 @@ describe('Home Assistant MCP Server', () => {
 
             // Verify the fetch call
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/services/cover/set_position',
+                `${TEST_HASS_HOST}/api/services/cover/set_position`,
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: 'Bearer test_token',
+                        Authorization: `Bearer ${TEST_HASS_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -415,7 +421,7 @@ describe('Home Assistant MCP Server', () => {
                 expect.stringContaining('/api/history/period/2024-01-01T00:00:00Z?'),
                 expect.objectContaining({
                     headers: {
-                        Authorization: 'Bearer test_token',
+                        Authorization: `Bearer ${TEST_HASS_TOKEN}`,
                         'Content-Type': 'application/json'
                     }
                 })
@@ -513,11 +519,11 @@ describe('Home Assistant MCP Server', () => {
             expect(result.message).toBe('Successfully activated scene scene.movie_time');
 
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/services/scene/turn_on',
+                `${TEST_HASS_HOST}/api/services/scene/turn_on`,
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: 'Bearer test_token',
+                        Authorization: `Bearer ${TEST_HASS_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -550,11 +556,11 @@ describe('Home Assistant MCP Server', () => {
             expect(result.message).toBe('Notification sent successfully');
 
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/services/notify/mobile_app_phone',
+                `${TEST_HASS_HOST}/api/services/notify/mobile_app_phone`,
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: 'Bearer test_token',
+                        Authorization: `Bearer ${TEST_HASS_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -581,7 +587,7 @@ describe('Home Assistant MCP Server', () => {
             });
 
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/services/notify/notify',
+                `${TEST_HASS_HOST}/api/services/notify/notify`,
                 expect.any(Object)
             );
         });
@@ -657,11 +663,11 @@ describe('Home Assistant MCP Server', () => {
             expect(result.message).toBe('Successfully toggled automation automation.morning_routine');
 
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/services/automation/toggle',
+                `${TEST_HASS_HOST}/api/services/automation/toggle`,
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: 'Bearer test_token',
+                        Authorization: `Bearer ${TEST_HASS_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -690,11 +696,11 @@ describe('Home Assistant MCP Server', () => {
             expect(result.message).toBe('Successfully triggered automation automation.morning_routine');
 
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/services/automation/trigger',
+                `${TEST_HASS_HOST}/api/services/automation/trigger`,
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: 'Bearer test_token',
+                        Authorization: `Bearer ${TEST_HASS_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -782,11 +788,11 @@ describe('Home Assistant MCP Server', () => {
             expect(result.message).toBe('Successfully installed add-on core_configurator');
 
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/hassio/addons/core_configurator/install',
+                `${TEST_HASS_HOST}/api/hassio/addons/core_configurator/install`,
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: 'Bearer test_token',
+                        Authorization: `Bearer ${TEST_HASS_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ version: '5.6.0' })
@@ -851,11 +857,11 @@ describe('Home Assistant MCP Server', () => {
             expect(result.message).toBe('Successfully installed package hacs/integration');
 
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/hacs/repository/install',
+                `${TEST_HASS_HOST}/api/hacs/repository/install`,
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: 'Bearer test_token',
+                        Authorization: `Bearer ${TEST_HASS_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -910,11 +916,11 @@ describe('Home Assistant MCP Server', () => {
             expect(result.automation_id).toBe('new_automation_1');
 
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/config/automation/config',
+                `${TEST_HASS_HOST}/api/config/automation/config`,
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: 'Bearer test_token',
+                        Authorization: `Bearer ${TEST_HASS_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(mockAutomationConfig)
@@ -950,17 +956,17 @@ describe('Home Assistant MCP Server', () => {
 
             // Verify both API calls
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/config/automation/config/automation.test',
+                `${TEST_HASS_HOST}/api/config/automation/config/automation.test`,
                 expect.any(Object)
             );
 
             const duplicateConfig = { ...mockAutomationConfig, alias: 'Test Automation (Copy)' };
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8123/api/config/automation/config',
+                `${TEST_HASS_HOST}/api/config/automation/config`,
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: 'Bearer test_token',
+                        Authorization: `Bearer ${TEST_HASS_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(duplicateConfig)
