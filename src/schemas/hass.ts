@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import type HomeAssistant from '../types/hass.js';
+import * as HomeAssistant from '../types/hass.js';
 
 export const entitySchema: JSONSchemaType<HomeAssistant.Entity> = {
     type: 'object',

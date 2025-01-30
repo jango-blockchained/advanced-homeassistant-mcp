@@ -1,4 +1,4 @@
-import { TokenManager, validateRequest, sanitizeInput, errorHandler } from '../../src/security';
+import { TokenManager, validateRequest, sanitizeInput, errorHandler } from '../../src/security/index.js';
 import { Request, Response } from 'express';
 
 describe('Security Module', () => {

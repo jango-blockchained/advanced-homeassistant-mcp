@@ -519,9 +519,11 @@ async function main() {
             throw new Error(`Failed to ${service} automation: ${response.statusText}`);
           }
 
+          const responseData = await response.json() as AutomationResponse;
           return {
             success: true,
             message: `Successfully ${service}d automation ${params.automation_id}`,
+            automation_id: responseData.automation_id,
           };
         }
       } catch (error) {

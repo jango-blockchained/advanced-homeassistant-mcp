@@ -1,13 +1,11 @@
-import { Tool } from 'litemcp';
 import { z } from 'zod';
+import { get_hass } from '../hass/index.js';
 
 // Tool category types
 export enum ToolCategory {
-    DEVICE_CONTROL = 'device_control',
-    SYSTEM_MANAGEMENT = 'system_management',
-    AUTOMATION = 'automation',
-    MONITORING = 'monitoring',
-    SECURITY = 'security'
+    DEVICE = 'device',
+    SYSTEM = 'system',
+    AUTOMATION = 'automation'
 }
 
 // Tool priority levels
@@ -17,15 +15,20 @@ export enum ToolPriority {
     LOW = 'low'
 }
 
-// Tool metadata interface
-export interface ToolMetadata {
+interface ToolParameters {
+    [key: string]: any;
+}
+
+interface Tool<Params extends ToolParameters = ToolParameters> {
+    name: string;
+    description: string;
+    execute(params: Params): Promise<any>;
+}
+
+interface ToolMetadata {
     category: ToolCategory;
-    priority: ToolPriority;
-    requiresAuth: boolean;
-    rateLimit?: {
-        windowMs: number;
-        max: number;
-    };
+    platform: string;
+    version: string;
     caching?: {
         enabled: boolean;
         ttl: number;
@@ -136,27 +139,34 @@ export class ToolRegistry {
 export const toolRegistry = new ToolRegistry();
 
 // Tool decorator for easy registration
-export function registerTool(metadata: ToolMetadata) {
-    return function (target: any) {
-        const tool: EnhancedTool = new target();
-        tool.metadata = metadata;
-        toolRegistry.registerTool(tool);
+function registerTool(metadata: Partial<ToolMetadata>) {
+    return function (constructor: any) {
+        return constructor;
     };
 }
 
 // Example usage:
 @registerTool({
-    category: ToolCategory.DEVICE_CONTROL,
-    priority: ToolPriority.HIGH,
-    requiresAuth: true,
+    category: ToolCategory.DEVICE,
+    platform: 'hass',
+    version: '1.0.0',
     caching: {
         enabled: true,
-        ttl: 5000 // 5 seconds
+        ttl: 60000
     }
 })
 export class LightControlTool implements EnhancedTool {
     name = 'light_control';
     description = 'Control light devices';
+    metadata: ToolMetadata = {
+        category: ToolCategory.DEVICE,
+        platform: 'hass',
+        version: '1.0.0',
+        caching: {
+            enabled: true,
+            ttl: 60000
+        }
+    };
     parameters = z.object({
         command: z.enum(['turn_on', 'turn_off', 'toggle']),
         entity_id: z.string(),

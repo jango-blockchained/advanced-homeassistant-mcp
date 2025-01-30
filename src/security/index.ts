@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import { HelmetOptions } from 'helmet';
 
 // Security configuration
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
@@ -16,29 +17,26 @@ export const rateLimiter = rateLimit({
 });
 
 // Security configuration
-const helmetConfig = {
+const helmetConfig: HelmetOptions = {
     contentSecurityPolicy: {
+        useDefaults: true,
         directives: {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'", "'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", 'data:', 'https:'],
-            connectSrc: ["'self'", process.env.HASS_HOST || ''],
-            upgradeInsecureRequests: true
+            connectSrc: ["'self'", 'wss:', 'https:']
         }
     },
     dnsPrefetchControl: true,
-    frameguard: {
-        action: 'deny'
-    },
+    frameguard: true,
     hidePoweredBy: true,
-    hsts: {
-        maxAge: 31536000,
-        includeSubDomains: true,
-        preload: true
-    },
+    hsts: true,
+    ieNoOpen: true,
     noSniff: true,
-    referrerPolicy: { policy: 'no-referrer' }
+    referrerPolicy: {
+        policy: ['no-referrer', 'strict-origin-when-cross-origin']
+    }
 };
 
 // Security headers middleware
