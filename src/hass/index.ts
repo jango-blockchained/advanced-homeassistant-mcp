@@ -1,5 +1,5 @@
-import { CreateApplication, TServiceParams, ServiceFunction } from "@digital-alchemy/core";
-import { LIB_HASS } from "@digital-alchemy/hass";
+import { CreateApplication, TServiceParams, ServiceFunction, AlsExtension, GetApisResult, ILogger, InternalDefinition, TContext, TInjectedConfig, TLifecycleBase, TScheduler } from "@digital-alchemy/core";
+import { Area, Backup, CallProxy, Configure, Device, EntityManager, EventsService, FetchAPI, FetchInternals, Floor, IDByExtension, Label, LIB_HASS, ReferenceService, Registry, WebsocketAPI, Zone } from "@digital-alchemy/hass";
 import { DomainSchema } from "../schemas.js";
 import { HASS_CONFIG } from "../config/hass.config.js";
 import { WebSocket } from 'ws';
@@ -105,18 +105,25 @@ const MY_APP = CreateApplication<ApplicationConfiguration, {}>({
   name: 'hass' as const
 });
 
-let hassInstance: HassInstance | null = null;
-
-export async function get_hass(): Promise<HassInstance> {
-  if (!hassInstance) {
-    // Safely get configuration keys, providing an empty object as fallback
-    const _sortedConfigKeys = Object.keys(MY_APP.configuration ?? {}).sort();
-
-    const instance = await MY_APP.bootstrap();
-    hassInstance = instance as HassInstance;
-  }
-  return hassInstance;
+export interface HassConfig {
+  host: string;
+  token: string;
 }
+
+const CONFIG: Record<string, HassConfig> = {
+  development: {
+    host: process.env.HASS_HOST || 'http://localhost:8123',
+    token: process.env.HASS_TOKEN || ''
+  },
+  production: {
+    host: process.env.HASS_HOST || '',
+    token: process.env.HASS_TOKEN || ''
+  },
+  test: {
+    host: 'http://localhost:8123',
+    token: 'test_token'
+  }
+};
 
 export class HassWebSocketClient extends EventEmitter {
   private ws: WebSocket | null = null;
@@ -143,19 +150,147 @@ export class HassWebSocketClient extends EventEmitter {
     };
   }
 
-  // ... rest of WebSocket client implementation ...
+  async connect(): Promise<void> {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    return new Promise((resolve, reject) => {
+      this.ws = new WebSocket(this.url);
+
+      this.ws.on('open', () => {
+        this.emit('open');
+        const authMessage: HomeAssistant.AuthMessage = {
+          type: 'auth',
+          access_token: this.token
+        };
+        this.ws?.send(JSON.stringify(authMessage));
+      });
+
+      this.ws.on('message', (data: string) => {
+        try {
+          const message = JSON.parse(data);
+          this.handleMessage(message);
+        } catch (error) {
+          this.emit('error', new Error('Failed to parse message'));
+        }
+      });
+
+      this.ws.on('close', () => {
+        this.emit('disconnected');
+        if (this.options.autoReconnect && this.reconnectAttempts < this.options.maxReconnectAttempts) {
+          setTimeout(() => {
+            this.reconnectAttempts++;
+            this.connect();
+          }, this.options.reconnectDelay);
+        }
+      });
+
+      this.ws.on('error', (error) => {
+        this.emit('error', error);
+        reject(error);
+      });
+    });
+  }
+
+  private handleMessage(message: any): void {
+    switch (message.type) {
+      case 'auth_ok':
+        this.emit('auth_ok');
+        break;
+      case 'auth_invalid':
+        this.emit('auth_invalid');
+        break;
+      case 'result':
+        // Handle command results
+        break;
+      case 'event':
+        if (message.event) {
+          this.emit('event', message.event);
+          const subscription = this.subscriptions.get(message.id);
+          if (subscription) {
+            subscription(message.event.data);
+          }
+        }
+        break;
+      default:
+        this.emit('error', new Error(`Unknown message type: ${message.type}`));
+    }
+  }
+
+  async subscribeEvents(callback: (data: any) => void, eventType?: string): Promise<number> {
+    const id = this.messageId++;
+    const message = {
+      id,
+      type: 'subscribe_events',
+      event_type: eventType
+    };
+
+    return new Promise((resolve, reject) => {
+      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        reject(new Error('WebSocket not connected'));
+        return;
+      }
+
+      this.subscriptions.set(id, callback);
+      this.ws.send(JSON.stringify(message));
+      resolve(id);
+    });
+  }
+
+  async unsubscribeEvents(subscriptionId: number): Promise<void> {
+    const message = {
+      id: this.messageId++,
+      type: 'unsubscribe_events',
+      subscription: subscriptionId
+    };
+
+    return new Promise((resolve, reject) => {
+      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        reject(new Error('WebSocket not connected'));
+        return;
+      }
+
+      this.ws.send(JSON.stringify(message));
+      this.subscriptions.delete(subscriptionId);
+      resolve();
+    });
+  }
+
+  disconnect(): void {
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+  }
 }
 
-export class HassInstance {
-  private baseUrl: string;
-  private token: string;
-  private wsClient: HassWebSocketClient | null;
+export interface HassInstance {
+  fetchStates(): Promise<HomeAssistant.Entity[]>;
+  fetchState(entityId: string): Promise<HomeAssistant.Entity>;
+  callService(domain: string, service: string, data: Record<string, any>): Promise<void>;
+  subscribeEvents(callback: (event: HomeAssistant.Event) => void, eventType?: string): Promise<number>;
+  unsubscribeEvents(subscriptionId: number): Promise<void>;
+}
 
-  constructor(baseUrl: string, token: string) {
-    this.baseUrl = baseUrl;
-    this.token = token;
-    this.wsClient = null;
-  }
+class HassInstanceImpl implements HassInstance {
+  private wsClient: HassWebSocketClient | null = null;
+
+  constructor(
+    private readonly baseUrl: string,
+    private readonly token: string
+  ) { }
+  services: HassServices;
+  als: AlsExtension;
+  context: TContext;
+  event: EventEmitter<[never]>;
+  internal: InternalDefinition;
+  lifecycle: TLifecycleBase;
+  logger: ILogger;
+  scheduler: TScheduler;
+  config: TInjectedConfig;
+  params: TServiceParams;
+  hass: GetApisResult<{ area: Area; backup: Backup; call: CallProxy; configure: Configure; device: Device; entity: EntityManager; events: EventsService; fetch: FetchAPI; floor: Floor; idBy: IDByExtension; internals: FetchInternals; label: Label; refBy: ReferenceService; registry: Registry; socket: WebsocketAPI; zone: Zone; }>;
 
   async fetchStates(): Promise<HomeAssistant.Entity[]> {
     const response = await fetch(`${this.baseUrl}/api/states`, {
@@ -221,4 +356,20 @@ export class HassInstance {
       await this.wsClient.unsubscribeEvents(subscriptionId);
     }
   }
+}
+
+let hassInstance: HassInstance | null = null;
+
+export async function get_hass(env: keyof typeof CONFIG = 'development'): Promise<HassInstance> {
+  if (hassInstance) {
+    return hassInstance;
+  }
+
+  const config = CONFIG[env];
+  if (!config.host || !config.token) {
+    throw new Error("Missing required configuration");
+  }
+
+  hassInstance = new HassInstanceImpl(config.host, config.token);
+  return hassInstance;
 }
