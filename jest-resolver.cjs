@@ -1,6 +1,13 @@
-module.exports = (path, options) => {
+const path = require('path');
+
+module.exports = (request, options) => {
+    // Handle chalk and related packages
+    if (request === 'chalk' || request === '#ansi-styles' || request === '#supports-color') {
+        return path.resolve(__dirname, 'node_modules', request.replace('#', ''));
+    }
+
     // Call the default resolver
-    return options.defaultResolver(path, {
+    return options.defaultResolver(request, {
         ...options,
         // Force node to resolve modules as CommonJS
         packageFilter: pkg => {

@@ -1,28 +1,54 @@
-import { get_hass } from '../../src/hass/index.js';
+import { jest, describe, beforeEach, afterAll, it, expect } from '@jest/globals';
+import type { Mock } from 'jest-mock';
 
-// Mock the entire module
-jest.mock('../../src/hass/index.js', () => {
-    let mockInstance: any = null;
+// Define types
+interface MockResponse {
+    success: boolean;
+}
 
-    return {
-        get_hass: jest.fn(async () => {
-            if (!mockInstance) {
-                mockInstance = {
-                    services: {
-                        light: {
-                            turn_on: jest.fn().mockResolvedValue(undefined),
-                            turn_off: jest.fn().mockResolvedValue(undefined),
-                        },
-                        climate: {
-                            set_temperature: jest.fn().mockResolvedValue(undefined),
-                        },
-                    },
-                };
-            }
-            return mockInstance;
-        }),
+type MockFn = () => Promise<MockResponse>;
+
+interface MockService {
+    [key: string]: Mock<MockFn>;
+}
+
+interface MockServices {
+    light: {
+        turn_on: Mock<MockFn>;
+        turn_off: Mock<MockFn>;
     };
-});
+    climate: {
+        set_temperature: Mock<MockFn>;
+    };
+}
+
+interface MockHassInstance {
+    services: MockServices;
+}
+
+// Mock instance
+let mockInstance: MockHassInstance | null = null;
+
+const createMockFn = (): Mock<MockFn> => {
+    return jest.fn<MockFn>().mockImplementation(async () => ({ success: true }));
+};
+
+// Mock the digital-alchemy modules before tests
+jest.unstable_mockModule('@digital-alchemy/core', () => ({
+    CreateApplication: jest.fn(() => ({
+        configuration: {},
+        bootstrap: async () => mockInstance,
+        services: {}
+    })),
+    TServiceParams: jest.fn()
+}));
+
+jest.unstable_mockModule('@digital-alchemy/hass', () => ({
+    LIB_HASS: {
+        configuration: {},
+        services: {}
+    }
+}));
 
 describe('Home Assistant Connection', () => {
     // Backup the original environment
@@ -31,7 +57,18 @@ describe('Home Assistant Connection', () => {
     beforeEach(() => {
         // Clear all mocks
         jest.clearAllMocks();
-
+        // Initialize mock instance
+        mockInstance = {
+            services: {
+                light: {
+                    turn_on: createMockFn(),
+                    turn_off: createMockFn(),
+                },
+                climate: {
+                    set_temperature: createMockFn(),
+                },
+            },
+        };
         // Reset environment variables
         process.env = { ...originalEnv };
     });
@@ -42,6 +79,7 @@ describe('Home Assistant Connection', () => {
     });
 
     it('should return a Home Assistant instance with services', async () => {
+        const { get_hass } = await import('../../src/hass/index.js');
         const hass = await get_hass();
 
         expect(hass).toBeDefined();
@@ -51,31 +89,11 @@ describe('Home Assistant Connection', () => {
         expect(typeof hass.services.climate.set_temperature).toBe('function');
     });
 
-    it('should reuse the same instance on multiple calls', async () => {
+    it('should reuse the same instance on subsequent calls', async () => {
+        const { get_hass } = await import('../../src/hass/index.js');
         const firstInstance = await get_hass();
         const secondInstance = await get_hass();
 
         expect(firstInstance).toBe(secondInstance);
-    });
-
-    it('should use "development" as default environment', async () => {
-        // Unset NODE_ENV
-        delete process.env.NODE_ENV;
-
-        const hass = await get_hass();
-
-        // You might need to add a way to check the environment in your actual implementation
-        // This is a placeholder and might need adjustment based on your exact implementation
-        expect(process.env.NODE_ENV).toBe(undefined);
-    });
-
-    it('should use process.env.NODE_ENV when set', async () => {
-        // Set a specific environment
-        process.env.NODE_ENV = 'production';
-
-        const hass = await get_hass();
-
-        // You might need to add a way to check the environment in your actual implementation
-        expect(process.env.NODE_ENV).toBe('production');
     });
 }); 

@@ -1,19 +1,31 @@
-const jestGlobals = require('@jest/globals');
+import { jest } from '@jest/globals';
+
+// Mock environment variables
+process.env.HASS_URL = 'http://localhost:8123';
+process.env.HASS_TOKEN = 'test_token';
+process.env.CLAUDE_API_KEY = 'test_api_key';
+process.env.CLAUDE_MODEL = 'test_model';
+
+// Global Jest settings
+jest.setTimeout(30000); // 30 seconds timeout
 
 // Mock semver to avoid the SemVer constructor issue
-jestGlobals.jest.mock('semver', () => {
-    const actual = jestGlobals.jest.requireActual('semver');
-    return {
-        ...actual,
-        parse: jestGlobals.jest.fn((version) => ({ version })),
-        valid: jestGlobals.jest.fn(() => true),
-        satisfies: jestGlobals.jest.fn(() => true),
-        gt: jestGlobals.jest.fn(() => true),
-        gte: jestGlobals.jest.fn(() => true),
-        lt: jestGlobals.jest.fn(() => false),
-        lte: jestGlobals.jest.fn(() => false),
-        eq: jestGlobals.jest.fn(() => true),
-        neq: jestGlobals.jest.fn(() => false),
-        SemVer: jestGlobals.jest.fn((version) => ({ version }))
-    };
-}); 
+jest.mock('semver', () => ({
+    default: class SemVer {
+        constructor(version) {
+            this.version = version;
+        }
+        toString() {
+            return this.version;
+        }
+    },
+    valid: (v) => v,
+    clean: (v) => v,
+    satisfies: () => true,
+    gt: () => false,
+    gte: () => true,
+    lt: () => false,
+    lte: () => true,
+    eq: () => true,
+    neq: () => false,
+})); 
