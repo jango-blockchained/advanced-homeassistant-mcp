@@ -1,5 +1,57 @@
-import { HassInstance } from '../../src/hass/index.js';
+import { HassInstanceImpl } from '../../src/hass/index.js';
 import * as HomeAssistant from '../../src/types/hass.js';
+import { HassWebSocketClient } from '../../src/websocket/client.js';
+
+// Add DOM types for WebSocket and events
+type CloseEvent = {
+    code: number;
+    reason: string;
+    wasClean: boolean;
+};
+
+type MessageEvent = {
+    data: any;
+    type: string;
+    lastEventId: string;
+};
+
+type Event = {
+    type: string;
+};
+
+interface WebSocketLike {
+    send(data: string): void;
+    close(): void;
+    addEventListener(type: string, listener: (event: any) => void): void;
+    removeEventListener(type: string, listener: (event: any) => void): void;
+    dispatchEvent(event: Event): boolean;
+    onopen: ((event: Event) => void) | null;
+    onclose: ((event: CloseEvent) => void) | null;
+    onmessage: ((event: MessageEvent) => void) | null;
+    onerror: ((event: Event) => void) | null;
+    url: string;
+    readyState: number;
+    bufferedAmount: number;
+    extensions: string;
+    protocol: string;
+    binaryType: string;
+}
+
+interface MockWebSocketInstance extends WebSocketLike {
+    send: jest.Mock;
+    close: jest.Mock;
+    addEventListener: jest.Mock;
+    removeEventListener: jest.Mock;
+    dispatchEvent: jest.Mock;
+}
+
+interface MockWebSocketConstructor extends jest.Mock<MockWebSocketInstance> {
+    CONNECTING: 0;
+    OPEN: 1;
+    CLOSING: 2;
+    CLOSED: 3;
+    prototype: WebSocketLike;
+}
 
 // Mock the entire hass module
 jest.mock('../../src/hass/index.js', () => ({
@@ -7,10 +59,40 @@ jest.mock('../../src/hass/index.js', () => ({
 }));
 
 describe('Home Assistant API', () => {
-    let hass: HassInstance;
+    let hass: HassInstanceImpl;
+    let mockWs: MockWebSocketInstance;
+    let MockWebSocket: MockWebSocketConstructor;
 
     beforeEach(() => {
-        hass = new HassInstance('http://localhost:8123', 'test_token');
+        hass = new HassInstanceImpl('http://localhost:8123', 'test_token');
+        mockWs = {
+            send: jest.fn(),
+            close: jest.fn(),
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn(),
+            dispatchEvent: jest.fn(),
+            onopen: null,
+            onclose: null,
+            onmessage: null,
+            onerror: null,
+            url: '',
+            readyState: 1,
+            bufferedAmount: 0,
+            extensions: '',
+            protocol: '',
+            binaryType: 'blob'
+        } as MockWebSocketInstance;
+
+        // Create a mock WebSocket constructor
+        MockWebSocket = jest.fn().mockImplementation(() => mockWs) as MockWebSocketConstructor;
+        MockWebSocket.CONNECTING = 0;
+        MockWebSocket.OPEN = 1;
+        MockWebSocket.CLOSING = 2;
+        MockWebSocket.CLOSED = 3;
+        MockWebSocket.prototype = {} as WebSocketLike;
+
+        // Mock WebSocket globally
+        (global as any).WebSocket = MockWebSocket;
     });
 
     describe('State Management', () => {
@@ -105,30 +187,41 @@ describe('Home Assistant API', () => {
     describe('Event Subscription', () => {
         it('should subscribe to events', async () => {
             const callback = jest.fn();
-            const mockWs = {
-                send: jest.fn(),
-                close: jest.fn(),
-                addEventListener: jest.fn()
-            };
-
-            global.WebSocket = jest.fn().mockImplementation(() => mockWs);
-
             await hass.subscribeEvents(callback, 'state_changed');
 
-            expect(WebSocket).toHaveBeenCalledWith(
+            expect(MockWebSocket).toHaveBeenCalledWith(
                 'ws://localhost:8123/api/websocket'
             );
         });
 
         it('should handle subscription errors', async () => {
             const callback = jest.fn();
-            global.WebSocket = jest.fn().mockImplementation(() => {
+            MockWebSocket.mockImplementation(() => {
                 throw new Error('WebSocket connection failed');
             });
 
             await expect(
                 hass.subscribeEvents(callback, 'state_changed')
             ).rejects.toThrow('WebSocket connection failed');
+        });
+    });
+
+    describe('WebSocket connection', () => {
+        it('should connect to WebSocket endpoint', async () => {
+            await hass.subscribeEvents(() => { });
+            expect(MockWebSocket).toHaveBeenCalledWith(
+                'ws://localhost:8123/api/websocket'
+            );
+        });
+
+        it('should handle connection errors', async () => {
+            MockWebSocket.mockImplementation(() => {
+                throw new Error('Connection failed');
+            });
+
+            await expect(hass.subscribeEvents(() => { })).rejects.toThrow(
+                'Connection failed'
+            );
         });
     });
 }); 

@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv';
-import * as HomeAssistant from '../types/hass.js';
+import { Entity, StateChangedEvent } from '../types/hass.js';
 
 // Define base types for automation components
 type TriggerType = {
@@ -44,8 +44,49 @@ type DeviceControlType = {
     parameters?: Record<string, any> | null;
 };
 
-// Schema definitions
-export const entitySchema: JSONSchemaType<HomeAssistant.Entity> = {
+// Define missing types
+export interface Service {
+    name: string;
+    description: string;
+    target?: {
+        entity?: string[];
+        device?: string[];
+        area?: string[];
+    } | null;
+    fields: Record<string, any>;
+}
+
+export interface Config {
+    components: string[];
+    config_dir: string;
+    elevation: number;
+    latitude: number;
+    longitude: number;
+    location_name: string;
+    time_zone: string;
+    unit_system: {
+        length: string;
+        mass: string;
+        temperature: string;
+        volume: string;
+    };
+    version: string;
+}
+
+// Define base schemas
+const contextSchema = {
+    type: 'object',
+    properties: {
+        id: { type: 'string' },
+        parent_id: { type: 'string', nullable: true },
+        user_id: { type: 'string', nullable: true }
+    },
+    required: ['id', 'parent_id', 'user_id'],
+    additionalProperties: false
+} as const;
+
+// Entity schema
+export const entitySchema = {
     type: 'object',
     properties: {
         entity_id: { type: 'string' },
@@ -56,59 +97,55 @@ export const entitySchema: JSONSchemaType<HomeAssistant.Entity> = {
         },
         last_changed: { type: 'string' },
         last_updated: { type: 'string' },
-        context: {
-            type: 'object',
-            properties: {
-                id: { type: 'string' },
-                parent_id: { type: 'string', nullable: true },
-                user_id: { type: 'string', nullable: true }
-            },
-            required: ['id'],
-            additionalProperties: false
-        }
+        context: contextSchema
     },
     required: ['entity_id', 'state', 'attributes', 'last_changed', 'last_updated', 'context'],
     additionalProperties: false
-};
+} as const;
 
-export const serviceSchema: JSONSchemaType<HomeAssistant.Service> = {
+// Service schema
+export const serviceSchema = {
     type: 'object',
     properties: {
-        domain: { type: 'string' },
-        service: { type: 'string' },
+        name: { type: 'string' },
+        description: { type: 'string' },
         target: {
             type: 'object',
             nullable: true,
             properties: {
-                entity_id: {
-                    type: 'array',
-                    nullable: true,
-                    items: { type: 'string' }
-                },
-                device_id: {
-                    type: 'array',
-                    nullable: true,
-                    items: { type: 'string' }
-                },
-                area_id: {
-                    type: 'array',
-                    nullable: true,
-                    items: { type: 'string' }
-                }
+                entity: { type: 'array', items: { type: 'string' }, nullable: true },
+                device: { type: 'array', items: { type: 'string' }, nullable: true },
+                area: { type: 'array', items: { type: 'string' }, nullable: true }
             },
+            required: [],
             additionalProperties: false
         },
-        service_data: {
+        fields: {
             type: 'object',
-            nullable: true,
             additionalProperties: true
         }
     },
-    required: ['domain', 'service'],
+    required: ['name', 'description', 'fields'],
     additionalProperties: false
+} as const;
+
+// Define the trigger schema without type assertion
+export const triggerSchema = {
+    type: 'object',
+    properties: {
+        platform: { type: 'string' },
+        event: { type: 'string', nullable: true },
+        entity_id: { type: 'string', nullable: true },
+        to: { type: 'string', nullable: true },
+        from: { type: 'string', nullable: true },
+        offset: { type: 'string', nullable: true }
+    },
+    required: ['platform'],
+    additionalProperties: true
 };
 
-export const automationSchema: JSONSchemaType<AutomationType> = {
+// Define the automation schema
+export const automationSchema = {
     type: 'object',
     properties: {
         alias: { type: 'string' },
@@ -120,63 +157,26 @@ export const automationSchema: JSONSchemaType<AutomationType> = {
         },
         trigger: {
             type: 'array',
-            items: {
-                type: 'object',
-                required: ['platform'],
-                properties: {
-                    platform: { type: 'string' },
-                    event: { type: 'string', nullable: true },
-                    entity_id: { type: 'string', nullable: true },
-                    to: { type: 'string', nullable: true },
-                    from: { type: 'string', nullable: true },
-                    offset: { type: 'string', nullable: true }
-                },
-                additionalProperties: true
-            }
+            items: triggerSchema
         },
         condition: {
             type: 'array',
-            nullable: true,
             items: {
                 type: 'object',
-                required: ['condition'],
-                properties: {
-                    condition: { type: 'string' }
-                },
                 additionalProperties: true
-            }
+            },
+            nullable: true
         },
         action: {
             type: 'array',
             items: {
                 type: 'object',
-                required: ['service'],
-                properties: {
-                    service: { type: 'string' },
-                    target: {
-                        type: 'object',
-                        nullable: true,
-                        properties: {
-                            entity_id: {
-                                type: 'array',
-                                items: { type: 'string' },
-                                nullable: true
-                            }
-                        },
-                        additionalProperties: true
-                    },
-                    data: {
-                        type: 'object',
-                        nullable: true,
-                        additionalProperties: true
-                    }
-                },
                 additionalProperties: true
             }
         }
     },
     required: ['alias', 'trigger', 'action'],
-    additionalProperties: true
+    additionalProperties: false
 };
 
 export const deviceControlSchema: JSONSchemaType<DeviceControlType> = {
@@ -206,7 +206,8 @@ export const deviceControlSchema: JSONSchemaType<DeviceControlType> = {
     additionalProperties: false
 };
 
-export const stateChangedEventSchema: JSONSchemaType<HomeAssistant.StateChangedEvent> = {
+// State changed event schema
+export const stateChangedEventSchema = {
     type: 'object',
     properties: {
         event_type: { type: 'string', const: 'state_changed' },
@@ -214,78 +215,31 @@ export const stateChangedEventSchema: JSONSchemaType<HomeAssistant.StateChangedE
             type: 'object',
             properties: {
                 entity_id: { type: 'string' },
-                new_state: {
-                    type: 'object',
-                    nullable: true,
-                    properties: {
-                        entity_id: { type: 'string' },
-                        state: { type: 'string' },
-                        attributes: {
-                            type: 'object',
-                            additionalProperties: true
-                        },
-                        last_changed: { type: 'string' },
-                        last_updated: { type: 'string' },
-                        context: {
-                            type: 'object',
-                            properties: {
-                                id: { type: 'string' },
-                                parent_id: { type: 'string', nullable: true },
-                                user_id: { type: 'string', nullable: true }
-                            },
-                            required: ['id']
-                        }
-                    },
-                    required: ['entity_id', 'state', 'attributes', 'last_changed', 'last_updated', 'context']
-                },
-                old_state: {
-                    type: 'object',
-                    nullable: true,
-                    properties: {
-                        entity_id: { type: 'string' },
-                        state: { type: 'string' },
-                        attributes: {
-                            type: 'object',
-                            additionalProperties: true
-                        },
-                        last_changed: { type: 'string' },
-                        last_updated: { type: 'string' },
-                        context: {
-                            type: 'object',
-                            properties: {
-                                id: { type: 'string' },
-                                parent_id: { type: 'string', nullable: true },
-                                user_id: { type: 'string', nullable: true }
-                            },
-                            required: ['id']
-                        }
-                    },
-                    required: ['entity_id', 'state', 'attributes', 'last_changed', 'last_updated', 'context']
-                }
+                new_state: { ...entitySchema, nullable: true },
+                old_state: { ...entitySchema, nullable: true }
             },
-            required: ['entity_id', 'new_state']
+            required: ['entity_id', 'new_state', 'old_state'],
+            additionalProperties: false
         },
         origin: { type: 'string' },
         time_fired: { type: 'string' },
-        context: {
-            type: 'object',
-            properties: {
-                id: { type: 'string' },
-                parent_id: { type: 'string', nullable: true },
-                user_id: { type: 'string', nullable: true }
-            },
-            required: ['id']
-        }
+        context: contextSchema
     },
-    required: ['event_type', 'data', 'origin', 'time_fired', 'context']
-};
+    required: ['event_type', 'data', 'origin', 'time_fired', 'context'],
+    additionalProperties: false
+} as const;
 
-export const configSchema: JSONSchemaType<HomeAssistant.Config> = {
+// Config schema
+export const configSchema = {
     type: 'object',
     properties: {
+        components: { type: 'array', items: { type: 'string' } },
+        config_dir: { type: 'string' },
+        elevation: { type: 'number' },
         latitude: { type: 'number' },
         longitude: { type: 'number' },
-        elevation: { type: 'number' },
+        location_name: { type: 'string' },
+        time_zone: { type: 'string' },
         unit_system: {
             type: 'object',
             properties: {
@@ -297,14 +251,18 @@ export const configSchema: JSONSchemaType<HomeAssistant.Config> = {
             required: ['length', 'mass', 'temperature', 'volume'],
             additionalProperties: false
         },
-        location_name: { type: 'string' },
-        time_zone: { type: 'string' },
-        components: {
-            type: 'array',
-            items: { type: 'string' }
-        },
         version: { type: 'string' }
     },
-    required: ['latitude', 'longitude', 'elevation', 'unit_system', 'location_name', 'time_zone', 'components', 'version'],
+    required: [
+        'components',
+        'config_dir',
+        'elevation',
+        'latitude',
+        'longitude',
+        'location_name',
+        'time_zone',
+        'unit_system',
+        'version'
+    ],
     additionalProperties: false
-}; 
+} as const; 

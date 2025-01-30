@@ -19,7 +19,37 @@ type HassServices = {
 
 // Define the type for Home Assistant instance
 interface HassInstance extends TServiceParams {
+  baseUrl: string;
+  token: string;
+  wsClient: HassWebSocketClient | undefined;
   services: HassServices;
+  als: AlsExtension;
+  context: TContext;
+  event: EventEmitter<[never]>;
+  internal: InternalDefinition;
+  lifecycle: TLifecycleBase;
+  logger: ILogger;
+  scheduler: TScheduler;
+  config: TInjectedConfig;
+  params: TServiceParams;
+  hass: GetApisResult<{
+    area: typeof Area;
+    backup: typeof Backup;
+    call: typeof CallProxy;
+    configure: typeof Configure;
+    device: typeof Device;
+    entity: typeof EntityManager;
+    events: typeof EventsService;
+    fetch: typeof FetchAPI;
+    floor: typeof Floor;
+    idBy: typeof IDByExtension;
+    internals: typeof FetchInternals;
+    label: typeof Label;
+    refBy: typeof ReferenceService;
+    registry: typeof Registry;
+    socket: typeof WebsocketAPI;
+    zone: typeof Zone;
+  }>;
 }
 
 // Configuration type for application with more specific constraints
@@ -265,32 +295,60 @@ export class HassWebSocketClient extends EventEmitter {
   }
 }
 
-export interface HassInstance {
-  fetchStates(): Promise<HomeAssistant.Entity[]>;
-  fetchState(entityId: string): Promise<HomeAssistant.Entity>;
-  callService(domain: string, service: string, data: Record<string, any>): Promise<void>;
-  subscribeEvents(callback: (event: HomeAssistant.Event) => void, eventType?: string): Promise<number>;
-  unsubscribeEvents(subscriptionId: number): Promise<void>;
-}
+export class HassInstanceImpl implements HassInstance {
+  public readonly baseUrl: string;
+  public readonly token: string;
+  public wsClient: HassWebSocketClient | undefined;
 
-class HassInstanceImpl implements HassInstance {
-  private wsClient: HassWebSocketClient | null = null;
+  public services!: HassServices;
+  public als!: AlsExtension;
+  public context!: TContext;
+  public event!: EventEmitter<[never]>;
+  public internal!: InternalDefinition;
+  public lifecycle!: TLifecycleBase;
+  public logger!: ILogger;
+  public scheduler!: TScheduler;
+  public config!: TInjectedConfig;
+  public params!: TServiceParams;
+  public hass!: GetApisResult<{
+    area: typeof Area;
+    backup: typeof Backup;
+    call: typeof CallProxy;
+    configure: typeof Configure;
+    device: typeof Device;
+    entity: typeof EntityManager;
+    events: typeof EventsService;
+    fetch: typeof FetchAPI;
+    floor: typeof Floor;
+    idBy: typeof IDByExtension;
+    internals: typeof FetchInternals;
+    label: typeof Label;
+    refBy: typeof ReferenceService;
+    registry: typeof Registry;
+    socket: typeof WebsocketAPI;
+    zone: typeof Zone;
+  }>;
 
-  constructor(
-    private readonly baseUrl: string,
-    private readonly token: string
-  ) { }
-  services: HassServices;
-  als: AlsExtension;
-  context: TContext;
-  event: EventEmitter<[never]>;
-  internal: InternalDefinition;
-  lifecycle: TLifecycleBase;
-  logger: ILogger;
-  scheduler: TScheduler;
-  config: TInjectedConfig;
-  params: TServiceParams;
-  hass: GetApisResult<{ area: Area; backup: Backup; call: CallProxy; configure: Configure; device: Device; entity: EntityManager; events: EventsService; fetch: FetchAPI; floor: Floor; idBy: IDByExtension; internals: FetchInternals; label: Label; refBy: ReferenceService; registry: Registry; socket: WebsocketAPI; zone: Zone; }>;
+  constructor(baseUrl: string, token: string) {
+    this.baseUrl = baseUrl;
+    this.token = token;
+    this.initialize();
+  }
+
+  private initialize() {
+    // Initialize all required properties with proper type instantiation
+    this.services = {} as HassServices;
+    this.als = {} as AlsExtension;
+    this.context = {} as TContext;
+    this.event = new EventEmitter();
+    this.internal = {} as InternalDefinition;
+    this.lifecycle = {} as TLifecycleBase;
+    this.logger = {} as ILogger;
+    this.scheduler = {} as TScheduler;
+    this.config = {} as TInjectedConfig;
+    this.params = {} as TServiceParams;
+    this.hass = {} as GetApisResult<any>;
+  }
 
   async fetchStates(): Promise<HomeAssistant.Entity[]> {
     const response = await fetch(`${this.baseUrl}/api/states`, {
@@ -362,14 +420,20 @@ let hassInstance: HassInstance | null = null;
 
 export async function get_hass(env: keyof typeof CONFIG = 'development'): Promise<HassInstance> {
   if (hassInstance) {
+    console.log('Reusing existing Home Assistant connection');
     return hassInstance;
   }
 
-  const config = CONFIG[env];
-  if (!config.host || !config.token) {
-    throw new Error("Missing required configuration");
+  console.log('Initializing new Home Assistant connection...');
+
+  if (!HASS_CONFIG.BASE_URL || !HASS_CONFIG.TOKEN) {
+    console.error('Missing required configuration: HASS_HOST or HASS_TOKEN not set');
+    throw new Error("Missing required configuration: HASS_HOST or HASS_TOKEN not set");
   }
 
-  hassInstance = new HassInstanceImpl(config.host, config.token);
+  console.log(`Connecting to Home Assistant at ${HASS_CONFIG.BASE_URL}...`);
+  hassInstance = new HassInstanceImpl(HASS_CONFIG.BASE_URL, HASS_CONFIG.TOKEN);
+  console.log('Home Assistant connection established successfully');
+
   return hassInstance;
 }

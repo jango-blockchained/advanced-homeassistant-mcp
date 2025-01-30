@@ -109,7 +109,11 @@ describe('WebSocket Event Handling', () => {
                         attributes: { brightness: 255 },
                         last_changed: '2024-01-01T00:00:00Z',
                         last_updated: '2024-01-01T00:00:00Z',
-                        context: { id: '123' }
+                        context: {
+                            id: '123',
+                            parent_id: null,
+                            user_id: null
+                        }
                     },
                     old_state: {
                         entity_id: 'light.living_room',
@@ -117,12 +121,20 @@ describe('WebSocket Event Handling', () => {
                         attributes: {},
                         last_changed: '2024-01-01T00:00:00Z',
                         last_updated: '2024-01-01T00:00:00Z',
-                        context: { id: '122' }
+                        context: {
+                            id: '122',
+                            parent_id: null,
+                            user_id: null
+                        }
                     }
                 },
                 origin: 'LOCAL',
                 time_fired: '2024-01-01T00:00:00Z',
-                context: { id: '123' }
+                context: {
+                    id: '123',
+                    parent_id: null,
+                    user_id: null
+                }
             };
 
             client.on('event', (event) => {
