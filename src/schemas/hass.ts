@@ -141,15 +141,7 @@ export const automationSchema: JSONSchemaType<AutomationType> = {
                 type: 'object',
                 required: ['condition'],
                 properties: {
-                    condition: { type: 'string' },
-                    conditions: {
-                        type: 'array',
-                        nullable: true,
-                        items: {
-                            type: 'object',
-                            additionalProperties: true
-                        }
-                    }
+                    condition: { type: 'string' }
                 },
                 additionalProperties: true
             }
@@ -166,13 +158,8 @@ export const automationSchema: JSONSchemaType<AutomationType> = {
                         nullable: true,
                         properties: {
                             entity_id: {
-                                anyOf: [
-                                    { type: 'string' },
-                                    {
-                                        type: 'array',
-                                        items: { type: 'string' }
-                                    }
-                                ],
+                                type: 'array',
+                                items: { type: 'string' },
                                 nullable: true
                             }
                         },
@@ -228,22 +215,55 @@ export const stateChangedEventSchema: JSONSchemaType<HomeAssistant.StateChangedE
             properties: {
                 entity_id: { type: 'string' },
                 new_state: {
-                    anyOf: [
-                        entitySchema,
-                        { type: 'null' }
-                    ],
-                    nullable: true
+                    type: 'object',
+                    nullable: true,
+                    properties: {
+                        entity_id: { type: 'string' },
+                        state: { type: 'string' },
+                        attributes: {
+                            type: 'object',
+                            additionalProperties: true
+                        },
+                        last_changed: { type: 'string' },
+                        last_updated: { type: 'string' },
+                        context: {
+                            type: 'object',
+                            properties: {
+                                id: { type: 'string' },
+                                parent_id: { type: 'string', nullable: true },
+                                user_id: { type: 'string', nullable: true }
+                            },
+                            required: ['id']
+                        }
+                    },
+                    required: ['entity_id', 'state', 'attributes', 'last_changed', 'last_updated', 'context']
                 },
                 old_state: {
-                    anyOf: [
-                        entitySchema,
-                        { type: 'null' }
-                    ],
-                    nullable: true
+                    type: 'object',
+                    nullable: true,
+                    properties: {
+                        entity_id: { type: 'string' },
+                        state: { type: 'string' },
+                        attributes: {
+                            type: 'object',
+                            additionalProperties: true
+                        },
+                        last_changed: { type: 'string' },
+                        last_updated: { type: 'string' },
+                        context: {
+                            type: 'object',
+                            properties: {
+                                id: { type: 'string' },
+                                parent_id: { type: 'string', nullable: true },
+                                user_id: { type: 'string', nullable: true }
+                            },
+                            required: ['id']
+                        }
+                    },
+                    required: ['entity_id', 'state', 'attributes', 'last_changed', 'last_updated', 'context']
                 }
             },
-            required: ['entity_id', 'new_state', 'old_state'],
-            additionalProperties: false
+            required: ['entity_id', 'new_state']
         },
         origin: { type: 'string' },
         time_fired: { type: 'string' },
@@ -254,12 +274,10 @@ export const stateChangedEventSchema: JSONSchemaType<HomeAssistant.StateChangedE
                 parent_id: { type: 'string', nullable: true },
                 user_id: { type: 'string', nullable: true }
             },
-            required: ['id'],
-            additionalProperties: false
+            required: ['id']
         }
     },
-    required: ['event_type', 'data', 'origin', 'time_fired', 'context'],
-    additionalProperties: false
+    required: ['event_type', 'data', 'origin', 'time_fired', 'context']
 };
 
 export const configSchema: JSONSchemaType<HomeAssistant.Config> = {

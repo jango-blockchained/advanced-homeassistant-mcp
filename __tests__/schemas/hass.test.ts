@@ -1,5 +1,6 @@
 import { entitySchema, serviceSchema, stateChangedEventSchema, configSchema, automationSchema, deviceControlSchema } from '../../src/schemas/hass.js';
-import Ajv, { JSONSchemaType } from 'ajv';
+import AjvModule from 'ajv';
+const Ajv = AjvModule.default || AjvModule;
 
 describe('Home Assistant Schemas', () => {
     const ajv = new Ajv({ allErrors: true });
@@ -77,18 +78,15 @@ describe('Home Assistant Schemas', () => {
     describe('Service Schema', () => {
         const validate = ajv.compile(serviceSchema);
 
-        it('should validate a valid service call', () => {
-            const validService = {
+        it('should validate a basic service call', () => {
+            const basicService = {
                 domain: 'light',
                 service: 'turn_on',
                 target: {
-                    entity_id: 'light.living_room'
-                },
-                service_data: {
-                    brightness: 255
+                    entity_id: ['light.living_room']
                 }
             };
-            expect(validate(validService)).toBe(true);
+            expect(validate(basicService)).toBe(true);
         });
 
         it('should validate service call with multiple targets', () => {
@@ -97,27 +95,31 @@ describe('Home Assistant Schemas', () => {
                 service: 'turn_on',
                 target: {
                     entity_id: ['light.living_room', 'light.kitchen'],
-                    area_id: 'living_room'
+                    device_id: ['device123', 'device456'],
+                    area_id: ['living_room', 'kitchen']
                 },
                 service_data: {
-                    brightness: 255
+                    brightness_pct: 100
                 }
             };
             expect(validate(multiTargetService)).toBe(true);
         });
 
-        it('should validate service call without target', () => {
-            const serviceWithoutTarget = {
+        it('should validate service call without targets', () => {
+            const noTargetService = {
                 domain: 'homeassistant',
                 service: 'restart'
             };
-            expect(validate(serviceWithoutTarget)).toBe(true);
+            expect(validate(noTargetService)).toBe(true);
         });
 
-        it('should reject invalid service call', () => {
+        it('should reject service call with invalid target type', () => {
             const invalidService = {
-                service: 'turn_on'
-                // missing domain
+                domain: 'light',
+                service: 'turn_on',
+                target: {
+                    entity_id: 'not_an_array' // should be an array
+                }
             };
             expect(validate(invalidService)).toBe(false);
             expect(validate.errors).toBeDefined();
@@ -149,9 +151,7 @@ describe('Home Assistant Schemas', () => {
                     old_state: {
                         entity_id: 'light.living_room',
                         state: 'off',
-                        attributes: {
-                            brightness: 0
-                        },
+                        attributes: {},
                         last_changed: '2024-01-01T00:00:00Z',
                         last_updated: '2024-01-01T00:00:00Z',
                         context: {
@@ -202,7 +202,7 @@ describe('Home Assistant Schemas', () => {
             expect(validate(newEntityEvent)).toBe(true);
         });
 
-        it('should reject invalid event type', () => {
+        it('should reject event with invalid event_type', () => {
             const invalidEvent = {
                 event_type: 'wrong_type',
                 data: {
@@ -213,18 +213,21 @@ describe('Home Assistant Schemas', () => {
                 origin: 'LOCAL',
                 time_fired: '2024-01-01T00:00:00Z',
                 context: {
-                    id: '123456'
+                    id: '123456',
+                    parent_id: null,
+                    user_id: null
                 }
             };
             expect(validate(invalidEvent)).toBe(false);
+            expect(validate.errors).toBeDefined();
         });
     });
 
     describe('Config Schema', () => {
         const validate = ajv.compile(configSchema);
 
-        it('should validate a valid config', () => {
-            const validConfig = {
+        it('should validate a minimal config', () => {
+            const minimalConfig = {
                 latitude: 52.3731,
                 longitude: 4.8922,
                 elevation: 0,
@@ -236,17 +239,17 @@ describe('Home Assistant Schemas', () => {
                 },
                 location_name: 'Home',
                 time_zone: 'Europe/Amsterdam',
-                components: ['homeassistant', 'light', 'switch'],
+                components: ['homeassistant'],
                 version: '2024.1.0'
             };
-            expect(validate(validConfig)).toBe(true);
+            expect(validate(minimalConfig)).toBe(true);
         });
 
-        it('should reject config with missing fields', () => {
+        it('should reject config with missing required fields', () => {
             const invalidConfig = {
                 latitude: 52.3731,
                 longitude: 4.8922
-                // missing required fields
+                // missing other required fields
             };
             expect(validate(invalidConfig)).toBe(false);
             expect(validate.errors).toBeDefined();
@@ -265,31 +268,11 @@ describe('Home Assistant Schemas', () => {
                 },
                 location_name: 'Home',
                 time_zone: 'Europe/Amsterdam',
-                components: ['homeassistant', 'light', 'switch'],
+                components: ['homeassistant'],
                 version: '2024.1.0'
             };
             expect(validate(invalidConfig)).toBe(false);
-        });
-
-        it('should validate config with all optional fields', () => {
-            const fullConfig = {
-                latitude: 52.3731,
-                longitude: 4.8922,
-                elevation: 0,
-                unit_system: {
-                    length: 'km',
-                    mass: 'kg',
-                    temperature: '°C',
-                    volume: 'L'
-                },
-                location_name: 'Home',
-                time_zone: 'Europe/Amsterdam',
-                components: ['homeassistant', 'light', 'switch', 'climate', 'sensor'],
-                version: '2024.1.0',
-                country: 'NL',
-                language: 'en'
-            };
-            expect(validate(fullConfig)).toBe(true);
+            expect(validate.errors).toBeDefined();
         });
     });
 

@@ -66,4 +66,5 @@ yarn.lock
 pnpm-lock.yaml
 bun.lockb
 
+coverage/*
 coverage/
