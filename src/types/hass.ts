@@ -82,4 +82,5 @@ export interface HassEvent {
         parent_id?: string;
         user_id?: string;
     };
-} 
+}
+

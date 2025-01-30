@@ -13,6 +13,8 @@
     "declaration": true,
     "sourceMap": true,
     "allowJs": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "types": [
       "node",
       "jest"
@@ -39,6 +41,7 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "**/__tests__/**/*.ts",
+    "**/*.test.ts"
   ]
 }

@@ -1,5 +1,4 @@
 import { jest, describe, beforeEach, afterEach, it, expect } from '@jest/globals';
-import type { Mock } from 'jest-mock';
 import { LiteMCP } from 'litemcp';
 import { get_hass } from '../src/hass/index.js';
 import type { WebSocket } from 'ws';
@@ -34,35 +33,62 @@ const mockFetchResponse = {
     redirect: () => Promise.resolve(new Response())
 } as Response;
 
-const mockFetch = jest.fn(async (_input: string | URL | Request, _init?: RequestInit) => mockFetchResponse) as jest.MockedFunction<typeof fetch>;
+const mockFetch = jest.fn(async (_input: string | URL | Request, _init?: RequestInit) => mockFetchResponse);
 (global as any).fetch = mockFetch;
 
 // Mock LiteMCP
-jest.mock('litemcp', () => ({
-    LiteMCP: jest.fn().mockImplementation(() => ({
-        addTool: jest.fn(),
-        start: jest.fn()
-    }))
-}));
-
-// Mock get_hass
-jest.unstable_mockModule('../src/hass/index.js', () => ({
-    get_hass: jest.fn().mockReturnValue({
-        services: {
-            light: {
-                turn_on: jest.fn(),
-                turn_off: jest.fn()
-            }
-        }
-    })
-}));
-
 interface Tool {
     name: string;
     description: string;
     parameters: Record<string, unknown>;
     execute: (params: Record<string, unknown>) => Promise<unknown>;
 }
+
+type MockFunction<T = any> = jest.Mock<Promise<T>, any[]>;
+
+interface MockLiteMCPInstance {
+    addTool: ReturnType<typeof jest.fn>;
+    start: ReturnType<typeof jest.fn>;
+}
+
+const mockLiteMCPInstance: MockLiteMCPInstance = {
+    addTool: jest.fn(),
+    start: jest.fn().mockResolvedValue(undefined)
+};
+
+jest.mock('litemcp', () => ({
+    LiteMCP: jest.fn(() => mockLiteMCPInstance)
+}));
+
+// Mock get_hass
+interface MockServices {
+    light: {
+        turn_on: jest.Mock;
+        turn_off: jest.Mock;
+    };
+    climate: {
+        set_temperature: jest.Mock;
+    };
+}
+
+interface MockHassInstance {
+    services: MockServices;
+}
+
+// Create mock services
+const mockServices: MockServices = {
+    light: {
+        turn_on: jest.fn().mockResolvedValue({ success: true }),
+        turn_off: jest.fn().mockResolvedValue({ success: true })
+    },
+    climate: {
+        set_temperature: jest.fn().mockResolvedValue({ success: true })
+    }
+};
+
+jest.unstable_mockModule('../src/hass/index.js', () => ({
+    get_hass: jest.fn().mockResolvedValue({ services: mockServices })
+}));
 
 interface TestResponse {
     success: boolean;
@@ -88,10 +114,10 @@ type WebSocketEventListener = (event: Event) => void;
 type WebSocketMessageListener = (event: MessageEvent) => void;
 
 interface MockWebSocketInstance {
-    addEventListener: jest.MockedFunction<typeof Function>;
-    removeEventListener: jest.MockedFunction<typeof Function>;
-    send: jest.MockedFunction<typeof Function>;
-    close: jest.MockedFunction<typeof Function>;
+    addEventListener: jest.Mock;
+    removeEventListener: jest.Mock;
+    send: jest.Mock;
+    close: jest.Mock;
     readyState: number;
     binaryType: 'blob' | 'arraybuffer';
     bufferedAmount: number;
@@ -109,10 +135,10 @@ interface MockWebSocketInstance {
 }
 
 const createMockWebSocket = (): MockWebSocketInstance => ({
-    addEventListener: jest.fn() as jest.MockedFunction<typeof Function>,
-    removeEventListener: jest.fn() as jest.MockedFunction<typeof Function>,
-    send: jest.fn() as jest.MockedFunction<typeof Function>,
-    close: jest.fn() as jest.MockedFunction<typeof Function>,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    send: jest.fn(),
+    close: jest.fn(),
     readyState: 0,
     binaryType: 'blob',
     bufferedAmount: 0,
@@ -130,7 +156,15 @@ const createMockWebSocket = (): MockWebSocketInstance => ({
 });
 
 describe('Home Assistant MCP Server', () => {
+    let mockHass: MockHassInstance;
+    let liteMcpInstance: MockLiteMCPInstance;
+    let addToolCalls: Array<[Tool]>;
+
     beforeEach(async () => {
+        mockHass = {
+            services: mockServices
+        };
+
         // Reset all mocks
         jest.clearAllMocks();
         mockFetch.mockClear();
@@ -141,10 +175,27 @@ describe('Home Assistant MCP Server', () => {
         // Mock WebSocket
         const mockWs = createMockWebSocket();
         (global as any).WebSocket = jest.fn(() => mockWs);
+
+        // Get the mock instance
+        liteMcpInstance = mockLiteMCPInstance;
+        addToolCalls = liteMcpInstance.addTool.mock.calls as Array<[Tool]>;
     });
 
     afterEach(() => {
         jest.resetModules();
+    });
+
+    it('should connect to Home Assistant', async () => {
+        const hass = await get_hass();
+        expect(hass).toBeDefined();
+        expect(hass.services).toBeDefined();
+        expect(typeof hass.services.light.turn_on).toBe('function');
+    });
+
+    it('should reuse the same instance on subsequent calls', async () => {
+        const firstInstance = await get_hass();
+        const secondInstance = await get_hass();
+        expect(firstInstance).toBe(secondInstance);
     });
 
     describe('list_devices tool', () => {
@@ -169,9 +220,12 @@ describe('Home Assistant MCP Server', () => {
             } as Response);
 
             // Get the tool registration
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const listDevicesTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'list_devices')?.[0] as Tool;
+            const listDevicesTool = addToolCalls.find(call => call[0].name === 'list_devices')?.[0];
+            expect(listDevicesTool).toBeDefined();
+
+            if (!listDevicesTool) {
+                throw new Error('list_devices tool not found');
+            }
 
             // Execute the tool
             const result = (await listDevicesTool.execute({})) as TestResponse;
@@ -197,9 +251,12 @@ describe('Home Assistant MCP Server', () => {
             mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
             // Get the tool registration
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const listDevicesTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'list_devices')?.[0] as Tool;
+            const listDevicesTool = addToolCalls.find(call => call[0].name === 'list_devices')?.[0];
+            expect(listDevicesTool).toBeDefined();
+
+            if (!listDevicesTool) {
+                throw new Error('list_devices tool not found');
+            }
 
             // Execute the tool
             const result = (await listDevicesTool.execute({})) as TestResponse;
@@ -219,9 +276,12 @@ describe('Home Assistant MCP Server', () => {
             } as Response);
 
             // Get the tool registration
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const controlTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'control')?.[0] as Tool;
+            const controlTool = addToolCalls.find(call => call[0].name === 'control')?.[0];
+            expect(controlTool).toBeDefined();
+
+            if (!controlTool) {
+                throw new Error('control tool not found');
+            }
 
             // Execute the tool
             const result = (await controlTool.execute({
@@ -253,9 +313,12 @@ describe('Home Assistant MCP Server', () => {
 
         it('should handle unsupported domains', async () => {
             // Get the tool registration
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const controlTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'control')?.[0] as Tool;
+            const controlTool = addToolCalls.find(call => call[0].name === 'control')?.[0];
+            expect(controlTool).toBeDefined();
+
+            if (!controlTool) {
+                throw new Error('control tool not found');
+            }
 
             // Execute the tool with an unsupported domain
             const result = (await controlTool.execute({
@@ -276,9 +339,12 @@ describe('Home Assistant MCP Server', () => {
             } as Response);
 
             // Get the tool registration
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const controlTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'control')?.[0] as Tool;
+            const controlTool = addToolCalls.find(call => call[0].name === 'control')?.[0];
+            expect(controlTool).toBeDefined();
+
+            if (!controlTool) {
+                throw new Error('control tool not found');
+            }
 
             // Execute the tool
             const result = (await controlTool.execute({
@@ -299,9 +365,12 @@ describe('Home Assistant MCP Server', () => {
             } as Response);
 
             // Get the tool registration
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const controlTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'control')?.[0] as Tool;
+            const controlTool = addToolCalls.find(call => call[0].name === 'control')?.[0];
+            expect(controlTool).toBeDefined();
+
+            if (!controlTool) {
+                throw new Error('control tool not found');
+            }
 
             // Execute the tool
             const result = (await controlTool.execute({
@@ -343,9 +412,12 @@ describe('Home Assistant MCP Server', () => {
             } as Response);
 
             // Get the tool registration
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const controlTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'control')?.[0] as Tool;
+            const controlTool = addToolCalls.find(call => call[0].name === 'control')?.[0];
+            expect(controlTool).toBeDefined();
+
+            if (!controlTool) {
+                throw new Error('control tool not found');
+            }
 
             // Execute the tool
             const result = (await controlTool.execute({
@@ -399,9 +471,12 @@ describe('Home Assistant MCP Server', () => {
             } as Response);
 
             // Get the tool registration
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const historyTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'get_history')?.[0] as Tool;
+            const historyTool = addToolCalls.find(call => call[0].name === 'get_history')?.[0];
+            expect(historyTool).toBeDefined();
+
+            if (!historyTool) {
+                throw new Error('get_history tool not found');
+            }
 
             // Execute the tool
             const result = (await historyTool.execute({
@@ -438,9 +513,12 @@ describe('Home Assistant MCP Server', () => {
         it('should handle fetch errors', async () => {
             mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const historyTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'get_history')?.[0] as Tool;
+            const historyTool = addToolCalls.find(call => call[0].name === 'get_history')?.[0];
+            expect(historyTool).toBeDefined();
+
+            if (!historyTool) {
+                throw new Error('get_history tool not found');
+            }
 
             const result = (await historyTool.execute({
                 entity_id: 'light.living_room'
@@ -477,9 +555,12 @@ describe('Home Assistant MCP Server', () => {
                 json: async () => mockScenes
             } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const sceneTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'scene')?.[0] as Tool;
+            const sceneTool = addToolCalls.find(call => call[0].name === 'scene')?.[0];
+            expect(sceneTool).toBeDefined();
+
+            if (!sceneTool) {
+                throw new Error('scene tool not found');
+            }
 
             const result = (await sceneTool.execute({
                 action: 'list'
@@ -506,9 +587,12 @@ describe('Home Assistant MCP Server', () => {
                 json: async () => ({})
             } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const sceneTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'scene')?.[0] as Tool;
+            const sceneTool = addToolCalls.find(call => call[0].name === 'scene')?.[0];
+            expect(sceneTool).toBeDefined();
+
+            if (!sceneTool) {
+                throw new Error('scene tool not found');
+            }
 
             const result = (await sceneTool.execute({
                 action: 'activate',
@@ -541,9 +625,12 @@ describe('Home Assistant MCP Server', () => {
                 json: async () => ({})
             } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const notifyTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'notify')?.[0] as Tool;
+            const notifyTool = addToolCalls.find(call => call[0].name === 'notify')?.[0];
+            expect(notifyTool).toBeDefined();
+
+            if (!notifyTool) {
+                throw new Error('notify tool not found');
+            }
 
             const result = (await notifyTool.execute({
                 message: 'Test notification',
@@ -578,9 +665,12 @@ describe('Home Assistant MCP Server', () => {
                 json: async () => ({})
             } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const notifyTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'notify')?.[0] as Tool;
+            const notifyTool = addToolCalls.find(call => call[0].name === 'notify')?.[0];
+            expect(notifyTool).toBeDefined();
+
+            if (!notifyTool) {
+                throw new Error('notify tool not found');
+            }
 
             await notifyTool.execute({
                 message: 'Test notification'
@@ -619,9 +709,12 @@ describe('Home Assistant MCP Server', () => {
                 json: async () => mockAutomations
             } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const automationTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation')?.[0] as Tool;
+            const automationTool = addToolCalls.find(call => call[0].name === 'automation')?.[0];
+            expect(automationTool).toBeDefined();
+
+            if (!automationTool) {
+                throw new Error('automation tool not found');
+            }
 
             const result = (await automationTool.execute({
                 action: 'list'
@@ -650,9 +743,12 @@ describe('Home Assistant MCP Server', () => {
                 json: async () => ({})
             } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const automationTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation')?.[0] as Tool;
+            const automationTool = addToolCalls.find(call => call[0].name === 'automation')?.[0];
+            expect(automationTool).toBeDefined();
+
+            if (!automationTool) {
+                throw new Error('automation tool not found');
+            }
 
             const result = (await automationTool.execute({
                 action: 'toggle',
@@ -683,9 +779,12 @@ describe('Home Assistant MCP Server', () => {
                 json: async () => ({})
             } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const automationTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation')?.[0] as Tool;
+            const automationTool = addToolCalls.find(call => call[0].name === 'automation')?.[0];
+            expect(automationTool).toBeDefined();
+
+            if (!automationTool) {
+                throw new Error('automation tool not found');
+            }
 
             const result = (await automationTool.execute({
                 action: 'trigger',
@@ -711,9 +810,12 @@ describe('Home Assistant MCP Server', () => {
         });
 
         it('should require automation_id for toggle and trigger actions', async () => {
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const automationTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation')?.[0] as Tool;
+            const automationTool = addToolCalls.find(call => call[0].name === 'automation')?.[0];
+            expect(automationTool).toBeDefined();
+
+            if (!automationTool) {
+                throw new Error('automation tool not found');
+            }
 
             const result = (await automationTool.execute({
                 action: 'toggle'
@@ -756,9 +858,12 @@ describe('Home Assistant MCP Server', () => {
                 json: async () => mockAddons
             } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const addonTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'addon')?.[0] as Tool;
+            const addonTool = addToolCalls.find(call => call[0].name === 'addon')?.[0];
+            expect(addonTool).toBeDefined();
+
+            if (!addonTool) {
+                throw new Error('addon tool not found');
+            }
 
             const result = (await addonTool.execute({
                 action: 'list'
@@ -774,9 +879,12 @@ describe('Home Assistant MCP Server', () => {
                 json: async () => ({ data: { state: 'installing' } })
             } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const addonTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'addon')?.[0] as Tool;
+            const addonTool = addToolCalls.find(call => call[0].name === 'addon')?.[0];
+            expect(addonTool).toBeDefined();
+
+            if (!addonTool) {
+                throw new Error('addon tool not found');
+            }
 
             const result = (await addonTool.execute({
                 action: 'install',
@@ -823,9 +931,12 @@ describe('Home Assistant MCP Server', () => {
                 json: async () => mockPackages
             } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const packageTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'package')?.[0] as Tool;
+            const packageTool = addToolCalls.find(call => call[0].name === 'package')?.[0];
+            expect(packageTool).toBeDefined();
+
+            if (!packageTool) {
+                throw new Error('package tool not found');
+            }
 
             const result = (await packageTool.execute({
                 action: 'list',
@@ -842,9 +953,12 @@ describe('Home Assistant MCP Server', () => {
                 json: async () => ({})
             } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const packageTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'package')?.[0] as Tool;
+            const packageTool = addToolCalls.find(call => call[0].name === 'package')?.[0];
+            expect(packageTool).toBeDefined();
+
+            if (!packageTool) {
+                throw new Error('package tool not found');
+            }
 
             const result = (await packageTool.execute({
                 action: 'install',
@@ -902,9 +1016,12 @@ describe('Home Assistant MCP Server', () => {
                 json: async () => ({ automation_id: 'new_automation_1' })
             } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const automationConfigTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation_config')?.[0] as Tool;
+            const automationConfigTool = addToolCalls.find(call => call[0].name === 'automation_config')?.[0];
+            expect(automationConfigTool).toBeDefined();
+
+            if (!automationConfigTool) {
+                throw new Error('automation_config tool not found');
+            }
 
             const result = (await automationConfigTool.execute({
                 action: 'create',
@@ -941,9 +1058,12 @@ describe('Home Assistant MCP Server', () => {
                     json: async () => ({ automation_id: 'new_automation_2' })
                 } as Response);
 
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const automationConfigTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation_config')?.[0] as Tool;
+            const automationConfigTool = addToolCalls.find(call => call[0].name === 'automation_config')?.[0];
+            expect(automationConfigTool).toBeDefined();
+
+            if (!automationConfigTool) {
+                throw new Error('automation_config tool not found');
+            }
 
             const result = (await automationConfigTool.execute({
                 action: 'duplicate',
@@ -975,9 +1095,12 @@ describe('Home Assistant MCP Server', () => {
         });
 
         it('should require config for create action', async () => {
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const automationConfigTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation_config')?.[0] as Tool;
+            const automationConfigTool = addToolCalls.find(call => call[0].name === 'automation_config')?.[0];
+            expect(automationConfigTool).toBeDefined();
+
+            if (!automationConfigTool) {
+                throw new Error('automation_config tool not found');
+            }
 
             const result = (await automationConfigTool.execute({
                 action: 'create'
@@ -988,9 +1111,12 @@ describe('Home Assistant MCP Server', () => {
         });
 
         it('should require automation_id for update action', async () => {
-            const liteMcpInstance = (LiteMCP as jest.MockedClass<typeof LiteMCP>).mock.results[0].value;
-            const addToolCalls = liteMcpInstance.addTool.mock.calls;
-            const automationConfigTool = addToolCalls.find((call: { 0: Tool }) => call[0].name === 'automation_config')?.[0] as Tool;
+            const automationConfigTool = addToolCalls.find(call => call[0].name === 'automation_config')?.[0];
+            expect(automationConfigTool).toBeDefined();
+
+            if (!automationConfigTool) {
+                throw new Error('automation_config tool not found');
+            }
 
             const result = (await automationConfigTool.execute({
                 action: 'update',
