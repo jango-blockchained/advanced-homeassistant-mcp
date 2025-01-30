@@ -1,0 +1,14 @@
+{
+    "name": "MCP SSE Subscribe Flow",
+    "nodes": [
+        {
+            "id": "sse_subscribe",
+            "type": "http request",
+            "method": "GET",
+            "url": "http://localhost:3000/sse",
+            "ret": "txt",
+            "persist": true,
+            "name": "SSE Subscription"
+        }
+    ]
+}

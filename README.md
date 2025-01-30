@@ -11,6 +11,39 @@ A powerful bridge between your Home Assistant instance and Language Learning Mod
 ![TypeScript](https://img.shields.io/badge/typescript-%5E5.0.0-blue.svg)
 ![Test Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)
 
+## Features
+
+- 🎮 **Device Control**: Control any Home Assistant device through natural language
+- 🔄 **Real-time Updates**: Get instant updates through Server-Sent Events (SSE)
+- 🤖 **Automation Management**: Create, update, and manage automations
+- 📊 **State Monitoring**: Track and query device states
+- 🔐 **Secure**: Token-based authentication and rate limiting
+- 📱 **Mobile Ready**: Works with any HTTP-capable client
+
+## Real-time Updates with SSE
+
+The server includes a powerful Server-Sent Events (SSE) system that provides real-time updates from your Home Assistant instance. This allows you to:
+
+- 🔄 Get instant state changes for any device
+- 📡 Monitor automation triggers and executions
+- 🎯 Subscribe to specific domains or entities
+- 📊 Track service calls and script executions
+
+### Quick SSE Example
+
+```javascript
+const eventSource = new EventSource(
+  'http://localhost:3000/subscribe_events?token=YOUR_TOKEN&domain=light'
+);
+
+eventSource.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Update received:', data);
+};
+```
+
+See [SSE_API.md](docs/SSE_API.md) for complete documentation of the SSE system.
+
 ## Table of Contents
 
 - [Key Features](#key-features)
