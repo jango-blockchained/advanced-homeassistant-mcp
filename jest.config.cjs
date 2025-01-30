@@ -26,14 +26,32 @@ module.exports = {
     setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
     testMatch: [
         '**/__tests__/helpers.test.ts',
-        '**/__tests__/schemas/devices.test.ts'
+        '**/__tests__/schemas/devices.test.ts',
+        '**/__tests__/context/index.test.ts'
     ],
     globals: {
         'ts-jest': {
             useESM: true,
         },
     },
-    collectCoverage: false,
+    collectCoverage: true,
+    coverageDirectory: 'coverage',
+    coverageReporters: ['text', 'lcov', 'clover', 'html'],
+    collectCoverageFrom: [
+        'src/**/*.ts',
+        '!src/**/*.d.ts',
+        '!src/**/*.test.ts',
+        '!src/types/**/*',
+        '!src/polyfills.ts'
+    ],
+    coverageThreshold: {
+        global: {
+            branches: 50,
+            functions: 50,
+            lines: 50,
+            statements: 50
+        }
+    },
     verbose: true,
     testTimeout: 30000
 }; 
