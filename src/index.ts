@@ -3,6 +3,9 @@ import { config } from 'dotenv';
 import { resolve } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { sseManager } from './sse/index.js';
+import { ILogger } from "@digital-alchemy/core";
+import express from 'express';
+import { rateLimiter, securityHeaders } from './security/index.js';
 
 // Load environment variables based on NODE_ENV
 const envFile = process.env.NODE_ENV === 'production'
@@ -25,6 +28,51 @@ const HASS_TOKEN = process.env.HASS_TOKEN;
 const PORT = process.env.PORT || 3000;
 
 console.log('Initializing Home Assistant connection...');
+
+// Initialize Express app
+const app = express();
+
+// Apply security middleware
+app.use(securityHeaders);
+app.use(rateLimiter);
+app.use(express.json());
+
+// Initialize LiteMCP
+const server = new LiteMCP('home-assistant', '0.1.0');
+
+// Define Tool interface
+interface Tool {
+  name: string;
+  description: string;
+  parameters: z.ZodType<any>;
+  execute: (params: any) => Promise<any>;
+}
+
+// Array to track tools (moved outside main function)
+const tools: Tool[] = [];
+
+// Create API endpoint for each tool
+app.post('/api/:tool', async (req, res) => {
+  const toolName = req.params.tool;
+  const tool = tools.find((t: Tool) => t.name === toolName);
+
+  if (!tool) {
+    return res.status(404).json({
+      success: false,
+      message: `Tool '${toolName}' not found`
+    });
+  }
+
+  try {
+    const result = await tool.execute(req.body);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+  }
+});
 
 interface CommandParams {
   command: string;
@@ -142,17 +190,66 @@ interface SSEParams {
   domain?: string;
 }
 
+interface HistoryParams {
+  entity_id: string;
+  start_time?: string;
+  end_time?: string;
+  minimal_response?: boolean;
+  significant_changes_only?: boolean;
+}
+
+interface SceneParams {
+  action: 'list' | 'activate';
+  scene_id?: string;
+}
+
+interface NotifyParams {
+  message: string;
+  title?: string;
+  target?: string;
+  data?: Record<string, any>;
+}
+
+interface AutomationParams {
+  action: 'list' | 'toggle' | 'trigger';
+  automation_id?: string;
+}
+
+interface AddonParams {
+  action: 'list' | 'info' | 'install' | 'uninstall' | 'start' | 'stop' | 'restart';
+  slug?: string;
+  version?: string;
+}
+
+interface PackageParams {
+  action: 'list' | 'install' | 'uninstall' | 'update';
+  category: 'integration' | 'plugin' | 'theme' | 'python_script' | 'appdaemon' | 'netdaemon';
+  repository?: string;
+  version?: string;
+}
+
+interface AutomationConfigParams {
+  action: 'create' | 'update' | 'delete' | 'duplicate';
+  automation_id?: string;
+  config?: {
+    alias: string;
+    description?: string;
+    mode?: 'single' | 'parallel' | 'queued' | 'restart';
+    trigger: any[];
+    condition?: any[];
+    action: any[];
+  };
+}
+
 async function main() {
   const hass = await get_hass();
-
-  // Create MCP server
-  const server = new LiteMCP('home-assistant', '0.1.0');
+  const logger: ILogger = (hass as any).logger;
 
   // Add the list devices tool
-  server.addTool({
+  const listDevicesTool = {
     name: 'list_devices',
     description: 'List all available Home Assistant devices',
-    parameters: z.object({}),
+    parameters: z.object({}).describe('No parameters required'),
     execute: async () => {
       try {
         const response = await fetch(`${HASS_HOST}/api/states`, {
@@ -166,35 +263,35 @@ async function main() {
           throw new Error(`Failed to fetch devices: ${response.statusText}`);
         }
 
-        const states = await response.json() as HassEntity[];
-        const devices = states.reduce((acc: Record<string, HassEntity[]>, state: HassEntity) => {
-          const domain = state.entity_id.split('.')[0];
-          if (!acc[domain]) {
-            acc[domain] = [];
+        const states = await response.json() as HassState[];
+        const devices: Record<string, HassState[]> = {};
+
+        // Group devices by domain
+        states.forEach(state => {
+          const [domain] = state.entity_id.split('.');
+          if (!devices[domain]) {
+            devices[domain] = [];
           }
-          acc[domain].push({
-            entity_id: state.entity_id,
-            state: state.state,
-            attributes: state.attributes,
-          });
-          return acc;
-        }, {});
+          devices[domain].push(state);
+        });
 
         return {
           success: true,
-          devices,
+          devices
         };
       } catch (error) {
         return {
           success: false,
-          message: error instanceof Error ? error.message : 'Unknown error occurred',
+          message: error instanceof Error ? error.message : 'Unknown error occurred'
         };
       }
-    },
-  });
+    }
+  };
+  server.addTool(listDevicesTool);
+  tools.push(listDevicesTool);
 
   // Add the Home Assistant control tool
-  server.addTool({
+  const controlTool = {
     name: 'control',
     description: 'Control Home Assistant devices and services',
     parameters: z.object({
@@ -326,10 +423,12 @@ async function main() {
         };
       }
     }
-  });
+  };
+  server.addTool(controlTool);
+  tools.push(controlTool);
 
   // Add the history tool
-  server.addTool({
+  const historyTool = {
     name: 'get_history',
     description: 'Get state history for Home Assistant entities',
     parameters: z.object({
@@ -339,7 +438,7 @@ async function main() {
       minimal_response: z.boolean().optional().describe('Return minimal response to reduce data size'),
       significant_changes_only: z.boolean().optional().describe('Only return significant state changes'),
     }),
-    execute: async (params) => {
+    execute: async (params: HistoryParams) => {
       try {
         const now = new Date();
         const startTime = params.start_time ? new Date(params.start_time) : new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -377,17 +476,19 @@ async function main() {
         };
       }
     },
-  });
+  };
+  server.addTool(historyTool);
+  tools.push(historyTool);
 
   // Add the scenes tool
-  server.addTool({
+  const sceneTool = {
     name: 'scene',
     description: 'Manage and activate Home Assistant scenes',
     parameters: z.object({
       action: z.enum(['list', 'activate']).describe('Action to perform with scenes'),
       scene_id: z.string().optional().describe('Scene ID to activate (required for activate action)'),
     }),
-    execute: async (params) => {
+    execute: async (params: SceneParams) => {
       try {
         if (params.action === 'list') {
           const response = await fetch(`${HASS_HOST}/api/states`, {
@@ -446,10 +547,12 @@ async function main() {
         };
       }
     },
-  });
+  };
+  server.addTool(sceneTool);
+  tools.push(sceneTool);
 
   // Add the notification tool
-  server.addTool({
+  const notifyTool = {
     name: 'notify',
     description: 'Send notifications through Home Assistant',
     parameters: z.object({
@@ -458,7 +561,7 @@ async function main() {
       target: z.string().optional().describe('Specific notification target (e.g., mobile_app_phone)'),
       data: z.record(z.any()).optional().describe('Additional notification data'),
     }),
-    execute: async (params) => {
+    execute: async (params: NotifyParams) => {
       try {
         const service = params.target ? `notify.${params.target}` : 'notify.notify';
         const [domain, service_name] = service.split('.');
@@ -491,17 +594,19 @@ async function main() {
         };
       }
     },
-  });
+  };
+  server.addTool(notifyTool);
+  tools.push(notifyTool);
 
   // Add the automation tool
-  server.addTool({
+  const automationTool = {
     name: 'automation',
     description: 'Manage Home Assistant automations',
     parameters: z.object({
       action: z.enum(['list', 'toggle', 'trigger']).describe('Action to perform with automation'),
       automation_id: z.string().optional().describe('Automation ID (required for toggle and trigger actions)'),
     }),
-    execute: async (params) => {
+    execute: async (params: AutomationParams) => {
       try {
         if (params.action === 'list') {
           const response = await fetch(`${HASS_HOST}/api/states`, {
@@ -562,10 +667,12 @@ async function main() {
         };
       }
     },
-  });
+  };
+  server.addTool(automationTool);
+  tools.push(automationTool);
 
   // Add the addon tool
-  server.addTool({
+  const addonTool = {
     name: 'addon',
     description: 'Manage Home Assistant add-ons',
     parameters: z.object({
@@ -573,7 +680,7 @@ async function main() {
       slug: z.string().optional().describe('Add-on slug (required for all actions except list)'),
       version: z.string().optional().describe('Version to install (only for install action)'),
     }),
-    execute: async (params) => {
+    execute: async (params: AddonParams) => {
       try {
         if (params.action === 'list') {
           const response = await fetch(`${HASS_HOST}/api/hassio/store`, {
@@ -665,10 +772,12 @@ async function main() {
         };
       }
     },
-  });
+  };
+  server.addTool(addonTool);
+  tools.push(addonTool);
 
   // Add the package tool
-  server.addTool({
+  const packageTool = {
     name: 'package',
     description: 'Manage HACS packages and custom components',
     parameters: z.object({
@@ -678,7 +787,7 @@ async function main() {
       repository: z.string().optional().describe('Repository URL or name (required for install)'),
       version: z.string().optional().describe('Version to install'),
     }),
-    execute: async (params) => {
+    execute: async (params: PackageParams) => {
       try {
         const hacsBase = `${HASS_HOST}/api/hacs`;
 
@@ -750,10 +859,12 @@ async function main() {
         };
       }
     },
-  });
+  };
+  server.addTool(packageTool);
+  tools.push(packageTool);
 
   // Extend the automation tool with more functionality
-  server.addTool({
+  const automationConfigTool = {
     name: 'automation_config',
     description: 'Advanced automation configuration and management',
     parameters: z.object({
@@ -768,7 +879,7 @@ async function main() {
         action: z.array(z.any()).describe('List of actions'),
       }).optional().describe('Automation configuration (required for create and update)'),
     }),
-    execute: async (params) => {
+    execute: async (params: AutomationConfigParams) => {
       try {
         switch (params.action) {
           case 'create': {
@@ -895,10 +1006,12 @@ async function main() {
         };
       }
     },
-  });
+  };
+  server.addTool(automationConfigTool);
+  tools.push(automationConfigTool);
 
   // Add SSE endpoint
-  server.addTool({
+  const subscribeEventsTool = {
     name: 'subscribe_events',
     description: 'Subscribe to Home Assistant events via Server-Sent Events (SSE)',
     parameters: z.object({
@@ -976,10 +1089,12 @@ async function main() {
         keepAlive: true
       };
     }
-  });
+  };
+  server.addTool(subscribeEventsTool);
+  tools.push(subscribeEventsTool);
 
   // Add statistics endpoint
-  server.addTool({
+  const getSSEStatsTool = {
     name: 'get_sse_stats',
     description: 'Get SSE connection statistics',
     parameters: z.object({
@@ -998,18 +1113,43 @@ async function main() {
         statistics: sseManager.getStatistics()
       };
     }
-  });
+  };
+  server.addTool(getSSEStatsTool);
+  tools.push(getSSEStatsTool);
 
-  console.log('Initializing MCP Server...');
+  logger.debug('[server:init]', 'Initializing MCP Server...');
 
   // Start the server
   await server.start();
-  console.log(`MCP Server started on port ${PORT}`);
-  console.log('Home Assistant server running on stdio');
-  console.log('SSE endpoints initialized');
+  logger.info('[server:init]', `MCP Server started on port ${PORT}`);
+  logger.info('[server:init]', 'Home Assistant server running on stdio');
+  logger.info('[server:init]', 'SSE endpoints initialized');
+
+  // Log available endpoints using our tracked tools array
+  logger.info('[server:endpoints]', '\nAvailable API Endpoints:');
+  tools.forEach((tool: Tool) => {
+    logger.info('[server:endpoints]', `- ${tool.name}: ${tool.description}`);
+  });
+
+  // Log SSE endpoints
+  logger.info('[server:endpoints]', '\nAvailable SSE Endpoints:');
+  logger.info('[server:endpoints]', '- /subscribe_events');
+  logger.info('[server:endpoints]', '  Parameters:');
+  logger.info('[server:endpoints]', '  - token: Authentication token (required)');
+  logger.info('[server:endpoints]', '  - events: List of event types to subscribe to (optional)');
+  logger.info('[server:endpoints]', '  - entity_id: Specific entity ID to monitor (optional)');
+  logger.info('[server:endpoints]', '  - domain: Domain to monitor (e.g., "light", "switch") (optional)');
+  logger.info('[server:endpoints]', '\n- /get_sse_stats');
+  logger.info('[server:endpoints]', '  Parameters:');
+  logger.info('[server:endpoints]', '  - token: Authentication token (required)');
 
   // Log successful initialization
-  console.log('Server initialization complete. Ready to handle requests.');
+  logger.info('[server:init]', '\nServer initialization complete. Ready to handle requests.');
+
+  // Start the Express server
+  app.listen(PORT, () => {
+    logger.info('[server:init]', `Express server listening on port ${PORT}`);
+  });
 }
 
 main().catch(console.error);
