@@ -418,22 +418,12 @@ export class HassInstanceImpl implements HassInstance {
 
 let hassInstance: HassInstance | null = null;
 
-export async function get_hass(env: keyof typeof CONFIG = 'development'): Promise<HassInstance> {
-  if (hassInstance) {
-    console.log('Reusing existing Home Assistant connection');
-    return hassInstance;
+export async function get_hass(): Promise<HassInstance> {
+  if (!hassInstance) {
+    // Safely get configuration keys, providing an empty object as fallback
+    const _sortedConfigKeys = Object.keys(MY_APP.configuration ?? {}).sort();
+    const instance = await MY_APP.bootstrap();
+    hassInstance = instance as HassInstance;
   }
-
-  console.log('Initializing new Home Assistant connection...');
-
-  if (!HASS_CONFIG.BASE_URL || !HASS_CONFIG.TOKEN) {
-    console.error('Missing required configuration: HASS_HOST or HASS_TOKEN not set');
-    throw new Error("Missing required configuration: HASS_HOST or HASS_TOKEN not set");
-  }
-
-  console.log(`Connecting to Home Assistant at ${HASS_CONFIG.BASE_URL}...`);
-  hassInstance = new HassInstanceImpl(HASS_CONFIG.BASE_URL, HASS_CONFIG.TOKEN);
-  console.log('Home Assistant connection established successfully');
-
   return hassInstance;
 }
