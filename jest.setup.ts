@@ -50,28 +50,28 @@ jest.mock('ws', () => {
 });
 
 // Mock chalk
-jest.mock('chalk', () => ({
-    default: {
-        red: (text: string) => text,
-        green: (text: string) => text,
-        yellow: (text: string) => text,
-        blue: (text: string) => text,
-        magenta: (text: string) => text,
-        cyan: (text: string) => text,
-        white: (text: string) => text,
-        gray: (text: string) => text,
-        grey: (text: string) => text,
-        black: (text: string) => text,
-        bold: (text: string) => text,
-        dim: (text: string) => text,
-        italic: (text: string) => text,
-        underline: (text: string) => text,
-        inverse: (text: string) => text,
-        hidden: (text: string) => text,
-        strikethrough: (text: string) => text,
-        visible: (text: string) => text,
-    }
-}));
+const createChalkMock = () => {
+    const handler = {
+        get(target: any, prop: string) {
+            if (prop === 'default') {
+                return createChalkMock();
+            }
+            return typeof prop === 'string' ? createChalkMock() : target[prop];
+        },
+        apply(target: any, thisArg: any, args: any[]) {
+            return args[0];
+        }
+    };
+    return new Proxy(() => { }, handler);
+};
+
+jest.mock('chalk', () => createChalkMock());
+
+// Mock ansi-styles
+jest.mock('ansi-styles', () => ({}), { virtual: true });
+
+// Mock supports-color
+jest.mock('supports-color', () => ({}), { virtual: true });
 
 // Reset mocks between tests
 beforeEach(() => {
