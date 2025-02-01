@@ -246,6 +246,30 @@ TEST_HASS_TOKEN=test_token           # Test token
 2. **Production**: Copy `.env.example` to `.env.production`
 3. **Testing**: Copy `.env.example` to `.env.test`
 
+### Adding to Claude Desktop (or other clients)
+
+To use your new Home Assistant MCP server, you can add Claude Desktop as a client. Add the following to the configuration. Note this will run the MCP within claude and does not work with the Docker method.
+
+```
+{
+  "homeassistant": {
+    "command": "node",
+    "args": [<path/to/your/dist/folder>]
+    "env": {
+      NODE_ENV=development
+      HASS_HOST=http://homeassistant.local:8123
+      HASS_TOKEN=your_home_assistant_token
+      PORT=3000
+      HASS_SOCKET_URL=ws://homeassistant.local:8123/api/websocket
+      LOG_LEVEL=debug
+    }
+  }
+}
+
+```
+
+
+
 ## API Reference
 
 ### Device Control
