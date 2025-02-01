@@ -127,6 +127,11 @@ export class TokenManager {
 
 // Request validation middleware
 export function validateRequest(req: Request, res: Response, next: NextFunction) {
+    // Skip validation for health endpoint
+    if (req.path === '/health') {
+        return next();
+    }
+
     // Validate content type
     if (req.method !== 'GET' && !req.is('application/json')) {
         return res.status(415).json({

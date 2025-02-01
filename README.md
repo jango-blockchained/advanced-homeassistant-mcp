@@ -152,14 +152,19 @@ npm run build
 
 ### Docker Setup (Recommended)
 
-1. **Clone and prepare:**
+The project includes Docker support for easy deployment and consistent environments across different platforms.
+
+1. **Clone the repository:**
     ```bash
-    git clone -b docker https://github.com/jango-blockchained/homeassistant-mcp.git
+    git clone https://github.com/jango-blockchained/homeassistant-mcp.git
     cd homeassistant-mcp
-    cp .env.example .env
     ```
 
-2. **Configure environment `.env` file:**
+2. **Configure environment:**
+    ```bash
+    cp .env.example .env
+    ```
+    Edit the `.env` file with your Home Assistant configuration:
     ```env
     # Home Assistant Configuration
     HASS_HOST=http://homeassistant.local:8123
@@ -170,16 +175,50 @@ npm run build
     PORT=3000
     NODE_ENV=production
     DEBUG=false
-
-    # Test Configuration
-    TEST_HASS_HOST=http://localhost:8123
-    TEST_HASS_TOKEN=test_token
     ```
 
-3. **Launch with Docker Compose:**
+3. **Build and run with Docker Compose:**
     ```bash
-    docker-compose up -d
+    # Build and start the containers
+    docker compose up -d
+
+    # View logs
+    docker compose logs -f
+
+    # Stop the service
+    docker compose down
     ```
+
+4. **Verify the installation:**
+    The server should now be running at `http://localhost:3000`. You can check the health endpoint at `http://localhost:3000/health`.
+
+5. **Update the application:**
+    ```bash
+    # Pull the latest changes
+    git pull
+
+    # Rebuild and restart the containers
+    docker compose up -d --build
+    ```
+
+#### Docker Configuration
+
+The Docker setup includes:
+- Multi-stage build for optimal image size
+- Health checks for container monitoring
+- Volume mounting for environment configuration
+- Automatic container restart on failure
+- Exposed port 3000 for API access
+
+#### Docker Compose Environment Variables
+
+All environment variables can be configured in the `.env` file. The following variables are supported:
+- `HASS_HOST`: Your Home Assistant instance URL
+- `HASS_TOKEN`: Long-lived access token for Home Assistant
+- `HASS_SOCKET_URL`: WebSocket URL for Home Assistant
+- `PORT`: Server port (default: 3000)
+- `NODE_ENV`: Environment (production/development)
+- `DEBUG`: Enable debug mode (true/false)
 
 ## Configuration
 

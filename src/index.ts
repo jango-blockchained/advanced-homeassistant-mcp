@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { sseManager } from './sse/index.js';
 import { ILogger } from "@digital-alchemy/core";
 import express from 'express';
-import { rateLimiter, securityHeaders } from './security/index.js';
+import { rateLimiter, securityHeaders, validateRequest, sanitizeInput, errorHandler } from './security/index.js';
 
 // Load environment variables based on NODE_ENV
 const envFile = process.env.NODE_ENV === 'production'
@@ -36,9 +36,20 @@ const app = express();
 app.use(securityHeaders);
 app.use(rateLimiter);
 app.use(express.json());
+app.use(validateRequest);
+app.use(sanitizeInput);
 
 // Initialize LiteMCP
 const server = new LiteMCP('home-assistant', '0.1.0');
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: '0.1.0'
+  });
+});
 
 // Define Tool interface
 interface Tool {
@@ -48,23 +59,31 @@ interface Tool {
   execute: (params: any) => Promise<any>;
 }
 
-// Array to track tools (moved outside main function)
+// Array to track tools
 const tools: Tool[] = [];
 
-// Create API endpoint for each tool
-app.post('/api/:tool', async (req, res) => {
-  const toolName = req.params.tool;
-  const tool = tools.find((t: Tool) => t.name === toolName);
-
-  if (!tool) {
-    return res.status(404).json({
-      success: false,
-      message: `Tool '${toolName}' not found`
-    });
-  }
-
+// List devices endpoint
+app.get('/list_devices', async (req, res) => {
   try {
-    const result = await tool.execute(req.body);
+    // Get token from Authorization header
+    const token = req.headers.authorization?.replace('Bearer ', '');
+
+    if (!token || token !== HASS_TOKEN) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized - Invalid token'
+      });
+    }
+
+    const tool = tools.find(t => t.name === 'list_devices');
+    if (!tool) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tool not found'
+      });
+    }
+
+    const result = await tool.execute({ token });
     res.json(result);
   } catch (error) {
     res.status(500).json({
@@ -73,6 +92,108 @@ app.post('/api/:tool', async (req, res) => {
     });
   }
 });
+
+app.post('/control', async (req, res) => {
+  try {
+    // Get token from Authorization header
+    const token = req.headers.authorization?.replace('Bearer ', '');
+
+    if (!token || token !== HASS_TOKEN) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized - Invalid token'
+      });
+    }
+
+    const tool = tools.find(t => t.name === 'control');
+    if (!tool) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tool not found'
+      });
+    }
+
+    const result = await tool.execute({
+      ...req.body,
+      token
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+  }
+});
+
+// SSE endpoints
+app.get('/subscribe_events', (req, res) => {
+  try {
+    // Get token from query parameter
+    const token = req.query.token?.toString();
+
+    if (!token || token !== HASS_TOKEN) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized - Invalid token'
+      });
+    }
+
+    const tool = tools.find(t => t.name === 'subscribe_events');
+    if (!tool) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tool not found'
+      });
+    }
+
+    tool.execute({
+      token,
+      events: req.query.events?.toString().split(','),
+      entity_id: req.query.entity_id?.toString(),
+      domain: req.query.domain?.toString(),
+      response: res
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+  }
+});
+
+app.get('/get_sse_stats', async (req, res) => {
+  try {
+    // Get token from query parameter
+    const token = req.query.token?.toString();
+
+    if (!token || token !== HASS_TOKEN) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized - Invalid token'
+      });
+    }
+
+    const tool = tools.find(t => t.name === 'get_sse_stats');
+    if (!tool) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tool not found'
+      });
+    }
+
+    const result = await tool.execute({ token });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+  }
+});
+
+// Error handling middleware
+app.use(errorHandler);
 
 interface CommandParams {
   command: string;
