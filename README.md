@@ -1,6 +1,6 @@
 # Model Context Protocol Server for Home Assistant
 
-*Forked from [tevonsb/homeassistant-mcp](https://github.com/tevonsb/homeassistant-mcp)*
+The server uses the MCP protocol to share access to a local Home Assistant instance with an LLM application.
 
 A powerful bridge between your Home Assistant instance and Language Learning Models (LLMs), enabling natural language control and monitoring of your smart home devices through the Model Context Protocol (MCP). This server provides a comprehensive API for managing your entire Home Assistant ecosystem, from device control to system administration.
 
