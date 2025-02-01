@@ -1,3 +1,70 @@
+# Dependencies
 node_modules
 dist
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.cursorrules
+# Environment variables
 .env
+.env.local
+.env.development
+.env.production
+.env.test
+venv/
+ENV/
+env/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+docker-compose.yml
+docker-compose.yaml
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Home Assistant
+.storage
+.cloud
+.google.token
+home-assistant.log*
+home-assistant_v2.db
+home-assistant_v2.db-*
+.
+
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+coverage/*
+coverage/
