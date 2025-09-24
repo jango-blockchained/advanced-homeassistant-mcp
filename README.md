@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/jango-blockchained-advanced-homeassistant-mcp-badge.jpg)](https://mseep.ai/app/jango-blockchained-advanced-homeassistant-mcp)
+
 # Home Assistant Model Context Protocol (MCP)
 
 A standardized protocol for AI assistants to interact with Home Assistant, providing a secure, typed, and extensible interface for controlling smart home devices.
