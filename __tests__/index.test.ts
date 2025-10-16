@@ -90,8 +90,9 @@ describe('Home Assistant MCP Server', () => {
             globalThis.fetch = mockFetch;
 
             const result = await listDevicesTool.execute({});
-            expect(result).toHaveProperty('success', true);
             expect(result).toHaveProperty('devices');
+            expect(result).toHaveProperty('total_count');
+            expect(result).toHaveProperty('filters_applied');
         });
 
         test('should execute control tool', async () => {

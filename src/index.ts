@@ -49,7 +49,7 @@ async function main(): Promise<void> {
   // Get the server instance (singleton)
   const server = MCPServer.getInstance();
 
-  // Register Home Assistant tools
+  // Register Home Assistant tools (BaseTool classes)
   server.registerTool(new LightsControlTool());
   server.registerTool(new ClimateControlTool());
   server.registerTool(new ListDevicesTool());
@@ -57,9 +57,12 @@ async function main(): Promise<void> {
   server.registerTool(new SceneTool());
   server.registerTool(new NotifyTool());
 
-  // Register additional tools from tools/index.ts
+  // Register additional tools from tools/index.ts (excluding homeassistant tools which are already registered above)
+  const homeAssistantToolNames = ['lights_control', 'climate_control', 'list_devices', 'automation', 'scene', 'notify'];
   tools.forEach(tool => {
-    server.registerTool(tool);
+    if (!homeAssistantToolNames.includes(tool.name)) {
+      server.registerTool(tool);
+    }
   });
 
   // Add middlewares
