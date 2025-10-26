@@ -61,7 +61,7 @@ class HomeAssistantClimateService {
         }
     }
 
-    async setTemperature(entity_id: string, temperature: number, target_temp_high?: number, target_temp_low?: number): Promise<boolean> {
+    async setTemperature(entity_id: string, temperature?: number, target_temp_high?: number, target_temp_low?: number): Promise<boolean> {
         try {
             const hass = await get_hass();
             const serviceData: Record<string, unknown> = { entity_id };

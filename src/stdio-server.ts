@@ -15,10 +15,6 @@ import { FastMCP } from "fastmcp";
 // Import refactored Home Assistant tools
 import { tools } from "./tools/index.js";
 
-// Import Home Assistant specific tools (FastMCP versions)
-import { lightsControlTool } from './tools/homeassistant/lights.tool.js';
-import { climateControlTool } from './tools/homeassistant/climate.tool.js';
-
 // --- Removed old imports and setup ---
 // import { createStdioServer, BaseTool } from "./mcp/index.js";
 // import { MCPContext } from "./mcp/types.js";
@@ -59,13 +55,6 @@ async function main(): Promise<void> {
             });
             logger.info(`Added tool: ${tool.name}`);
         }
-
-        // Add Home Assistant specific tools
-        server.addTool(lightsControlTool);
-        logger.info(`Added tool: ${lightsControlTool.name}`);
-
-        server.addTool(climateControlTool);
-        logger.info(`Added tool: ${climateControlTool.name}`);
 
         // --- Temporarily removed system_info tool --- 
         server.addTool({
