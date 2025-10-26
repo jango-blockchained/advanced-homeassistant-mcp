@@ -1,6 +1,6 @@
 {
   "name": "@jango-blockchained/homeassistant-mcp",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Home Assistant Model Context Protocol",
   "main": "dist/index.js",
   "type": "module",
