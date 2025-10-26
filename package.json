@@ -15,7 +15,7 @@
     "build:all": "bun build ./src/index.ts ./src/stdio-server.ts --outdir ./dist --target bun --minify && node scripts/optimize-dist.js",
     "build:node": "bun build ./src/index.ts --outdir ./dist --target node --minify",
     "build:stdio": "bun build ./src/stdio-server.ts --outdir ./dist --target node --minify",
-    "prepare": "husky install && bun run build:all",
+    "prepare": "test -d .husky && husky install || echo 'Skipping husky' && bun run build:all",
     "stdio": "bun run ./bin/stdio-server.js",
     "test": "bun test --preload ./test/setup.ts",
     "test:watch": "bun test --watch --preload ./test/setup.ts",
