@@ -47,8 +47,8 @@ try {
     const stdioServerPath = path.resolve(__dirname, '../dist/stdio-server.js');
 
     if (fs.existsSync(stdioServerPath)) {
-        // Try to use Bun if available, otherwise use Node.js
-        const runtime = process.env.BUN_INSTALL ? 'bun' : 'node';
+        // Use Node.js for NPM/NPX compatibility
+        const runtime = 'node';
 
         const serverProcess = spawn(runtime, [stdioServerPath], {
             stdio: ['inherit', 'inherit', 'inherit'],
@@ -65,31 +65,6 @@ try {
 
         // Handle errors
         serverProcess.on('error', (err) => {
-            // If Bun not found, retry with Node.js
-            if (runtime === 'bun' && err.code === 'ENOENT') {
-                const nodeProcess = spawn('node', [stdioServerPath], {
-                    stdio: ['inherit', 'inherit', 'inherit'],
-                    env: {
-                        ...process.env,
-                        USE_STDIO_TRANSPORT: 'true'
-                    }
-                });
-
-                nodeProcess.on('exit', (code) => {
-                    process.exit(code || 0);
-                });
-
-                nodeProcess.on('error', (nodeErr) => {
-                    console.error('Failed to start stdio server:', nodeErr.message);
-                    process.exit(1);
-                });
-
-                // Propagate signals
-                process.on('SIGINT', () => nodeProcess.kill('SIGINT'));
-                process.on('SIGTERM', () => nodeProcess.kill('SIGTERM'));
-                return;
-            }
-
             console.error('Failed to start stdio server:', err.message);
             process.exit(1);
         });
@@ -102,7 +77,7 @@ try {
         const fullServerPath = path.resolve(__dirname, '../dist/index.js');
 
         if (fs.existsSync(fullServerPath)) {
-            const runtime = process.env.BUN_INSTALL ? 'bun' : 'node';
+            const runtime = 'node';
 
             const serverProcess = spawn(runtime, [fullServerPath], {
                 stdio: ['inherit', 'inherit', 'inherit'],
@@ -119,31 +94,6 @@ try {
 
             // Handle errors
             serverProcess.on('error', (err) => {
-                // If Bun not found, retry with Node.js
-                if (runtime === 'bun' && err.code === 'ENOENT') {
-                    const nodeProcess = spawn('node', [fullServerPath], {
-                        stdio: ['inherit', 'inherit', 'inherit'],
-                        env: {
-                            ...process.env,
-                            USE_STDIO_TRANSPORT: 'true'
-                        }
-                    });
-
-                    nodeProcess.on('exit', (code) => {
-                        process.exit(code || 0);
-                    });
-
-                    nodeProcess.on('error', (nodeErr) => {
-                        console.error('Failed to start server:', nodeErr.message);
-                        process.exit(1);
-                    });
-
-                    // Propagate signals
-                    process.on('SIGINT', () => nodeProcess.kill('SIGINT'));
-                    process.on('SIGTERM', () => nodeProcess.kill('SIGTERM'));
-                    return;
-                }
-
                 console.error('Failed to start server:', err.message);
                 process.exit(1);
             });

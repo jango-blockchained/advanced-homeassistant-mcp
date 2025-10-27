@@ -3,7 +3,7 @@ import {
     checkRateLimit,
     validateRequestHeaders,
     sanitizeValue,
-    applySecurityHeaders,
+    getSecurityHeaders,
     handleError
 } from '../../src/security/index.js';
 
@@ -116,13 +116,12 @@ describe('Security Middleware Utilities', () => {
     });
 
     describe('Security Headers', () => {
-        test('should apply security headers', () => {
-            const headers = applySecurityHeaders();
-
+        test('should return proper security headers config', () => {
+            const headers = getSecurityHeaders();
             expect(headers).toBeDefined();
-            expect(typeof headers).toBe('object');
+            expect(headers.contentSecurityPolicy).toBeDefined();
+            expect(headers.frameguard).toBe(true);
         });
-    });
 
     describe('Error Handling', () => {
         test('should handle errors in production mode', () => {
@@ -149,4 +148,4 @@ describe('Security Middleware Utilities', () => {
             });
         });
     });
-}); 
+}); });

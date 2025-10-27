@@ -1,5 +1,5 @@
 import { describe, expect, test, mock, it, beforeEach, afterEach } from "bun:test";
-import { TokenManager, validateRequestHeaders, sanitizeValue, handleError, rateLimiter, securityHeaders, checkRateLimit } from '../../src/security/index.js';
+import { TokenManager, validateRequestHeaders, sanitizeValue, handleError, checkRateLimit } from '../../src/security/index.js';
 import jwt from 'jsonwebtoken';
 
 const TEST_SECRET = 'test-secret-that-is-long-enough-for-testing-purposes';
@@ -223,45 +223,5 @@ describe('Security Module', () => {
                 timestamp: expect.any(String)
             });
         });
-    });
-
-    describe('Rate Limiter', () => {
-        test('should limit requests after threshold', () => {
-            const mockContext = {
-                request: new Request('http://localhost', {
-                    headers: new Headers({
-                        'x-forwarded-for': '127.0.0.1'
-                    })
-                }),
-                set: mock(() => { })
-            };
-
-            // Test multiple requests
-            for (let i = 0; i < 100; i++) {
-                rateLimiter.derive(mockContext);
-            }
-
-            // The next request should throw
-            try {
-                rateLimiter.derive(mockContext);
-                expect(false).toBe(true); // Should not reach here
-            } catch (error) {
-                expect((error as Error).message).toBe('Too many requests from this IP, please try again later');
-            }
-        });
-    });
-
-    describe('Security Headers', () => {
-        test('should set security headers', () => {
-            const mockContext = {
-                request: new Request('http://localhost'),
-                set: { headers: {} }
-            };
-
-            securityHeaders.derive(mockContext);
-
-            // Verify that security headers were set
-            expect(mockContext.set.headers['x-frame-options']).toBeDefined();
-        });
-    });
-}); 
+    }); 
+});

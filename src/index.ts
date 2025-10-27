@@ -13,7 +13,13 @@ import { HttpTransport } from './mcp/transports/http.transport.js';
 import { APP_CONFIG } from './config.js';
 import { logger } from "./utils/logger.js";
 import { openApiConfig } from './openapi.js';
-import { SecurityMiddleware } from './security/enhanced-middleware.js';
+import {
+  securityHeadersMiddleware,
+  rateLimiterMiddleware,
+  validateRequestMiddleware,
+  sanitizeInputMiddleware,
+  errorHandlerMiddleware
+} from './security/index.js';
 
 // Home Assistant tools
 import { LightsControlTool } from './tools/homeassistant/lights.tool.js';
@@ -119,8 +125,14 @@ async function main(): Promise<void> {
     logger.info('Using HTTP transport on port ' + APP_CONFIG.port);
     const app = express();
 
-    // Apply enhanced security middleware
-    SecurityMiddleware.initialize(app);
+    // Body parser middleware with size limit
+    app.use(express.json({ limit: '50kb' }));
+
+    // Apply security middleware in order
+    app.use(securityHeadersMiddleware);
+    app.use(rateLimiterMiddleware);
+    app.use(validateRequestMiddleware);
+    app.use(sanitizeInputMiddleware);
 
     // CORS configuration
     app.use(cors({
@@ -138,12 +150,15 @@ async function main(): Promise<void> {
     }));
 
     // Health check endpoint
-    app.get('/health', (req: Request, res: Response) => {
+    app.get('/health', (_req: Request, res: Response) => {
       res.json({
         status: 'ok',
-        version: process.env.npm_package_version || '1.0.0'
+        version: process.env.npm_package_version ?? '1.0.0'
       });
     });
+
+    // Error handler middleware (must be last)
+    app.use(errorHandlerMiddleware);
 
     const httpTransport = new HttpTransport({
       port: APP_CONFIG.port,

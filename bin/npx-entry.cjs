@@ -125,8 +125,8 @@ try {
     else {
         const scriptPath = path.join(__dirname, 'mcp-stdio.cjs');
 
-        // Try to use Bun if available, otherwise fall back to Node.js
-        const runtime = process.env.BUN_INSTALL ? 'bun' : 'node';
+        // Use Node.js for NPM/NPX compatibility (Bun has issues with some bundled modules)
+        const runtime = 'node';
 
         const childProcess = spawn(runtime, [scriptPath], {
             stdio: ['inherit', 'inherit', 'inherit'], // All stdio modes inherited for proper streaming
@@ -137,29 +137,6 @@ try {
         });
 
         childProcess.on('error', (err) => {
-            // If Bun not found, retry with Node.js
-            if (runtime === 'bun' && err.code === 'ENOENT') {
-                const nodeProcess = spawn('node', [scriptPath], {
-                    stdio: ['inherit', 'inherit', 'inherit'],
-                    env: {
-                        ...process.env,
-                        USE_STDIO_TRANSPORT: 'true'
-                    }
-                });
-
-                nodeProcess.on('error', (nodeErr) => {
-                    console.error('Failed to start server:', nodeErr.message);
-                    process.exit(1);
-                });
-
-                nodeProcess.on('exit', (code) => {
-                    process.exit(code || 0);
-                });
-
-                setupCleanExit(nodeProcess);
-                return;
-            }
-
             console.error('Failed to start server:', err.message);
             process.exit(1);
         });
