@@ -7,6 +7,7 @@
         "@anthropic-ai/sdk": "^0.39.0",
         "@elysiajs/cors": "^1.2.0",
         "@elysiajs/swagger": "^1.2.0",
+        "@jango-blockchained/homeassistant-mcp": "1.0.5",
         "@types/express-rate-limit": "^5.1.3",
         "@types/jsonwebtoken": "^9.0.5",
         "@types/node": "^20.11.24",
@@ -158,6 +159,8 @@
     "@istanbuljs/load-nyc-config": ["@istanbuljs/load-nyc-config@1.1.0", "", { "dependencies": { "camelcase": "^5.3.1", "find-up": "^4.1.0", "get-package-type": "^0.1.0", "js-yaml": "^3.13.1", "resolve-from": "^5.0.0" } }, "sha512-VjeHSlIzpv/NyD3N0YuHfXOPDIixcA1q2ZV98wsMqcYlPmv2n3Yb2lYP9XMElnaFVXg5A7YLTeLu6V84uQDjmQ=="],
 
     "@istanbuljs/schema": ["@istanbuljs/schema@0.1.3", "", {}, "sha512-ZXRY4jNvVgSVQ8DL3LTcakaAtXwTVUxE81hslsyD2AtoXW/wVob10HkOJ1X/pAlcI7D+2YoZKg5do8G/w6RYgA=="],
+
+    "@jango-blockchained/homeassistant-mcp": ["@jango-blockchained/homeassistant-mcp@1.0.5", "", { "dependencies": { "@anthropic-ai/sdk": "^0.39.0", "@elysiajs/cors": "^1.2.0", "@elysiajs/swagger": "^1.2.0", "@types/express-rate-limit": "^5.1.3", "@types/jsonwebtoken": "^9.0.5", "@types/node": "^20.11.24", "@types/sanitize-html": "^2.13.0", "@types/swagger-ui-express": "^4.1.8", "@types/ws": "^8.5.10", "@xmldom/xmldom": "^0.9.7", "chalk": "^5.4.1", "cors": "^2.8.5", "dotenv": "^16.4.7", "elysia": "^1.2.11", "express": "^4.21.2", "express-rate-limit": "^7.5.0", "fastmcp": "^1.21.0", "helmet": "^7.1.0", "jsonwebtoken": "^9.0.2", "node-fetch": "^3.3.2", "node-record-lpcm16": "^1.0.1", "openai": "^4.83.0", "openapi-types": "^12.1.3", "sanitize-html": "^2.15.0", "sury": "^11.0.0-alpha.3", "swagger-ui-express": "^5.0.1", "typescript": "^5.3.3", "valibot": "^1.0.0", "winston": "^3.11.0", "winston-daily-rotate-file": "^5.0.0", "ws": "^8.16.0", "zod": "^3.22.4", "zod-to-json-schema": "^3.24.6" }, "bin": { "homeassistant-mcp": "bin/npx-entry.cjs" } }, "sha512-o5iJm+k6eWkqJV7cJdma4QB2heBYZDso+IN+69FHf9MsbUjsbYoliaxmA684wwY4tyE9D4XgaRMH1pQIHPaWXQ=="],
 
     "@jest/environment": ["@jest/environment@29.7.0", "", { "dependencies": { "@jest/fake-timers": "^29.7.0", "@jest/types": "^29.6.3", "@types/node": "*", "jest-mock": "^29.7.0" } }, "sha512-aQIfHDq33ExsN4jP1NWGXhxgQ/wixs60gDiKO+XVMd8Mn0NWPWgc34ZQDTb2jKaUWQ7MuwoitXAsN2XVXNMpAw=="],
 
