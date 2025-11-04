@@ -1,0 +1,98 @@
+name: Version Bump and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: 'patch'
+
+permissions:
+  contents: write
+
+jobs:
+  bump-version:
+    name: Bump Version and Create Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version in package.json
+        id: bump
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Parse version
+          IFS='.' read -r -a version_parts <<< "$CURRENT_VERSION"
+          major="${version_parts[0]}"
+          minor="${version_parts[1]}"
+          patch="${version_parts[2]}"
+          
+          # Bump version based on input
+          case "${{ inputs.version_bump }}" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
+          
+          NEW_VERSION="$major.$minor.$patch"
+          echo "New version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          
+          # Update package.json
+          node -e "const fs=require('fs'); const pkg=JSON.parse(fs.readFileSync('package.json')); pkg.version='$NEW_VERSION'; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
+
+      - name: Commit version bump
+        run: |
+          git add package.json
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }}"
+          git push origin main
+
+      - name: Create and push tag
+        run: |
+          git tag -a "v${{ steps.bump.outputs.new_version }}" -m "Release v${{ steps.bump.outputs.new_version }}"
+          git push origin "v${{ steps.bump.outputs.new_version }}"
+
+      - name: Summary
+        run: |
+          {
+            echo "## Version Bump Complete! 🚀"
+            echo ""
+            echo "New version: **v${{ steps.bump.outputs.new_version }}**"
+            echo ""
+            echo "The release workflow will now:"
+            echo "- 📦 Create a GitHub release"
+            echo "- 📤 Publish to npm"
+            echo "- 🐳 Build and push Docker image"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,6 +1,8 @@
 # 🏠 Home Assistant MCP
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![npm version](https://img.shields.io/npm/v/@jango-blockchained/homeassistant-mcp.svg)](https://www.npmjs.com/package/@jango-blockchained/homeassistant-mcp)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/pkgs/container/advanced-homeassistant-mcp)
 [![Bun](https://img.shields.io/badge/bun-%3E%3D1.0.26-black)](https://bun.sh)
 [![TypeScript](https://img.shields.io/badge/typescript-%5E5.0.0-blue.svg)](https://www.typescriptlang.org)
 [![smithery badge](https://smithery.ai/badge/@jango-blockchained/homeassitant-mcp)](https://smithery.ai/server/@jango-blockchained/homeassitant-mcp)
@@ -97,7 +99,31 @@ bun add git+https://github.com/jango-blockchained/homeassistant-mcp.git
 homeassistant-mcp
 ```
 
-### Option 3: Local Installation
+### Option 3: Docker (Containerized)
+
+Run the MCP server in a Docker container:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/jango-blockchained/advanced-homeassistant-mcp:latest
+
+# Run with environment variables
+docker run -d \
+  -e HOME_ASSISTANT_URL=http://your-ha-instance:8123 \
+  -e HOME_ASSISTANT_TOKEN=your_long_lived_access_token \
+  -p 4000:4000 \
+  --name homeassistant-mcp \
+  ghcr.io/jango-blockchained/advanced-homeassistant-mcp:latest
+
+# Or use docker-compose (see docker/ directory for examples)
+```
+
+**Available Docker tags:**
+- `latest` - Latest stable release
+- `1.0.x` - Specific version
+- `dev` - Latest development build from main branch
+
+### Option 4: Local Installation
 
 ```bash
 # Install globally
@@ -110,7 +136,7 @@ bun add homeassistant-mcp
 homeassistant-mcp
 ```
 
-### Option 4: From Source (Most Flexible)
+### Option 5: From Source (Most Flexible)
 
 ```bash
 git clone https://github.com/jango-blockchained/homeassistant-mcp.git
@@ -329,6 +355,19 @@ bun test
 - ESLint for code quality
 - Prettier for formatting
 - Husky for pre-commit hooks
+
+### Releases
+
+This project uses **automated releases** to GitHub, npm, and Docker. See [AUTOMATED_RELEASES.md](docs/AUTOMATED_RELEASES.md) for details.
+
+**Quick Release:**
+1. Go to **Actions** → **Version Bump and Release**
+2. Click **Run workflow**
+3. Select version bump type (patch/minor/major)
+4. The system automatically:
+   - 📦 Creates a GitHub release
+   - 📤 Publishes to npm
+   - 🐳 Builds and pushes Docker image
 
 ---
 
