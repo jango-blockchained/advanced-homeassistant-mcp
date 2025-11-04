@@ -34,6 +34,9 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
+          # Get package name from package.json
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          
           # Get the previous tag
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           
@@ -57,7 +60,7 @@ jobs:
             echo ""
             echo "### npm"
             echo '```bash'
-            echo "npm install -g @jango-blockchained/homeassistant-mcp@${{ steps.get_version.outputs.version }}"
+            echo "npm install -g ${PACKAGE_NAME}@${{ steps.get_version.outputs.version }}"
             echo '```'
             echo ""
             echo "### Docker"

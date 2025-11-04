@@ -149,7 +149,6 @@ docker pull ghcr.io/jango-blockchained/advanced-homeassistant-mcp:1
 
 **Parameters:**
 - `version_bump` - patch/minor/major (required)
-- `prerelease` - boolean (optional, future use)
 
 ### docker-build-push.yml (Development)
 
