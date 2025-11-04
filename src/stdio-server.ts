@@ -15,6 +15,10 @@ import { FastMCP } from "fastmcp";
 // Import refactored Home Assistant tools
 import { tools } from "./tools/index.js";
 
+// Import prompts and resources
+import { getAllPrompts, renderPrompt } from "./mcp/prompts.js";
+import { listResources, getResource } from "./mcp/resources.js";
+
 // --- Removed old imports and setup ---
 // import { createStdioServer, BaseTool } from "./mcp/index.js";
 // import { MCPContext } from "./mcp/types.js";
@@ -65,6 +69,51 @@ async function main(): Promise<void> {
             },
         });
         logger.info("Adding tool: system_info");
+
+        // Add prompts
+        logger.info("Adding prompts...");
+        const prompts = getAllPrompts();
+        for (const prompt of prompts) {
+            server.addPrompt({
+                name: prompt.name,
+                description: prompt.description,
+                arguments: prompt.arguments,
+                execute: async (args: Record<string, string>) => {
+                    return {
+                        messages: [
+                            {
+                                role: "user",
+                                content: {
+                                    type: "text",
+                                    text: renderPrompt(prompt.name, args)
+                                }
+                            }
+                        ]
+                    };
+                }
+            });
+            logger.info(`Added prompt: ${prompt.name}`);
+        }
+
+        // Add resources
+        logger.info("Adding resources...");
+        server.addResource({
+            uri: "ha://devices/*",
+            name: "Home Assistant Resources",
+            description: "Access Home Assistant device states and configurations",
+            list: async () => {
+                const resources = await listResources();
+                return resources;
+            },
+            read: async (uri: string) => {
+                const resource = await getResource(uri);
+                if (!resource) {
+                    throw new Error(`Resource not found: ${uri}`);
+                }
+                return resource;
+            }
+        });
+        logger.info("Added Home Assistant resources");
 
         // Start the server
         logger.info("Starting FastMCP server with stdio transport...");
