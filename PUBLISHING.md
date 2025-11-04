@@ -1,8 +1,21 @@
 # Publishing to npm
 
-This document outlines the steps to publish the Home Assistant MCP server to npm.
+> **Note**: This repository now uses **automated releases**. See [AUTOMATED_RELEASES.md](docs/AUTOMATED_RELEASES.md) for the recommended workflow.
 
-## Prerequisites
+This document outlines the manual steps to publish the Home Assistant MCP server to npm. For most cases, you should use the automated release workflow instead.
+
+## Quick Start (Automated - Recommended)
+
+Use the GitHub Actions workflow:
+1. Go to **Actions** → **Version Bump and Release**
+2. Click **Run workflow** and select version bump type
+3. The system automatically publishes to GitHub, npm, and Docker
+
+## Manual Publishing (Advanced Users Only)
+
+Only use this if the automated workflow is unavailable or you need manual control.
+
+### Prerequisites
 
 1. You need an npm account. Create one at [npmjs.com](https://www.npmjs.com/signup) if you don't have one.
 2. You need to be logged in to npm on your local machine:
@@ -14,7 +27,7 @@ This document outlines the steps to publish the Home Assistant MCP server to npm
    npm install
    ```
 
-## Before Publishing
+### Before Publishing
 
 1. Make sure all tests pass:
    ```bash
