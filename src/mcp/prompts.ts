@@ -106,7 +106,7 @@ What security features would you like to configure? I can check your available d
    - Fan control based on temperature
    - Energy-saving modes when away
 
-${typeof arguments !== 'undefined' && arguments[0]?.preferred_temp ? `Target temperature: ${arguments[0].preferred_temp}` : 'What is your preferred temperature?'}
+Target temperature: {{preferred_temp}}
 
 Let me review your climate devices and suggest optimal settings.`
     },
@@ -135,8 +135,8 @@ Available actions:
 - Play specific media content
 - Create scene for movie watching or music listening
 
-${typeof arguments !== 'undefined' && arguments[0]?.room ? `Room: ${arguments[0].room}` : 'Which room?'}
-${typeof arguments !== 'undefined' && arguments[0]?.activity ? `Activity: ${arguments[0].activity}` : 'What would you like to do?'}
+Room: {{room}}
+Activity: {{activity}}
 
 Let me find your media players and help you set them up.`
     },
