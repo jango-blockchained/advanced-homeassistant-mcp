@@ -264,6 +264,28 @@ RATE_LIMIT_MAX=50
 - ⚙️ **Automation**: Scene and automation triggers
 - 📱 **Notifications**: Multi-channel alert system
 - 📋 **Device Management**: Discovery and organization
+- 📺 **Media Players**: Control media playback, volume, and sources
+- 🪟 **Covers**: Control blinds, curtains, and garage doors
+- 🔒 **Locks**: Smart lock control with code support
+- 💨 **Fans**: Speed control, oscillation, and direction
+- 🤖 **Vacuums**: Robot vacuum control and scheduling
+- 🚨 **Alarm Systems**: Arm/disarm and security management
+
+### MCP Features
+
+- 📝 **Prompts**: Pre-defined prompt templates for common home automation tasks
+  - Morning/evening routines
+  - Energy saving suggestions
+  - Security setup
+  - Climate optimization
+  - Media control
+  - Troubleshooting helpers
+  
+- 📊 **Resources**: Direct access to Home Assistant states and configurations
+  - Device lists by type (lights, climate, sensors, etc.)
+  - Area/room configurations
+  - Automation and scene listings
+  - Dashboard summaries with current home status
 
 ---
 
@@ -276,6 +298,17 @@ Once integrated, your AI assistant can understand commands like:
 > "Activate the movie scene"
 > "What's the current temperature in the living room?"
 > "Notify everyone that dinner is ready"
+> "Play music on the living room speaker"
+> "Open the garage door"
+> "Lock all doors"
+> "Start the robot vacuum"
+> "Set the bedroom fan to 50%"
+> "Arm the alarm in away mode"
+
+You can also use prompts for guided assistance:
+> "Help me set up a morning routine"
+> "Show me energy saving tips"
+> "How do I control my media players?"
 
 ---
 
