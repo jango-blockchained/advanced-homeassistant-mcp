@@ -82,6 +82,12 @@ import { automationTool } from "./homeassistant/automation.tool.js";
 import { listDevicesTool } from "./homeassistant/list-devices.tool.js";
 import { notifyTool } from "./homeassistant/notify.tool.js";
 import { sceneTool } from "./homeassistant/scene.tool.js";
+import { mediaPlayerControlTool } from "./homeassistant/media-player.tool.js";
+import { coverControlTool } from "./homeassistant/cover.tool.js";
+import { lockControlTool } from "./homeassistant/lock.tool.js";
+import { fanControlTool } from "./homeassistant/fan.tool.js";
+import { vacuumControlTool } from "./homeassistant/vacuum.tool.js";
+import { alarmControlTool } from "./homeassistant/alarm.tool.js";
 
 export const tools: Tool[] = [
   // ... other tools
@@ -91,6 +97,12 @@ export const tools: Tool[] = [
   listDevicesTool,
   notifyTool,
   sceneTool,
+  mediaPlayerControlTool,
+  coverControlTool,
+  lockControlTool,
+  fanControlTool,
+  vacuumControlTool,
+  alarmControlTool,
 ];
 ```
 
@@ -105,9 +117,18 @@ server.registerTool(new ListDevicesTool());
 server.registerTool(new AutomationTool());
 server.registerTool(new SceneTool());
 server.registerTool(new NotifyTool());
+server.registerTool(new MediaPlayerControlTool());
+server.registerTool(new CoverControlTool());
+server.registerTool(new LockControlTool());
+server.registerTool(new FanControlTool());
+server.registerTool(new VacuumControlTool());
+server.registerTool(new AlarmControlTool());
 
 // Register additional tools (excluding homeassistant tools already registered)
-const homeAssistantToolNames = ['lights_control', 'climate_control', 'list_devices', 'automation', 'scene', 'notify'];
+const homeAssistantToolNames = [
+  'lights_control', 'climate_control', 'list_devices', 'automation', 'scene', 'notify',
+  'media_player_control', 'cover_control', 'lock_control', 'fan_control', 'vacuum_control', 'alarm_control'
+];
 tools.forEach(tool => {
   if (!homeAssistantToolNames.includes(tool.name)) {
     server.registerTool(tool);
@@ -180,7 +201,13 @@ src/tools/
 │   ├── automation.tool.ts   # ✓ automationTool + AutomationTool
 │   ├── list-devices.tool.ts # ✓ listDevicesTool + ListDevicesTool
 │   ├── notify.tool.ts       # ✓ notifyTool + NotifyTool
-│   └── scene.tool.ts        # ✓ sceneTool + SceneTool
+│   ├── scene.tool.ts        # ✓ sceneTool + SceneTool
+│   ├── media-player.tool.ts # ✓ mediaPlayerControlTool + MediaPlayerControlTool
+│   ├── cover.tool.ts        # ✓ coverControlTool + CoverControlTool
+│   ├── lock.tool.ts         # ✓ lockControlTool + LockControlTool
+│   ├── fan.tool.ts          # ✓ fanControlTool + FanControlTool
+│   ├── vacuum.tool.ts       # ✓ vacuumControlTool + VacuumControlTool
+│   └── alarm.tool.ts        # ✓ alarmControlTool + AlarmControlTool
 ├── control.tool.ts          # General device control
 ├── history.tool.ts          # History queries
 ├── addon.tool.ts            # Add-on management

@@ -2,6 +2,7 @@ site_name: Home Assistant MCP
 site_description: Bridge the gap between AI assistants and your smart home
 site_author: jango-blockchained
 site_url: https://jango-blockchained.github.io/advanced-homeassistant-mcp
+site_dir: site/advanced-homeassistant-mcp
 
 repo_name: jango-blockchained/advanced-homeassistant-mcp
 repo_url: https://github.com/jango-blockchained/advanced-homeassistant-mcp
