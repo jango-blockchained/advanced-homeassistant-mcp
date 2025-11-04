@@ -129,8 +129,8 @@ For Docker:
 # Build
 docker build -t ghcr.io/jango-blockchained/advanced-homeassistant-mcp:v1.0.8 .
 
-# Login
-echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
+# Login (secure method)
+echo "$GITHUB_TOKEN" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
 
 # Push
 docker push ghcr.io/jango-blockchained/advanced-homeassistant-mcp:v1.0.8

@@ -42,7 +42,8 @@ jobs:
           
           # Generate changelog
           if [ -z "$PREV_TAG" ]; then
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+            # First release - limit to recent commits
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges --max-count=50)
           else
             CHANGELOG=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges)
           fi
