@@ -23,15 +23,29 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Add shebang to entry points for better CLI usage
-const entryPoints = ['index.js', 'stdio-server.js'];
-entryPoints.forEach(file => {
+// index.js is built with --target bun, stdio-server.js with --target node
+const entryPoints = [
+  { file: 'index.js', runtime: 'bun' },
+  { file: 'stdio-server.js', runtime: 'node' }
+];
+entryPoints.forEach(({ file, runtime }) => {
   const path = join(distDir, file);
   if (existsSync(path)) {
     let content = readFileSync(path, 'utf-8');
+    const shebang = `#!/usr/bin/env ${runtime}\n`;
     if (!content.startsWith('#!/')) {
-      content = '#!/usr/bin/env bun\n' + content;
+      content = shebang + content;
       writeFileSync(path, content);
-      console.log(`✓ Added shebang to ${file}`);
+      console.log(`✓ Added shebang to ${file} (runtime: ${runtime})`);
+    } else {
+      // Replace existing shebang if it's wrong
+      const lines = content.split('\n');
+      if (lines[0].startsWith('#!/') && lines[0] !== shebang.trim()) {
+        lines[0] = shebang.trim();
+        content = lines.join('\n');
+        writeFileSync(path, content);
+        console.log(`✓ Updated shebang in ${file} (runtime: ${runtime})`);
+      }
     }
   }
 });
