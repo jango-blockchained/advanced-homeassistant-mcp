@@ -55,8 +55,8 @@ Get up and running in minutes:
 
 ```bash
 # Clone and install
-git clone https://github.com/jango-blockchained/homeassistant-mcp.git
-cd homeassistant-mcp
+git clone https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
+cd advanced-homeassistant-mcp
 bun install
 
 # Configure environment
@@ -99,7 +99,7 @@ bunx github:jango-blockchained/homeassistant-mcp
 Alternatively, install directly from Git:
 
 ```bash
-bun add git+https://github.com/jango-blockchained/homeassistant-mcp.git
+bun add git+https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
 homeassistant-mcp
 ```
 
@@ -119,8 +119,8 @@ homeassistant-mcp
 ### Option 4: From Source (Most Flexible)
 
 ```bash
-git clone https://github.com/jango-blockchained/homeassistant-mcp.git
-cd homeassistant-mcp
+git clone https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
+cd advanced-homeassistant-mcp
 bun install
 bun run build
 bun run start:stdio
