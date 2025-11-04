@@ -14,6 +14,12 @@ import { automationTool } from "./homeassistant/automation.tool.js";
 import { listDevicesTool } from "./homeassistant/list-devices.tool.js";
 import { notifyTool } from "./homeassistant/notify.tool.js";
 import { sceneTool } from "./homeassistant/scene.tool.js";
+import { mediaPlayerControlTool } from "./homeassistant/media-player.tool.js";
+import { coverControlTool } from "./homeassistant/cover.tool.js";
+import { lockControlTool } from "./homeassistant/lock.tool.js";
+import { fanControlTool } from "./homeassistant/fan.tool.js";
+import { vacuumControlTool } from "./homeassistant/vacuum.tool.js";
+import { alarmControlTool } from "./homeassistant/alarm.tool.js";
 
 // Tool category types
 export enum ToolCategory {
@@ -55,6 +61,12 @@ export const tools: Tool[] = [
   listDevicesTool,
   notifyTool,
   sceneTool,
+  mediaPlayerControlTool,
+  coverControlTool,
+  lockControlTool,
+  fanControlTool,
+  vacuumControlTool,
+  alarmControlTool,
 ];
 
 // Function to get a tool by name
@@ -83,4 +95,10 @@ export {
   listDevicesTool,
   notifyTool,
   sceneTool,
+  mediaPlayerControlTool,
+  coverControlTool,
+  lockControlTool,
+  fanControlTool,
+  vacuumControlTool,
+  alarmControlTool,
 };
