@@ -39,7 +39,8 @@ async function main(): Promise<void> {
         server.addTool({
             name: "system_info",
             description: "Get basic information about this MCP server",
-            execute: (): string => {
+            // eslint-disable-next-line @typescript-eslint/require-await
+            execute: async (): Promise<string> => {
                 return `Home Assistant MCP Server v${VERSION}`;
             },
         });
