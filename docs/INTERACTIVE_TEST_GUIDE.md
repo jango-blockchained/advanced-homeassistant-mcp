@@ -14,6 +14,12 @@ The following tools are available directly in this chat session for live testing
 - `mcp_homeassistant_list_devices` - List and filter all HA entities
 - `mcp_homeassistant_lights_control` - Control lights specifically
 - `mcp_homeassistant_climate_control` - Control climate/thermostat devices
+- `mcp_homeassistant_media_player_control` - Control media players
+- `mcp_homeassistant_cover_control` - Control covers (blinds, curtains, garage doors)
+- `mcp_homeassistant_lock_control` - Control locks
+- `mcp_homeassistant_fan_control` - Control fans
+- `mcp_homeassistant_vacuum_control` - Control vacuum cleaners
+- `mcp_homeassistant_alarm_control` - Control alarm systems
 - `mcp_homeassistant_control` - Generic device control
 
 ### 2. Scenes & Automation
