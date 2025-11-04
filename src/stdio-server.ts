@@ -10,8 +10,8 @@ import { logger } from "./utils/logger.js";
 import { FastMCP } from "fastmcp";
 import { tools } from "./tools/index.js";
 
-// Import version from package.json
-const VERSION = "1.0.7";
+// Get version from package.json via environment variable
+const VERSION = process.env.npm_package_version ?? "1.0.7";
 
 async function main(): Promise<void> {
     try {
