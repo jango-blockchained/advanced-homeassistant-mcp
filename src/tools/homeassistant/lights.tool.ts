@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import { UserError } from "fastmcp";
 import { logger } from "../../utils/logger.js";
 // Re-import BaseTool and MCPContext for the class definition
 import { BaseTool } from "../base-tool.js";
@@ -116,18 +117,18 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<R
 
         case "get": {
             if (!params.entity_id) {
-                throw new Error("entity_id is required for 'get' action");
+                throw new UserError("entity_id is required for 'get' action");
             }
             lightDetails = await haLightsService.getLight(params.entity_id);
             if (!lightDetails) {
-                throw new Error(`Light entity_id '${params.entity_id}' not found.`);
+                throw new UserError(`Light entity_id '${params.entity_id}' not found.`);
             }
             return lightDetails;
         }
 
         case "turn_on": {
             if (!params.entity_id) {
-                throw new Error("entity_id is required for 'turn_on' action");
+                throw new UserError("entity_id is required for 'turn_on' action");
             }
             attributes = {};
             if (params.brightness !== undefined) attributes.brightness = params.brightness;
@@ -136,7 +137,7 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<R
 
             success = await haLightsService.turnOn(params.entity_id, attributes);
             if (!success) {
-                throw new Error(`Failed to turn on light '${params.entity_id}'. Entity not found?`);
+                throw new UserError(`Failed to turn on light '${params.entity_id}'. Entity not found?`);
             }
             lightDetails = await haLightsService.getLight(params.entity_id); // Get updated state
             return { status: "success", state: lightDetails };
@@ -144,11 +145,11 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<R
 
         case "turn_off": {
             if (!params.entity_id) {
-                throw new Error("entity_id is required for 'turn_off' action");
+                throw new UserError("entity_id is required for 'turn_off' action");
             }
             success = await haLightsService.turnOff(params.entity_id);
             if (!success) {
-                throw new Error(`Failed to turn off light '${params.entity_id}'. Entity not found?`);
+                throw new UserError(`Failed to turn off light '${params.entity_id}'. Entity not found?`);
             }
             lightDetails = await haLightsService.getLight(params.entity_id); // Get updated state
             return { status: "success", state: lightDetails };
@@ -156,7 +157,7 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<R
 
         default:
             // Should be unreachable due to Zod validation
-            throw new Error(`Unknown action: ${String(params.action)}`);
+            throw new UserError(`Unknown action: ${String(params.action)}`);
     }
 }
 

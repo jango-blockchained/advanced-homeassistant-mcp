@@ -52,6 +52,8 @@ docker-compose.override.yaml
 *.swo
 .DS_Store
 Thumbs.db
+.eslintcache
+.prettierignore
 
 # Home Assistant
 .storage
