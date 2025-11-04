@@ -12,11 +12,6 @@ on:
           - minor
           - major
         default: 'patch'
-      prerelease:
-        description: 'Is this a prerelease?'
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: write
