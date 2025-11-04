@@ -5,8 +5,8 @@
  * This script tests that all new tools are properly registered and functional
  */
 
-import { tools, getToolByName } from '../src/tools/index.js';
-import { getAllPrompts, renderPrompt } from '../src/mcp/prompts.js';
+import { tools, getToolByName } from '../src/tools/index.ts';
+import { getAllPrompts, renderPrompt } from '../src/mcp/prompts.ts';
 
 console.log('🧪 Testing New Home Assistant MCP Features\n');
 

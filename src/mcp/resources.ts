@@ -6,6 +6,7 @@
 
 import { get_hass } from "../hass/index.js";
 import { logger } from "../utils/logger.js";
+import type { HassEntity } from "../interfaces/hass.js";
 
 export interface MCPResource {
     uri: string;
@@ -20,6 +21,85 @@ export interface MCPResourceContent {
     text?: string;
     blob?: string;
 }
+
+interface DeviceResourceContent {
+    count: number;
+    devices: Array<{
+        entity_id: string;
+        name: string;
+        state: string;
+        attributes: Record<string, unknown>;
+        last_changed?: string;
+        last_updated?: string;
+    }>;
+}
+
+interface AreaResourceContent {
+    areas: Array<{
+        id: string;
+        device_count: number;
+        devices: Array<{
+            entity_id: string;
+            name: string;
+            domain: string;
+        }>;
+    }>;
+}
+
+interface AutomationResourceContent {
+    count: number;
+    automations: Array<{
+        entity_id: string;
+        name: string;
+        state: string;
+        last_triggered?: string;
+    }>;
+}
+
+interface SceneResourceContent {
+    count: number;
+    scenes: Array<{
+        entity_id: string;
+        name: string;
+    }>;
+}
+
+interface DashboardResourceContent {
+    timestamp: string;
+    summary: {
+        lights: {
+            total: number;
+            on: number;
+            off: number;
+        };
+        climate: {
+            total: number;
+            devices: Array<{
+                name: string;
+                temperature?: number;
+                target?: number;
+                mode?: string;
+            }>;
+        };
+        security: {
+            locks: Array<{
+                name: string;
+                state: string;
+            }>;
+            alarms: Array<{
+                name: string;
+                state: string;
+            }>;
+        };
+        temperatures: Array<{
+            name: string;
+            value: string;
+            unit?: string;
+        }>;
+    };
+}
+
+type ResourceContent = DeviceResourceContent | AreaResourceContent | AutomationResourceContent | SceneResourceContent | DashboardResourceContent;
 
 /**
  * List all available resources
@@ -145,7 +225,7 @@ export async function getResource(uri: string): Promise<MCPResourceContent | nul
 
         const [, category, type] = match;
 
-        let content: any = null;
+        let content: ResourceContent | null = null;
 
         if (category === "devices") {
             content = await getDeviceResource(type, states);
@@ -172,7 +252,7 @@ export async function getResource(uri: string): Promise<MCPResourceContent | nul
     }
 }
 
-async function getDeviceResource(type: string, states: any[]): Promise<any> {
+async function getDeviceResource(type: string, states: HassEntity[]): Promise<DeviceResourceContent | null> {
     const filterMap: Record<string, string> = {
         all: "",
         lights: "light.",
@@ -209,10 +289,10 @@ async function getDeviceResource(type: string, states: any[]): Promise<any> {
     };
 }
 
-async function getConfigResource(type: string, states: any[]): Promise<any> {
+async function getConfigResource(type: string, states: HassEntity[]): Promise<AreaResourceContent | AutomationResourceContent | SceneResourceContent | null> {
     if (type === "areas") {
         // Group devices by area
-        const areas: Record<string, any[]> = {};
+        const areas: Record<string, Array<{entity_id: string; name: string; domain: string}>> = {};
         
         for (const state of states) {
             const area = state.attributes.area_id || "unassigned";
@@ -241,7 +321,7 @@ async function getConfigResource(type: string, states: any[]): Promise<any> {
                 entity_id: a.entity_id,
                 name: a.attributes.friendly_name || a.entity_id,
                 state: a.state,
-                last_triggered: a.attributes.last_triggered
+                last_triggered: a.attributes.last_triggered as string | undefined
             }))
         };
     } else if (type === "scenes") {
@@ -258,7 +338,7 @@ async function getConfigResource(type: string, states: any[]): Promise<any> {
     return null;
 }
 
-async function getSummaryResource(type: string, states: any[]): Promise<any> {
+async function getSummaryResource(type: string, states: HassEntity[]): Promise<DashboardResourceContent | null> {
     if (type === "dashboard") {
         const lights = states.filter(s => s.entity_id.startsWith("light."));
         const climate = states.filter(s => s.entity_id.startsWith("climate."));
