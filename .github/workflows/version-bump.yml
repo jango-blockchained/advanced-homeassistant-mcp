@@ -73,7 +73,7 @@ jobs:
           
           NEW_VERSION="$major.$minor.$patch"
           echo "New version: $NEW_VERSION"
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
           
           # Update package.json
           node -e "const fs=require('fs'); const pkg=JSON.parse(fs.readFileSync('package.json')); pkg.version='$NEW_VERSION'; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
@@ -91,11 +91,13 @@ jobs:
 
       - name: Summary
         run: |
-          echo "## Version Bump Complete! 🚀" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "New version: **v${{ steps.bump.outputs.new_version }}**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The release workflow will now:" >> $GITHUB_STEP_SUMMARY
-          echo "- 📦 Create a GitHub release" >> $GITHUB_STEP_SUMMARY
-          echo "- 📤 Publish to npm" >> $GITHUB_STEP_SUMMARY
-          echo "- 🐳 Build and push Docker image" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Version Bump Complete! 🚀"
+            echo ""
+            echo "New version: **v${{ steps.bump.outputs.new_version }}**"
+            echo ""
+            echo "The release workflow will now:"
+            echo "- 📦 Create a GitHub release"
+            echo "- 📤 Publish to npm"
+            echo "- 🐳 Build and push Docker image"
+          } >> "$GITHUB_STEP_SUMMARY"

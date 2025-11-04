@@ -30,7 +30,7 @@ jobs:
 
       - name: Get version from tag
         id: get_version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
 
       - name: Generate changelog
         id: changelog
@@ -42,28 +42,30 @@ jobs:
           if [ -z "$PREV_TAG" ]; then
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
           else
-            CHANGELOG=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+            CHANGELOG=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges)
           fi
           
           # Save to file for multiline output
           echo "$CHANGELOG" > changelog.txt
           
           # Create formatted release notes
-          echo "## Changes" > release_notes.txt
-          echo "" >> release_notes.txt
-          cat changelog.txt >> release_notes.txt
-          echo "" >> release_notes.txt
-          echo "## Installation" >> release_notes.txt
-          echo "" >> release_notes.txt
-          echo "### npm" >> release_notes.txt
-          echo '```bash' >> release_notes.txt
-          echo "npm install -g @jango-blockchained/homeassistant-mcp@${{ steps.get_version.outputs.version }}" >> release_notes.txt
-          echo '```' >> release_notes.txt
-          echo "" >> release_notes.txt
-          echo "### Docker" >> release_notes.txt
-          echo '```bash' >> release_notes.txt
-          echo "docker pull ghcr.io/${{ github.repository }}:${{ steps.get_version.outputs.version }}" >> release_notes.txt
-          echo '```' >> release_notes.txt
+          {
+            echo "## Changes"
+            echo ""
+            cat changelog.txt
+            echo ""
+            echo "## Installation"
+            echo ""
+            echo "### npm"
+            echo '```bash'
+            echo "npm install -g @jango-blockchained/homeassistant-mcp@${{ steps.get_version.outputs.version }}"
+            echo '```'
+            echo ""
+            echo "### Docker"
+            echo '```bash'
+            echo "docker pull ghcr.io/${{ github.repository }}:${{ steps.get_version.outputs.version }}"
+            echo '```'
+          } > release_notes.txt
 
       - name: Create GitHub Release
         id: create_release
