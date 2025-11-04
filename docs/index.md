@@ -1,6 +1,6 @@
 # 🏠 Home Assistant MCP
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/blob/main/LICENSE)
 [![Bun](https://img.shields.io/badge/bun-%3E%3D1.0.26-black)](https://bun.sh)
 [![TypeScript](https://img.shields.io/badge/typescript-%5E5.0.0-blue.svg)](https://www.typescriptlang.org)
 [![smithery badge](https://smithery.ai/badge/@jango-blockchained/homeassitant-mcp)](https://smithery.ai/server/@jango-blockchained/homeassitant-mcp)
@@ -37,6 +37,12 @@ A powerful, secure, and extensible Model Context Protocol (MCP) server that enab
 
 - **Lighting Control**: Brightness, color temperature, RGB colors, and effects
 - **Climate Management**: Thermostats, HVAC modes, fan control, and scheduling
+- **Media Players**: Control media playback, volume, and sources
+- **Covers**: Control blinds, curtains, and garage doors
+- **Locks**: Smart lock control with code support
+- **Fans**: Speed control, oscillation, and direction
+- **Vacuums**: Robot vacuum control and scheduling
+- **Alarm Systems**: Arm/disarm and security management
 - **Automation & Scenes**: Trigger automations, activate scenes, and manage routines
 - **Device Discovery**: Intelligent device listing with filtering and search
 - **Notification System**: Send alerts through Home Assistant's notification channels
@@ -285,21 +291,21 @@ RATE_LIMIT_MAX=50
 
 Once integrated, your AI assistant can understand commands like:
 
-> "Turn off all lights in the bedroom"
-> "Set the thermostat to 72°F"
-> "Activate the movie scene"
-> "What's the current temperature in the living room?"
-> "Notify everyone that dinner is ready"
-> "Play music on the living room speaker"
-> "Open the garage door"
-> "Lock all doors"
-> "Start the robot vacuum"
-> "Set the bedroom fan to 50%"
+> "Turn off all lights in the bedroom"  
+> "Set the thermostat to 72°F"  
+> "Activate the movie scene"  
+> "What's the current temperature in the living room?"  
+> "Notify everyone that dinner is ready"  
+> "Play music on the living room speaker"  
+> "Open the garage door"  
+> "Lock all doors"  
+> "Start the robot vacuum"  
+> "Set the bedroom fan to 50%"  
 > "Arm the alarm in away mode"
 
 You can also use prompts for guided assistance:
-> "Help me set up a morning routine"
-> "Show me energy saving tips"
+> "Help me set up a morning routine"  
+> "Show me energy saving tips"  
 > "How do I control my media players?"
 
 ---
@@ -334,7 +340,7 @@ bun test
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License - see [LICENSE](https://github.com/jango-blockchained/advanced-homeassistant-mcp/blob/main/LICENSE) for details.
 
 ---
 
