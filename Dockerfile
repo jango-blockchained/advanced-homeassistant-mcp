@@ -94,4 +94,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE ${PORT:-4000}
 
 # Start the application with audio setup
-CMD ["/bin/bash", "-c", "/app/docker/speech/setup-audio.sh || echo 'Audio setup failed, continuing anyway' && bun run src/index.ts"] 
+CMD ["/bin/bash", "-c", "(/app/docker/speech/setup-audio.sh 2>&1 &) && bun run src/index.ts"] 
