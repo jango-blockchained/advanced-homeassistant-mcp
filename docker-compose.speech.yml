@@ -60,8 +60,6 @@ services:
       - "${AUDIO_GID:-29}"
     network_mode: host
     privileged: true
-    ports:
-      - "10400:10400"
     healthcheck:
       test: [ "CMD-SHELL", "nc -z localhost 10400 || exit 1" ]
       interval: 30s
