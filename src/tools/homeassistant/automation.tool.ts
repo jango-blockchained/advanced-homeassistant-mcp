@@ -21,7 +21,7 @@ const automationSchema = z.object({
 type AutomationParams = z.infer<typeof automationSchema>;
 
 // Shared execution logic
-async function executeAutomationLogic(params: AutomationParams): Promise<Record<string, unknown>> {
+async function executeAutomationLogic(params: AutomationParams): Promise<string> {
     logger.debug(`Executing automation logic with params: ${JSON.stringify(params)}`);
 
     try {
@@ -38,11 +38,11 @@ async function executeAutomationLogic(params: AutomationParams): Promise<Record<
                     last_triggered: automation.attributes?.last_triggered
                 }));
 
-            return {
+            return JSON.stringify({
                 success: true,
                 automations,
                 total_count: automations.length
-            };
+            });
 
         } else {
             if (!params.automation_id) {
@@ -54,20 +54,20 @@ async function executeAutomationLogic(params: AutomationParams): Promise<Record<
                 entity_id: params.automation_id
             });
 
-            return {
+            return JSON.stringify({
                 success: true,
                 message: `Successfully ${service}d automation ${params.automation_id}`,
                 automation_id: params.automation_id,
                 action: params.action
-            };
+            });
         }
 
     } catch (error) {
         logger.error(`Error in automation logic: ${error instanceof Error ? error.message : String(error)}`);
-        return {
+        return JSON.stringify({
             success: false,
             message: error instanceof Error ? error.message : "Unknown error occurred"
-        };
+        });
     }
 }
 
@@ -99,7 +99,7 @@ export class AutomationTool extends BaseTool {
     /**
      * Execute method for the BaseTool class
      */
-    public async execute(params: AutomationParams, _context: MCPContext): Promise<Record<string, unknown>> {
+    public async execute(params: AutomationParams, _context: MCPContext): Promise<string> {
         logger.debug(`Executing AutomationTool (BaseTool) with params: ${JSON.stringify(params)}`);
         const validatedParams = this.validateParams(params);
         return await executeAutomationLogic(validatedParams);

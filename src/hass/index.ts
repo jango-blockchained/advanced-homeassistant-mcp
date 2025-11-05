@@ -14,6 +14,8 @@ class HomeAssistantAPI {
     }
 
     console.log(`Initializing Home Assistant API with base URL: ${this.baseUrl}`);
+    console.log(`Token loaded: ${this.token ? `yes (${this.token.length} chars, starts with ${this.token.substring(0, 20)}...)` : "no"}`);
+    console.log(`Full token for debugging: ${this.token}`);
   }
 
   private getCache<T>(key: string, ttlMs: number = 30000): T | null {

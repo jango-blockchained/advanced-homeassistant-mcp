@@ -1,6 +1,6 @@
 import { config as dotenvConfig } from "dotenv";
-import { file } from "bun";
 import path from "path";
+import fs from "fs";
 
 /**
  * Maps NODE_ENV values to their corresponding environment file names
@@ -14,8 +14,9 @@ const ENV_FILE_MAPPING: Record<string, string> = {
 /**
  * Loads environment variables from the appropriate files based on NODE_ENV.
  * First loads environment-specific file, then overrides with generic .env if it exists.
+ * This function executes synchronously to ensure variables are loaded before use.
  */
-export async function loadEnvironmentVariables() {
+export function loadEnvironmentVariables(): void {
     // Determine the current environment (default to 'development')
     const nodeEnv = (process.env.NODE_ENV || "development").toLowerCase();
 
@@ -30,8 +31,7 @@ export async function loadEnvironmentVariables() {
 
     // Load the environment-specific file if it exists
     try {
-        const envFileExists = await file(envPath).exists();
-        if (envFileExists) {
+        if (fs.existsSync(envPath)) {
             dotenvConfig({ path: envPath });
             console.log(`Loaded environment variables from ${envFile}`);
         } else {
@@ -45,8 +45,7 @@ export async function loadEnvironmentVariables() {
     // If so, load it with the override option, so its values take precedence
     const genericEnvPath = path.resolve(process.cwd(), ".env");
     try {
-        const genericEnvExists = await file(genericEnvPath).exists();
-        if (genericEnvExists) {
+        if (fs.existsSync(genericEnvPath)) {
             dotenvConfig({ path: genericEnvPath, override: true });
             console.log("Loaded and overrode with generic .env file");
         }

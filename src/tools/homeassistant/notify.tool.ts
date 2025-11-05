@@ -23,7 +23,7 @@ const notifySchema = z.object({
 type NotifyParams = z.infer<typeof notifySchema>;
 
 // Shared execution logic
-async function executeNotifyLogic(params: NotifyParams): Promise<Record<string, unknown>> {
+async function executeNotifyLogic(params: NotifyParams): Promise<string> {
     logger.debug(`Executing notify logic with params: ${JSON.stringify(params)}`);
 
     try {
@@ -41,18 +41,18 @@ async function executeNotifyLogic(params: NotifyParams): Promise<Record<string, 
 
         await hass.callService(domain, service_name, serviceData);
 
-        return {
+        return JSON.stringify({
             success: true,
             message: "Notification sent successfully",
             target: params.target || "default"
-        };
+        });
 
     } catch (error) {
         logger.error(`Error in notify logic: ${error instanceof Error ? error.message : String(error)}`);
-        return {
+        return JSON.stringify({
             success: false,
             message: error instanceof Error ? error.message : "Unknown error occurred"
-        };
+        });
     }
 }
 
@@ -84,7 +84,7 @@ export class NotifyTool extends BaseTool {
     /**
      * Execute method for the BaseTool class
      */
-    public async execute(params: NotifyParams, _context: MCPContext): Promise<Record<string, unknown>> {
+    public async execute(params: NotifyParams, _context: MCPContext): Promise<string> {
         logger.debug(`Executing NotifyTool (BaseTool) with params: ${JSON.stringify(params)}`);
         const validatedParams = this.validateParams(params);
         return await executeNotifyLogic(validatedParams);

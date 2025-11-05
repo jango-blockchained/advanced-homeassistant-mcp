@@ -37,7 +37,7 @@ const listDevicesSchema = z.object({
 type ListDevicesParams = z.infer<typeof listDevicesSchema>;
 
 // Shared execution logic
-async function executeListDevicesLogic(params: ListDevicesParams): Promise<Record<string, unknown>> {
+async function executeListDevicesLogic(params: ListDevicesParams): Promise<string> {
     logger.debug(`Executing list devices logic with params: ${JSON.stringify(params)}`);
 
     try {
@@ -47,19 +47,19 @@ async function executeListDevicesLogic(params: ListDevicesParams): Promise<Recor
         let filteredStates = states;
 
         // Apply filters
-        if (params.domain) {
+        if (params.domain != null) {
             filteredStates = filteredStates.filter(state =>
                 state.entity_id.startsWith(`${params.domain}.`)
             );
         }
 
-        if (params.area) {
+        if (params.area != null) {
             filteredStates = filteredStates.filter(state =>
                 state.attributes?.area_id === params.area
             );
         }
 
-        if (params.floor) {
+        if (params.floor != null) {
             filteredStates = filteredStates.filter(state =>
                 state.attributes?.floor_id === params.floor
             );
@@ -70,16 +70,16 @@ async function executeListDevicesLogic(params: ListDevicesParams): Promise<Recor
             entity_id: state.entity_id,
             state: state.state,
             attributes: {
-                friendly_name: state.attributes?.friendly_name,
-                area_id: state.attributes?.area_id,
-                floor_id: state.attributes?.floor_id,
+                friendly_name: (state.attributes?.friendly_name as string | undefined),
+                area_id: (state.attributes?.area_id as string | undefined),
+                floor_id: (state.attributes?.floor_id as string | undefined),
                 ...state.attributes
             }
         }));
 
         logger.debug(`Found ${devices.length} devices matching criteria`);
 
-        return {
+        const response = {
             devices,
             total_count: devices.length,
             filters_applied: {
@@ -88,6 +88,8 @@ async function executeListDevicesLogic(params: ListDevicesParams): Promise<Recor
                 floor: params.floor
             }
         };
+
+        return JSON.stringify(response);
 
     } catch (error) {
         logger.error(`Error in list devices logic: ${error instanceof Error ? error.message : String(error)}`);
@@ -123,9 +125,10 @@ export class ListDevicesTool extends BaseTool {
     /**
      * Execute method for the BaseTool class
      */
-    public async execute(params: ListDevicesParams, _context: MCPContext): Promise<Record<string, unknown>> {
+    public async execute(params: ListDevicesParams, _context: MCPContext): Promise<string> {
         logger.debug(`Executing ListDevicesTool (BaseTool) with params: ${JSON.stringify(params)}`);
-        const validatedParams = this.validateParams(params);
+        // Note: validateParams returns 'any' which we need to cast to ListDevicesParams
+        const validatedParams = this.validateParams(params) as unknown as ListDevicesParams;
         return await executeListDevicesLogic(validatedParams);
     }
 }

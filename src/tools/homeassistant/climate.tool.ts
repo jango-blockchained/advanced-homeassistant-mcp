@@ -36,11 +36,11 @@ class HomeAssistantClimateService {
         try {
             const hass = await get_hass();
             const state = await hass.getState(entity_id);
-            return {
+            return JSON.stringify({
                 entity_id: state.entity_id,
                 state: state.state,
                 attributes: state.attributes
-            };
+            });
         } catch (error) {
             logger.error(`Failed to get climate device ${entity_id} from HA:`, error);
             return null;
@@ -127,25 +127,25 @@ const climateControlSchema = z.object({
 type ClimateControlParams = z.infer<typeof climateControlSchema>;
 
 // --- Shared Execution Logic ---
-async function executeClimateControlLogic(params: ClimateControlParams): Promise<Record<string, unknown>> {
+async function executeClimateControlLogic(params: ClimateControlParams): Promise<string> {
     let success: boolean;
     let deviceDetails: Record<string, unknown> | null;
 
     switch (params.action) {
         case "list": {
             const devices = await haClimateService.getClimateDevices();
-            return { devices };
+            return JSON.stringify({ devices });
         }
 
         case "get": {
-            if (!params.entity_id) {
+            if (params.entity_id == null) {
                 throw new Error("entity_id is required for 'get' action");
             }
             deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
             if (!deviceDetails) {
                 throw new Error(`Climate entity_id '${params.entity_id}' not found.`);
             }
-            return deviceDetails;
+            return JSON.stringify(deviceDetails);
         }
 
         case "set_hvac_mode": {
@@ -160,7 +160,7 @@ async function executeClimateControlLogic(params: ClimateControlParams): Promise
                  throw new Error(`Failed to set HVAC mode for '${params.entity_id}'. Entity not found or mode not supported?`);
             }
             deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
-            return { status: "success", state: deviceDetails };
+            return JSON.stringify({ status: "success", state: deviceDetails });
         }
 
          case "set_temperature": {
@@ -184,7 +184,7 @@ async function executeClimateControlLogic(params: ClimateControlParams): Promise
                  throw new Error(`Failed to set temperature for '${params.entity_id}'. Entity not found or temperature setting not supported?`);
             }
             deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
-            return { status: "success", state: deviceDetails };
+            return JSON.stringify({ status: "success", state: deviceDetails });
         }
 
         case "set_fan_mode": {
@@ -199,7 +199,7 @@ async function executeClimateControlLogic(params: ClimateControlParams): Promise
                  throw new Error(`Failed to set fan mode for '${params.entity_id}'. Entity not found or mode not supported?`);
             }
             deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
-            return { status: "success", state: deviceDetails };
+            return JSON.stringify({ status: "success", state: deviceDetails });
         }
 
         default:
@@ -235,7 +235,7 @@ export class ClimateControlTool extends BaseTool {
     /**
      * Execute method for the BaseTool class
      */
-    public async execute(params: ClimateControlParams, context: MCPContext): Promise<Record<string, unknown>> {
+    public async execute(params: ClimateControlParams, context: MCPContext): Promise<string> {
          logger.debug(`Executing ClimateControlTool (BaseTool) with params: ${JSON.stringify(params)}`);
         try {
             const validatedParams = this.validateParams(params);

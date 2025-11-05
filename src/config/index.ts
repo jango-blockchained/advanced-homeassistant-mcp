@@ -1,7 +1,11 @@
 import { loadEnvironmentVariables } from "./loadEnv";
 
-// Load environment variables from the appropriate files
+// Load environment variables from the appropriate files  
+// Execute synchronously at module import time to ensure all env vars are available
 loadEnvironmentVariables();
+
+// Export a marker to ensure the above call isn't tree-shaken
+export const __envLoaded = true;
 
 // Home Assistant Configuration
 export const HASS_CONFIG = {

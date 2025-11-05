@@ -104,7 +104,7 @@ export const lightsControlTool: Tool = {
 
 // --- Shared Execution Logic --- 
 // Extracted logic to be used by both fastmcp object and BaseTool class
-async function executeLightsControlLogic(params: LightsControlParams): Promise<Record<string, unknown>> {
+async function executeLightsControlLogic(params: LightsControlParams): Promise<string> {
     let attributes: Record<string, unknown>;
     let success: boolean;
     let lightDetails: Record<string, unknown> | null;
@@ -112,22 +112,22 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<R
     switch (params.action) {
         case "list": {
             const lights = await haLightsService.getLights();
-            return { lights };
+            return JSON.stringify({ lights });
         }
 
         case "get": {
-            if (!params.entity_id) {
+            if (params.entity_id == null) {
                 throw new UserError("entity_id is required for 'get' action");
             }
             lightDetails = await haLightsService.getLight(params.entity_id);
             if (!lightDetails) {
                 throw new UserError(`Light entity_id '${params.entity_id}' not found.`);
             }
-            return lightDetails;
+            return JSON.stringify(lightDetails);
         }
 
         case "turn_on": {
-            if (!params.entity_id) {
+            if (params.entity_id == null) {
                 throw new UserError("entity_id is required for 'turn_on' action");
             }
             attributes = {};
@@ -140,11 +140,11 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<R
                 throw new UserError(`Failed to turn on light '${params.entity_id}'. Entity not found?`);
             }
             lightDetails = await haLightsService.getLight(params.entity_id); // Get updated state
-            return { status: "success", state: lightDetails };
+            return JSON.stringify({ status: "success", state: lightDetails });
         }
 
         case "turn_off": {
-            if (!params.entity_id) {
+            if (params.entity_id == null) {
                 throw new UserError("entity_id is required for 'turn_off' action");
             }
             success = await haLightsService.turnOff(params.entity_id);
@@ -152,7 +152,7 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<R
                 throw new UserError(`Failed to turn off light '${params.entity_id}'. Entity not found?`);
             }
             lightDetails = await haLightsService.getLight(params.entity_id); // Get updated state
-            return { status: "success", state: lightDetails };
+            return JSON.stringify({ status: "success", state: lightDetails });
         }
 
         default:
@@ -180,7 +180,7 @@ export class LightsControlTool extends BaseTool {
     /**
      * Execute method for the BaseTool class
      */
-    public async execute(params: LightsControlParams, context: MCPContext): Promise<Record<string, unknown>> {
+    public async execute(params: LightsControlParams, context: MCPContext): Promise<string> {
         logger.debug(`Executing LightsControlTool (BaseTool) with params: ${JSON.stringify(params)}`);
         try {
             // Validate params using BaseTool's method (optional, Zod does it too)

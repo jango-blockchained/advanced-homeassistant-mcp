@@ -21,7 +21,7 @@ const sceneSchema = z.object({
 type SceneParams = z.infer<typeof sceneSchema>;
 
 // Shared execution logic
-async function executeSceneLogic(params: SceneParams): Promise<Record<string, unknown>> {
+async function executeSceneLogic(params: SceneParams): Promise<string> {
     logger.debug(`Executing scene logic with params: ${JSON.stringify(params)}`);
 
     try {
@@ -37,11 +37,11 @@ async function executeSceneLogic(params: SceneParams): Promise<Record<string, un
                     description: scene.attributes?.description
                 }));
 
-            return {
+            return JSON.stringify({
                 success: true,
                 scenes,
                 total_count: scenes.length
-            };
+            });
 
         } else if (params.action === "activate") {
             if (!params.scene_id) {
@@ -52,21 +52,21 @@ async function executeSceneLogic(params: SceneParams): Promise<Record<string, un
                 entity_id: params.scene_id
             });
 
-            return {
+            return JSON.stringify({
                 success: true,
                 message: `Successfully activated scene ${params.scene_id}`,
                 scene_id: params.scene_id
-            };
+            });
         }
 
         throw new Error("Invalid action specified");
 
     } catch (error) {
         logger.error(`Error in scene logic: ${error instanceof Error ? error.message : String(error)}`);
-        return {
+        return JSON.stringify({
             success: false,
             message: error instanceof Error ? error.message : "Unknown error occurred"
-        };
+        });
     }
 }
 
@@ -98,7 +98,7 @@ export class SceneTool extends BaseTool {
     /**
      * Execute method for the BaseTool class
      */
-    public async execute(params: SceneParams, _context: MCPContext): Promise<Record<string, unknown>> {
+    public async execute(params: SceneParams, _context: MCPContext): Promise<string> {
         logger.debug(`Executing SceneTool (BaseTool) with params: ${JSON.stringify(params)}`);
         const validatedParams = this.validateParams(params);
         return await executeSceneLogic(validatedParams);
