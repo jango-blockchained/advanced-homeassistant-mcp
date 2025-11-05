@@ -31,8 +31,7 @@
     "clean": "rm -rf dist .bun coverage .eslintcache .prettierignore",
     "typecheck": "bun x tsc --noEmit",
     "mcp:stdio": "bun run bin/stdio-server.js",
-    "mcp:build": "bun run build:all",
-    "example:speech": "bun run extra/speech-to-text-example.ts"
+    "mcp:build": "bun run build:all"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

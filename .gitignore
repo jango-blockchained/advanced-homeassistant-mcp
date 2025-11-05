@@ -22,12 +22,10 @@ wheels/
 .installed.cfg
 *.egg
 .cursorrules
-# Environment variables
+# Environment variables - all .env files should be local only
 .env
-.env.local
-.env.development
-.env.production
-.env.test
+.env.*
+!.env.example
 venv/
 ENV/
 env/
@@ -94,14 +92,4 @@ __pycache__/
 models/
 
 *.code-workspace
-*.ttf
-*.otf
-*.woff
-*.woff2
-*.eot
-*.svg
-*.png
 bun.lock
-
-
-taskplan.md
