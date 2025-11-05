@@ -12,18 +12,10 @@
     "start:stdio": "node dist/stdio-server.js",
     "start:http": "node dist/http-server.js",
     "dev": "bun --hot --watch src/index.ts",
-<<<<<<< HEAD
-    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
-    "build:all": "bun build ./src/index.ts --outdir ./dist --target bun --external:@valibot/to-json-schema --external:effect && bun build ./src/stdio-server.ts --outdir ./dist --target node --external:@valibot/to-json-schema --external:effect && bun build ./src/http-server.ts --outdir ./dist --target node --external:@valibot/to-json-schema --external:effect && node scripts/optimize-dist.js",
-    "build:node": "bun build ./src/index.ts ./src/stdio-server.ts ./src/http-server.ts --outdir ./dist --target node --external:@valibot/to-json-schema --external:effect",
-    "build:stdio": "bun build ./src/stdio-server.ts --outdir ./dist --target node --external:express --external:swagger-ui-express --external:@valibot/to-json-schema --external:effect",
-    "build:http": "bun build ./src/http-server.ts --outdir ./dist --target node --external:express --external:swagger-ui-express --external:@valibot/to-json-schema --external:effect",
-=======
     "build": "bun build ./src/index.ts --outdir ./dist --target bun --external '@valibot/to-json-schema' --external 'effect'",
     "build:all": "bun build ./src/index.ts --outdir ./dist --target bun --external '@valibot/to-json-schema' --external 'effect' && bun build ./src/stdio-server.ts --outdir ./dist --target node --external '@valibot/to-json-schema' --external 'effect' && node scripts/optimize-dist.js",
     "build:node": "bun build ./src/index.ts ./src/stdio-server.ts --outdir ./dist --target node",
     "build:stdio": "bun build ./src/stdio-server.ts --outdir ./dist --target node --external:express --external:swagger-ui-express --external '@valibot/to-json-schema' --external 'effect'",
->>>>>>> dc145f621650045297e6eee8c5e05f34fec6315a
     "prepare": "test -d .husky && husky install || echo 'Skipping husky' && bun run build:all",
     "stdio": "bun run ./bin/stdio-server.js",
     "test": "bun test --preload ./test/setup.ts",
