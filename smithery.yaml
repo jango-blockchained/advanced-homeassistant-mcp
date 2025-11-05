@@ -1,7 +1,7 @@
 # Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
 
 startCommand:
-  type: stdio
+  type: http
   configSchema:
     # JSON Schema defining the configuration options for the MCP.
     type: object
@@ -27,11 +27,11 @@ startCommand:
         type: boolean
         description: The debug mode for the MCP server.
   commandFunction:
-    # A function that produces the CLI command to start the MCP on stdio.
+    # A function that produces the CLI command to start the MCP on HTTP.
     |-
     config => ({
       command: 'bun', 
-      args: ['--smol', 'run', 'start:stdio'], 
+      args: ['--smol', 'run', 'start:http'], 
       env: { 
         HASS_TOKEN: config.hassToken,
         HASS_HOST: config.hassHost || process.env.HASS_HOST,
