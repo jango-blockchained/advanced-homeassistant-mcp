@@ -25,7 +25,7 @@ RUN /opt/venv/bin/python -m pip install --no-cache-dir numpy scipy
 
 # Copy package.json and bun.lock and install dependencies
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile --ignore-scripts
+RUN bun install --ignore-scripts
 
 # Install ts-node for running TypeScript directly
 RUN bun add ts-node --dev --ignore-scripts
