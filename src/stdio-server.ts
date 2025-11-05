@@ -27,6 +27,8 @@ import { AppConfig } from "./config/index.js";
 import { logger } from "./utils/logger.js";
 import { FastMCP } from "fastmcp";
 import { tools } from "./tools/index.js";
+import { listResources, getResource } from "./mcp/resources.js";
+import { getAllPrompts, renderPrompt } from "./mcp/prompts.js";
 
 // Get version from package.json via environment variable
 const VERSION = (process.env.npm_package_version ?? "1.0.7") as `${number}.${number}.${number}`;
@@ -63,6 +65,58 @@ async function main(): Promise<void> {
             },
         });
         logger.info("Added tool: system_info");
+
+        // Add resources
+        try {
+            const resources = await listResources();
+            for (const resource of resources) {
+                server.addResource({
+                    uri: resource.uri,
+                    name: resource.name,
+                    description: resource.description,
+                    mimeType: resource.mimeType,
+                    load: async () => {
+                        const content = await getResource(resource.uri);
+                        if (!content) {
+                            throw new Error(`Failed to get resource: ${resource.uri}`);
+                        }
+                        const text = content.text ?? "";
+                        return {
+                            text
+                        };
+                    }
+                });
+                logger.info(`Added resource: ${resource.uri}`);
+            }
+            logger.info(`Successfully added ${resources.length} resources`);
+        } catch (error) {
+            logger.error("Error adding resources:", error);
+        }
+
+        // Add prompts
+        try {
+            const prompts = getAllPrompts();
+            for (const prompt of prompts) {
+                server.addPrompt({
+                    name: prompt.name,
+                    description: prompt.description,
+                    arguments: prompt.arguments?.map(arg => ({
+                        name: arg.name,
+                        description: arg.description,
+                        required: arg.required || false
+                    })) || [],
+                    // eslint-disable-next-line @typescript-eslint/require-await
+                    load: async (args) => {
+                        const rendered = renderPrompt(prompt.name, args as Record<string, string>);
+                        return rendered;
+                    }
+                });
+                logger.info(`Added prompt: ${prompt.name}`);
+            }
+            logger.info(`Successfully added ${prompts.length} prompts`);
+        } catch (error) {
+            logger.error("Error adding prompts:", error);
+        }
 
         // Start the server with stdio transport
         logger.info("Starting FastMCP server with stdio transport...");
