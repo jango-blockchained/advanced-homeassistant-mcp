@@ -1,8 +1,6 @@
 # 🏠 Home Assistant MCP
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![npm version](https://img.shields.io/npm/v/@jango-blockchained/homeassistant-mcp.svg)](https://www.npmjs.com/package/@jango-blockchained/homeassistant-mcp)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/pkgs/container/advanced-homeassistant-mcp)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/blob/main/LICENSE)
 [![Bun](https://img.shields.io/badge/bun-%3E%3D1.0.26-black)](https://bun.sh)
 [![TypeScript](https://img.shields.io/badge/typescript-%5E5.0.0-blue.svg)](https://www.typescriptlang.org)
 [![smithery badge](https://smithery.ai/badge/@jango-blockchained/homeassitant-mcp)](https://smithery.ai/server/@jango-blockchained/homeassitant-mcp)
@@ -39,6 +37,12 @@ A powerful, secure, and extensible Model Context Protocol (MCP) server that enab
 
 - **Lighting Control**: Brightness, color temperature, RGB colors, and effects
 - **Climate Management**: Thermostats, HVAC modes, fan control, and scheduling
+- **Media Players**: Control media playback, volume, and sources
+- **Covers**: Control blinds, curtains, and garage doors
+- **Locks**: Smart lock control with code support
+- **Fans**: Speed control, oscillation, and direction
+- **Vacuums**: Robot vacuum control and scheduling
+- **Alarm Systems**: Arm/disarm and security management
 - **Automation & Scenes**: Trigger automations, activate scenes, and manage routines
 - **Device Discovery**: Intelligent device listing with filtering and search
 - **Notification System**: Send alerts through Home Assistant's notification channels
@@ -51,8 +55,8 @@ Get up and running in minutes:
 
 ```bash
 # Clone and install
-git clone https://github.com/jango-blockchained/homeassistant-mcp.git
-cd homeassistant-mcp
+git clone https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
+cd advanced-homeassistant-mcp
 bun install
 
 # Configure environment
@@ -95,35 +99,11 @@ bunx github:jango-blockchained/homeassistant-mcp
 Alternatively, install directly from Git:
 
 ```bash
-bun add git+https://github.com/jango-blockchained/homeassistant-mcp.git
+bun add git+https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
 homeassistant-mcp
 ```
 
-### Option 3: Docker (Containerized)
-
-Run the MCP server in a Docker container:
-
-```bash
-# Pull the latest image
-docker pull ghcr.io/jango-blockchained/advanced-homeassistant-mcp:latest
-
-# Run with environment variables
-docker run -d \
-  -e HOME_ASSISTANT_URL=http://your-ha-instance:8123 \
-  -e HOME_ASSISTANT_TOKEN=your_long_lived_access_token \
-  -p 4000:4000 \
-  --name homeassistant-mcp \
-  ghcr.io/jango-blockchained/advanced-homeassistant-mcp:latest
-
-# Or use docker-compose (see docker/ directory for examples)
-```
-
-**Available Docker tags:**
-- `latest` - Latest stable release
-- `1.0.x` - Specific version
-- `dev` - Latest development build from main branch
-
-### Option 4: Local Installation
+### Option 3: Local Installation
 
 ```bash
 # Install globally
@@ -136,11 +116,11 @@ bun add homeassistant-mcp
 homeassistant-mcp
 ```
 
-### Option 5: From Source (Most Flexible)
+### Option 4: From Source (Most Flexible)
 
 ```bash
-git clone https://github.com/jango-blockchained/homeassistant-mcp.git
-cd homeassistant-mcp
+git clone https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
+cd advanced-homeassistant-mcp
 bun install
 bun run build
 bun run start:stdio
@@ -311,21 +291,21 @@ RATE_LIMIT_MAX=50
 
 Once integrated, your AI assistant can understand commands like:
 
-> "Turn off all lights in the bedroom"
-> "Set the thermostat to 72°F"
-> "Activate the movie scene"
-> "What's the current temperature in the living room?"
-> "Notify everyone that dinner is ready"
-> "Play music on the living room speaker"
-> "Open the garage door"
-> "Lock all doors"
-> "Start the robot vacuum"
-> "Set the bedroom fan to 50%"
+> "Turn off all lights in the bedroom"  
+> "Set the thermostat to 72°F"  
+> "Activate the movie scene"  
+> "What's the current temperature in the living room?"  
+> "Notify everyone that dinner is ready"  
+> "Play music on the living room speaker"  
+> "Open the garage door"  
+> "Lock all doors"  
+> "Start the robot vacuum"  
+> "Set the bedroom fan to 50%"  
 > "Arm the alarm in away mode"
 
 You can also use prompts for guided assistance:
-> "Help me set up a morning routine"
-> "Show me energy saving tips"
+> "Help me set up a morning routine"  
+> "Show me energy saving tips"  
 > "How do I control my media players?"
 
 ---
@@ -356,24 +336,11 @@ bun test
 - Prettier for formatting
 - Husky for pre-commit hooks
 
-### Releases
-
-This project uses **automated releases** to GitHub, npm, and Docker. See [AUTOMATED_RELEASES.md](docs/AUTOMATED_RELEASES.md) for details.
-
-**Quick Release:**
-1. Go to **Actions** → **Version Bump and Release**
-2. Click **Run workflow**
-3. Select version bump type (patch/minor/major)
-4. The system automatically:
-   - 📦 Creates a GitHub release
-   - 📤 Publishes to npm
-   - 🐳 Builds and pushes Docker image
-
 ---
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License - see [LICENSE](https://github.com/jango-blockchained/advanced-homeassistant-mcp/blob/main/LICENSE) for details.
 
 ---
 
