@@ -60,10 +60,10 @@ services:
       - "${AUDIO_GID:-29}"
     network_mode: host
     privileged: true
-    entrypoint: >
-      /bin/bash -c " apt-get update && apt-get install -y pulseaudio alsa-utils && rm -rf /var/lib/apt/lists/* && /run.sh"
+    ports:
+      - "10400:10400"
     healthcheck:
-      test: [ "CMD-SHELL", "pactl info > /dev/null 2>&1 || exit 1" ]
+      test: [ "CMD-SHELL", "nc -z localhost 10400 || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
