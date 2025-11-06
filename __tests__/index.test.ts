@@ -89,7 +89,10 @@ describe('Home Assistant MCP Server', () => {
             mockFetch = createMockFetch(mockDevices);
             globalThis.fetch = mockFetch;
 
-            const result = await listDevicesTool.execute({});
+            const resultString = await listDevicesTool.execute({});
+            // Tools return JSON strings, so we need to parse them
+            expect(typeof resultString).toBe('string');
+            const result = JSON.parse(resultString);
             expect(result).toHaveProperty('devices');
             expect(result).toHaveProperty('total_count');
             expect(result).toHaveProperty('filters_applied');
