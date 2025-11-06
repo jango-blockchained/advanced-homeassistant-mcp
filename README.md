@@ -300,7 +300,21 @@ RATE_LIMIT_MAX=50
 - **Tools Layer**: Device control, automation, notifications
 - **Resource Manager**: State management and caching
 
-### Built-in Tools (24 Total)
+### Built-in Tools (34 Total)
+
+#### 🎨 Aurora Sound-to-Light (10 tools) ✨ NEW!
+- 🎵 **Audio Analysis**: Extract BPM, beats, mood, frequency data
+- 🔍 **Device Scanning**: Find Aurora-compatible lights
+- 📊 **Device Profiling**: Measure latency & capabilities for sync
+- 🎬 **Timeline Rendering**: Generate pre-rendered light shows
+- ▶️ **Playback Control**: Play/pause/stop/seek timelines
+- 📋 **Timeline Management**: List, export, import timelines
+- 📈 **Status Monitoring**: System status and statistics
+- 🎯 **Smart Synchronization**: Device-specific timing compensation
+- 🌈 **Capability-Aware**: RGB, tunable white, brightness-only support
+- 🎶 **Beat Detection**: Lights pulse in sync with music
+
+> 🎨 **Aurora** is a complete sound-to-light synchronization system that transforms your Home Assistant lights into a professional light show synchronized to music!
 
 #### 🏠 Device Control (13 tools)
 - 🔦 **Lights Control**: Brightness, color temp, RGB, effects
@@ -398,6 +412,15 @@ Once integrated, your AI assistant can understand commands like:
 > "Analyze my light usage patterns"  
 > "Show me my energy consumption"  
 > "Which devices have low battery?"  
+
+**Aurora Sound-to-Light:** ✨ NEW!
+> "Analyze this music file and sync my lights"  
+> "Scan for lights that can do Aurora effects"  
+> "Profile my living room lights for synchronization"  
+> "Create a light show for this song"  
+> "Play the timeline I just created"  
+> "Pause the light show"  
+> "Show me Aurora status"  
 
 **Smart Scenarios:**
 > "I'm leaving home, activate away mode"  
