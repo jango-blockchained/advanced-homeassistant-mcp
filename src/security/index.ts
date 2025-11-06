@@ -155,15 +155,21 @@ export const validateRequestMiddleware: RequestHandler = (req: Request, res: Res
 };
 
 // Extracted input sanitization logic
+import sanitizeHtml from 'sanitize-html';
+
 export function sanitizeValue(value: unknown): unknown {
   if (typeof value === "string") {
-    // Basic XSS protection
-    return value
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#x27;")
-      .replace(/\//g, "&#x2F;");
+    // Use battle-tested sanitize-html library for robust XSS protection
+    return sanitizeHtml(value, {
+      allowedTags: [], // No HTML tags allowed
+      allowedAttributes: {}, // No attributes allowed
+      disallowedTagsMode: 'escape', // Escape rather than strip
+      // Additional security options
+      parseStyleAttributes: false,
+      transformTags: {
+        '*': () => ({ tagName: '', attribs: {} }) // Remove all tags
+      }
+    });
   }
 
   if (Array.isArray(value)) {
