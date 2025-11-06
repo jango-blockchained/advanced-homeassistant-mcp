@@ -1,16 +1,21 @@
-const check = async () => {
+import { logger } from "./utils/logger.js";
+
+const check = async (): Promise<void> => {
   try {
     const response = await fetch("http://localhost:3000/health");
     if (!response.ok) {
-      console.error("Health check failed:", response.status);
+      logger.error("Health check failed:", response.status);
       process.exit(1);
     }
-    console.log("Health check passed");
+    logger.info("Health check passed");
     process.exit(0);
   } catch (error) {
-    console.error("Health check failed:", error);
+    logger.error("Health check failed:", error);
     process.exit(1);
   }
 };
 
-check();
+check().catch((error) => {
+  logger.error("Unexpected error in health check:", error);
+  process.exit(1);
+});

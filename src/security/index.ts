@@ -10,12 +10,38 @@ const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 const RATE_LIMIT_MAX = 100; // requests per window
 const TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
-// Rate limiting state
+// Rate limiting state with max size to prevent memory leaks
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_STORE_MAX_SIZE = 10000;
+
+// Cleanup function to remove expired entries
+function cleanupRateLimitStore(): void {
+  const now = Date.now();
+  for (const [ip, record] of rateLimitStore.entries()) {
+    if (now > record.resetTime) {
+      rateLimitStore.delete(ip);
+    }
+  }
+}
+
+// Run cleanup periodically to prevent memory leaks
+setInterval(cleanupRateLimitStore, 5 * 60 * 1000); // Every 5 minutes
 
 // Extracted rate limiting logic
 export function checkRateLimit(ip: string, maxRequests: number = RATE_LIMIT_MAX, windowMs: number = RATE_LIMIT_WINDOW): boolean {
   const now = Date.now();
+
+  // Prevent memory leaks by limiting store size
+  if (rateLimitStore.size >= RATE_LIMIT_STORE_MAX_SIZE) {
+    cleanupRateLimitStore();
+    // If still too large, remove oldest entries
+    if (rateLimitStore.size >= RATE_LIMIT_STORE_MAX_SIZE) {
+      const oldestKey = rateLimitStore.keys().next().value;
+      if (oldestKey) {
+        rateLimitStore.delete(oldestKey);
+      }
+    }
+  }
 
   const record = rateLimitStore.get(ip) || {
     count: 0,

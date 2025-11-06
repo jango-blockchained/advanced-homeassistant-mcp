@@ -4,6 +4,7 @@
  */
 
 import type { AudioBuffer, AudioFeatures, FrequencySlice } from '../types';
+import { logger } from '../../utils/logger.js';
 
 export class AudioAnalyzer {
   private fftSize: number;
@@ -20,7 +21,7 @@ export class AudioAnalyzer {
    * Analyze audio buffer and extract features
    */
   async analyze(audioBuffer: AudioBuffer): Promise<AudioFeatures> {
-    console.log(`[AudioAnalyzer] Starting analysis of ${audioBuffer.duration.toFixed(2)}s audio`);
+    logger.info(`[AudioAnalyzer] Starting analysis of ${audioBuffer.duration.toFixed(2)}s audio`);
 
     // Convert to mono if stereo
     const monoData = audioBuffer.channels > 1 
@@ -39,7 +40,7 @@ export class AudioAnalyzer {
     // Detect mood based on features
     const mood = this.detectMood(frequencyData, energy, bpm);
 
-    console.log(`[AudioAnalyzer] Analysis complete: BPM=${bpm}, Energy=${energy.toFixed(2)}, Beats=${beats.length}, Mood=${mood}`);
+    logger.info(`[AudioAnalyzer] Analysis complete: BPM=${bpm}, Energy=${energy.toFixed(2)}, Beats=${beats.length}, Mood=${mood}`);
 
     return {
       bpm,
