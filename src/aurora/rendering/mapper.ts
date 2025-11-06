@@ -4,7 +4,6 @@
  */
 
 import type {
-  AudioFeatures,
   FrequencySlice,
   LightDevice,
   CommandParams,
@@ -125,7 +124,7 @@ export class AudioLightMapper {
     const params: CommandParams = {};
 
     // Apply zone-specific intensity multiplier
-    const zoneIntensity = zoneSettings?.intensityMultiplier || 1.0;
+    const zoneIntensity = zoneSettings?.intensityMultiplier ?? 1.0;
     const effectiveIntensity = this.settings.intensity * zoneIntensity;
 
     // Color mapping
@@ -173,14 +172,17 @@ export class AudioLightMapper {
    * Map frequency to color temperature (for tunable white bulbs)
    */
   private mapFrequencyToColorTemp(slice: FrequencySlice, device: LightDevice): number {
-    if (!device.capabilities.minMireds || !device.capabilities.maxMireds) {
+    const minMireds = device.capabilities.minMireds;
+    const maxMireds = device.capabilities.maxMireds;
+    
+    if (minMireds == null || maxMireds == null) {
       return 370; // Default ~2700K
     }
 
     // Higher frequencies → cooler (lower mireds)
     // Lower frequencies → warmer (higher mireds)
-    const min = device.capabilities.minMireds;
-    const max = device.capabilities.maxMireds;
+    const min = minMireds;
+    const max = maxMireds;
     
     // Use treble/bass ratio to determine temperature
     const ratio = slice.treble / Math.max(0.01, slice.bass);
