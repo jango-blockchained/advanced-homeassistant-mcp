@@ -80,7 +80,8 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started:
-    - Quick Start: getting-started/quick-start.md
+    - Quick Start Guide: getting-started/quickstart.md
+    - AI Usage Examples: QUICK_START_SCENARIOS.md
     - Installation:
       - Basic Setup: getting-started/installation.md
       - Docker Setup: getting-started/docker.md
@@ -97,22 +98,10 @@ nav:
     - Events & States: features/events-states.md
     - Security: features/security.md
   
-  - AI Features:
-    - Overview: ai/overview.md
-    - NLP Integration: ai/nlp.md
-    - Custom Prompts: ai/prompts.md
-    - Model Configuration: ai/models.md
-    - Best Practices: ai/best-practices.md
-  
-  - Speech Processing:
-    - Overview: speech/overview.md
-    - Wake Word Detection: speech/wake-word.md
-    - Speech-to-Text: speech/stt.md
-    - GPU Acceleration: speech/gpu.md
-    - Language Support: speech/languages.md
-  
-  - Tools & Utilities:
-    - Overview: tools/overview.md
+  - Tools & API:
+    - Complete Tools Reference: TOOLS_REFERENCE.md
+    - Smart Features: SMART_FEATURES.md
+    - Tools Overview: tools/overview.md
     - Analyzer CLI:
       - Installation: tools/analyzer/installation.md
       - Usage: tools/analyzer/usage.md
@@ -126,6 +115,20 @@ nav:
       - Setup: tools/claude/setup.md
       - Integration: tools/claude/integration.md
       - Configuration: tools/claude/config.md
+  
+  - AI Features:
+    - Overview: ai/overview.md
+    - NLP Integration: ai/nlp.md
+    - Custom Prompts: ai/prompts.md
+    - Model Configuration: ai/models.md
+    - Best Practices: ai/best-practices.md
+  
+  - Speech Processing:
+    - Overview: speech/overview.md
+    - Wake Word Detection: speech/wake-word.md
+    - Speech-to-Text: speech/stt.md
+    - GPU Acceleration: speech/gpu.md
+    - Language Support: speech/languages.md
   
   - API Reference:
     - Overview: api/overview.md
@@ -143,6 +146,7 @@ nav:
       - Examples: api/sse/examples.md
   
   - Development:
+    - Implementation Details: IMPLEMENTATION_SUMMARY.md
     - Setup: development/setup.md
     - Architecture: development/architecture.md
     - Contributing: development/contributing.md
