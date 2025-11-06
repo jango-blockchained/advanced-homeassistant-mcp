@@ -49,7 +49,7 @@ export const addonTool: Tool = {
         }
 
         const data = (await response.json()) as HassAddonResponse;
-        return {
+        return JSON.stringify({
           success: true,
           addons: data.data.addons.map((addon) => ({
             name: addon.name,
@@ -60,7 +60,7 @@ export const addonTool: Tool = {
             available: addon.available,
             state: addon.state,
           })),
-        };
+        });
       } else {
         if (!params.slug) {
           throw new Error("Add-on slug is required for this action");
@@ -115,18 +115,18 @@ export const addonTool: Tool = {
         }
 
         const data = (await response.json()) as HassAddonInfoResponse;
-        return {
+        return JSON.stringify({
           success: true,
           message: `Successfully ${params.action}ed add-on ${params.slug}`,
           data: data.data,
-        };
+        });
       }
     } catch (error) {
-      return {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      return JSON.stringify({
         success: false,
-        message:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      };
+        error: errorMessage,
+      });
     }
   },
 };

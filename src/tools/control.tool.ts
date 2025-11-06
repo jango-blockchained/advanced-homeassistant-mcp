@@ -78,10 +78,10 @@ export const controlTool: Tool = {
     try {
       // Validate that either entity_id or area_id is provided
       if (!params.entity_id && !params.area_id) {
-        return {
+        return JSON.stringify({
           success: false,
-          message: "Either entity_id or area_id must be provided"
-        };
+          error: "Either entity_id or area_id must be provided"
+        });
       }
 
       // Determine domain from entity_id if provided, otherwise assume light for area control
@@ -94,19 +94,19 @@ export const controlTool: Tool = {
         if (['turn_on', 'turn_off', 'toggle'].includes(params.command)) {
           domain = 'light';
         } else {
-          return {
+          return JSON.stringify({
             success: false,
-            message: `Command ${params.command} not supported for area control`
-          };
+            error: `Command ${params.command} not supported for area control`
+          });
         }
       }
 
       // Explicitly handle unsupported domains
       if (!['light', 'climate', 'switch', 'cover', 'contact'].includes(domain)) {
-        return {
+        return JSON.stringify({
           success: false,
-          message: `Unsupported domain: ${domain}`
-        };
+          error: `Unsupported domain: ${domain}`
+        });
       }
 
       const service = params.command;
@@ -191,10 +191,10 @@ export const controlTool: Tool = {
       );
 
       if (!response.ok) {
-        return {
+        return JSON.stringify({
           success: false,
-          message: `Failed to execute ${service} for ${params.entity_id || params.area_id}`
-        };
+          error: `Failed to execute ${service} for ${params.entity_id || params.area_id}`
+        });
       }
 
       // Specific message formats for different domains and services
@@ -206,16 +206,16 @@ export const controlTool: Tool = {
             ? `Successfully executed set_temperature for ${target}` :
             `Command ${service} executed successfully on ${target}`;
 
-      return {
+      return JSON.stringify({
         success: true,
         message: successMessage,
-      };
+      });
     } catch (error) {
-      return {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      return JSON.stringify({
         success: false,
-        message:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      };
+        error: errorMessage,
+      });
     }
   },
 };

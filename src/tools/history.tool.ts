@@ -56,16 +56,16 @@ export const historyTool: Tool = {
       }
 
       const history = await response.json();
-      return {
+      return JSON.stringify({
         success: true,
-        history,
-      };
+        history: Array.isArray(history) ? history : [history],
+      });
     } catch (error) {
-      return {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      return JSON.stringify({
         success: false,
-        message:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      };
+        error: errorMessage,
+      });
     }
   },
 };
