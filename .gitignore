@@ -79,7 +79,6 @@ coverage/
 .bun/
 .cursorconfig
 bun.lockb
-bun.lock
 # MkDocs
 site/
 .site/
@@ -92,4 +91,3 @@ __pycache__/
 models/
 
 *.code-workspace
-bun.lock
