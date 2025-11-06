@@ -1,8 +1,34 @@
 {
   "name": "@jango-blockchained/homeassistant-mcp",
   "version": "1.1.0",
-  "description": "Home Assistant Model Context Protocol",
+  "description": "Home Assistant Model Context Protocol Server - Control your smart home through AI assistants",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "home-assistant",
+    "smart-home",
+    "iot",
+    "automation",
+    "ai",
+    "claude",
+    "cursor",
+    "smithery"
+  ],
+  "homepage": "https://github.com/jango-blockchained/homeassistant-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jango-blockchained/homeassistant-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jango-blockchained/homeassistant-mcp/issues"
+  },
+  "author": {
+    "name": "jango-blockchained",
+    "url": "https://github.com/jango-blockchained"
+  },
+  "license": "MIT",
   "main": "dist/index.js",
+  "module": "src/http-server.ts",
   "type": "module",
   "bin": {
     "homeassistant-mcp": "bin/npx-entry.cjs"
@@ -18,6 +44,9 @@
     "build:stdio": "bun build ./src/stdio-server.ts --outdir ./dist --target node --external:express --external:swagger-ui-express --external '@valibot/to-json-schema' --external 'effect'",
     "prepare": "test -d .husky && husky install || echo 'Skipping husky' && bun run build:all",
     "stdio": "bun run ./bin/stdio-server.js",
+    "smithery:build": "npx @smithery/cli build src/http-server.ts --out dist/smithery.cjs --transport shttp",
+    "smithery:dev": "npx @smithery/cli dev src/http-server.ts --port 7123",
+    "smithery:playground": "npx @smithery/cli playground --port 7123 -- node dist/http-server.js",
     "test": "bun test --preload ./test/setup.ts",
     "test:watch": "bun test --watch --preload ./test/setup.ts",
     "test:coverage": "bun test --coverage --preload ./test/setup.ts",
@@ -68,6 +97,7 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
+    "@smithery/cli": "^1.6.3",
     "@types/bun": "latest",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",

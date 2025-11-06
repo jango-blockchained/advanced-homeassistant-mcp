@@ -1,5 +1,14 @@
 # Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
 
+# Runtime configuration - using container for maximum compatibility
+runtime: "container"
+
+# Build configuration for Docker deployment
+build:
+  dockerfile: "Dockerfile"
+  dockerBuildPath: "."
+
+# Start command configuration for HTTP transport
 startCommand:
   type: http
   configSchema:
@@ -10,22 +19,34 @@ startCommand:
     properties:
       hassToken:
         type: string
-        description: The token for connecting to Home Assistant API.
+        title: "Home Assistant Token"
+        description: "Long-lived access token for connecting to Home Assistant API. Generate this from your Home Assistant profile."
       hassHost:
         type: string
         default: http://homeassistant.local:8123
-        description: The host for connecting to Home Assistant API.
+        title: "Home Assistant Host"
+        description: "The URL of your Home Assistant instance (e.g., http://homeassistant.local:8123 or https://your-domain.com)"
       hassSocketUrl:
         type: string
         default: ws://homeassistant.local:8123
-        description: The socket URL for connecting to Home Assistant API.
-      mcp-port:
+        title: "Home Assistant WebSocket URL"
+        description: "The WebSocket URL for real-time Home Assistant events (e.g., ws://homeassistant.local:8123)"
+      port:
         type: number
         default: 7123
-        description: The port on which the MCP server will run.
+        title: "MCP Server Port"
+        description: "The port on which the MCP server will listen for connections."
       debug:
         type: boolean
-        description: The debug mode for the MCP server.
+        default: false
+        title: "Debug Mode"
+        description: "Enable detailed debug logging for troubleshooting."
+  exampleConfig:
+    hassToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    hassHost: "http://homeassistant.local:8123"
+    hassSocketUrl: "ws://homeassistant.local:8123"
+    port: 7123
+    debug: false
   commandFunction:
     # A function that produces the CLI command to start the MCP on HTTP.
     |-
@@ -34,10 +55,11 @@ startCommand:
       args: ['dist/http-server.js'], 
       env: { 
         HASS_TOKEN: config.hassToken,
-        HASS_HOST: config.hassHost || process.env.HASS_HOST,
-        HASS_SOCKET_URL: config.hassSocketUrl || process.env.HASS_SOCKET_URL,
-        PORT: config['mcp-port'].toString(),
-        DEBUG: config.debug !== undefined ? config.debug.toString() : process.env.DEBUG || 'false'
+        HASS_HOST: config.hassHost || 'http://homeassistant.local:8123',
+        HASS_SOCKET_URL: config.hassSocketUrl || 'ws://homeassistant.local:8123',
+        PORT: (config.port || 7123).toString(),
+        DEBUG: config.debug !== undefined ? config.debug.toString() : 'false',
+        NODE_ENV: 'production'
       }
     })
 

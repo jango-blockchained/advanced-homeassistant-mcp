@@ -20,6 +20,7 @@ A powerful, secure, and extensible Model Context Protocol (MCP) server that enab
 - **Natural Language Processing**: Turn "dim the living room lights to 50%" into actual device commands
 - **Multi-Assistant Support**: Works with Claude, GPT-4, Cursor, and other MCP-compatible assistants
 - **Intelligent Context**: Remembers device states, relationships, and user preferences
+- **Smithery Integration**: One-click installation and deployment via [Smithery.ai](https://smithery.ai)
 
 ### 🛡️ Enterprise-Grade Security
 
@@ -74,13 +75,35 @@ That's it! Your AI assistant can now control your smart home. 🤖✨
 - 🚀 [Bun](https://bun.sh) (v1.0.26+) - *Recommended*
 - 🏠 [Home Assistant](https://www.home-assistant.io/) instance
 
-### Option 1: NPX (Easiest)
+### Option 1: Smithery.ai (Recommended for Quick Setup)
+
+[Smithery](https://smithery.ai) is a registry for MCP servers that makes installation incredibly easy:
+
+```bash
+# Install to Claude Desktop
+npx @smithery/cli install @jango-blockchained/homeassistant-mcp --client claude
+
+# Install to Cursor
+npx @smithery/cli install @jango-blockchained/homeassistant-mcp --client cursor
+
+# Install to VS Code
+npx @smithery/cli install @jango-blockchained/homeassistant-mcp --client vscode
+```
+
+You'll be prompted to configure:
+- Home Assistant URL
+- Long-lived access token
+- Optional settings (port, debug mode)
+
+See [SMITHERY_DEPLOYMENT.md](docs/SMITHERY_DEPLOYMENT.md) for detailed deployment guide.
+
+### Option 2: NPX (Quick Start)
 
 ```bash
 npx @jango-blockchained/homeassistant-mcp@latest
 ```
 
-### Option 2: Bunx with GitHub (No NPM Login Required)
+### Option 3: Bunx with GitHub (No NPM Login Required)
 
 If you can't login to npm, use Bunx to run directly from GitHub:
 
@@ -99,7 +122,7 @@ bun add git+https://github.com/jango-blockchained/homeassistant-mcp.git
 homeassistant-mcp
 ```
 
-### Option 3: Docker (Containerized)
+### Option 4: Docker (Containerized)
 
 Run the MCP server in a Docker container:
 
@@ -123,7 +146,7 @@ docker run -d \
 - `1.0.x` - Specific version
 - `dev` - Latest development build from main branch
 
-### Option 4: Local Installation
+### Option 5: Local Installation
 
 ```bash
 # Install globally
@@ -136,7 +159,7 @@ bun add homeassistant-mcp
 homeassistant-mcp
 ```
 
-### Option 5: From Source (Most Flexible)
+### Option 6: From Source (Most Flexible)
 
 ```bash
 git clone https://github.com/jango-blockchained/homeassistant-mcp.git
