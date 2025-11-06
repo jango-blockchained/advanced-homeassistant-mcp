@@ -53,7 +53,7 @@ export interface ToolMetadata {
  */
 export interface ToolExample {
     description: string;
-    params: Record<string, unknown>;
+    params: unknown;
     expectedResult?: unknown;
 }
 

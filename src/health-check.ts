@@ -15,7 +15,5 @@ const check = async (): Promise<void> => {
   }
 };
 
-check().catch((error) => {
-  logger.error("Unexpected error in health check:", error);
-  process.exit(1);
-});
+// Execute check - no need for outer catch since check handles all errors
+check();

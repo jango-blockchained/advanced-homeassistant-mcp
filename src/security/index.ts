@@ -3,6 +3,7 @@ import helmet from "helmet";
 import { HelmetOptions } from "helmet";
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction, RequestHandler } from "express";
+import sanitizeHtml from 'sanitize-html';
 import { logger } from "../utils/logger.js";
 
 // Security configuration
@@ -155,8 +156,6 @@ export const validateRequestMiddleware: RequestHandler = (req: Request, res: Res
 };
 
 // Extracted input sanitization logic
-import sanitizeHtml from 'sanitize-html';
-
 export function sanitizeValue(value: unknown): unknown {
   if (typeof value === "string") {
     // Use battle-tested sanitize-html library for robust XSS protection
