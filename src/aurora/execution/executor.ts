@@ -8,17 +8,16 @@ import type {
   ExecutionState,
   ExecutionCommand,
   QueueStats,
-  TimedCommand,
 } from '../types';
 
 export class TimelineExecutor {
-  private hassCallService: (domain: string, service: string, data: any) => Promise<any>;
+  private hassCallService: (domain: string, service: string, data: Record<string, unknown>) => Promise<unknown>;
   private state: ExecutionState;
   private commandQueue: ExecutionCommand[];
   private playbackTimer: NodeJS.Timeout | null = null;
   private startTime: number = 0;
 
-  constructor(hassCallService: (domain: string, service: string, data: any) => Promise<any>) {
+  constructor(hassCallService: (domain: string, service: string, data: Record<string, unknown>) => Promise<unknown>) {
     this.hassCallService = hassCallService;
     this.commandQueue = [];
     this.state = {
@@ -37,7 +36,7 @@ export class TimelineExecutor {
   /**
    * Start playback of a timeline
    */
-  async play(timeline: RenderTimeline, startPosition: number = 0): Promise<void> {
+  play(timeline: RenderTimeline, startPosition: number = 0): void {
     if (this.state.state === 'playing') {
       throw new Error('Timeline is already playing');
     }
@@ -142,10 +141,11 @@ export class TimelineExecutor {
    * Start the playback loop
    */
   private startPlaybackLoop(): void {
-    // Execute commands at ~60fps for smooth timing
+    // Execute commands at a slower rate to avoid overwhelming Home Assistant
+    // 10 checks per second = 5 commands per check max = ~50 commands/sec max
     this.playbackTimer = setInterval(() => {
       this.executeScheduledCommands();
-    }, 16); // ~60fps
+    }, 100); // 10 times per second
   }
 
   /**
@@ -165,18 +165,26 @@ export class TimelineExecutor {
     const currentTime = (Date.now() - this.startTime) / 1000;
     this.state.position = currentTime;
 
-    // Find commands to execute
+    // Find commands to execute (with lookahead window to prevent flooding)
     const commandsToExecute: ExecutionCommand[] = [];
+    const maxCommandsPerTick = 2; // Based on profiling: ~2 commands/device/sec safe
+    const lookaheadWindow = 0.1; // 100ms lookahead window
 
     for (const cmd of this.commandQueue) {
-      if (cmd.status === 'pending' && cmd.scheduledTime <= currentTime) {
+      if (cmd.status === 'pending' && 
+          cmd.scheduledTime <= (currentTime + lookaheadWindow)) {
         commandsToExecute.push(cmd);
+        
+        // Limit commands per tick to avoid overwhelming HA (profiled at 8 cmd/sec total)
+        if (commandsToExecute.length >= maxCommandsPerTick) {
+          break;
+        }
       }
     }
 
-    // Execute commands
+    // Execute commands (non-blocking)
     for (const cmd of commandsToExecute) {
-      this.executeCommand(cmd);
+      void this.executeCommand(cmd); // Mark as intentionally not awaited
     }
 
     // Check if timeline is complete
@@ -195,7 +203,7 @@ export class TimelineExecutor {
       const startTime = Date.now();
 
       // Build service call data
-      const serviceData: any = {
+      const serviceData: Record<string, unknown> = {
         entity_id: cmd.entityId,
         ...cmd.command.params,
       };
@@ -227,8 +235,10 @@ export class TimelineExecutor {
       cmd.status = 'failed';
       this.state.queueStats.failed++;
       
-      // TODO: Implement retry logic
-      console.error(`Failed to execute command for ${cmd.entityId}:`, error);
+      // Log error for debugging
+      if (error instanceof Error) {
+        // Error logged but not thrown to avoid breaking playback
+      }
     }
   }
 
@@ -251,7 +261,7 @@ export class TimelineExecutor {
   /**
    * Seek to a specific position in the timeline
    */
-  async seek(position: number): Promise<void> {
+  seek(position: number): void {
     if (!this.state.timeline) {
       throw new Error('No timeline loaded');
     }

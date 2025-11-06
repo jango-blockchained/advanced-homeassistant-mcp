@@ -1,0 +1,465 @@
+{
+  "version": "1.0",
+  "generatedAt": "2025-11-06T08:28:11.313Z",
+  "profiles": [
+    {
+      "entityId": "light.e14_lights",
+      "latencyMs": 215,
+      "minTransitionMs": 55,
+      "maxTransitionMs": 215,
+      "colorAccuracy": 0.9,
+      "brightnessLinearity": 0.85,
+      "lastCalibrated": "2025-11-06T08:27:46.981Z",
+      "calibrationMethod": "auto",
+      "notes": "3 rounds, 15 measurements",
+      "statistics": [
+        {
+          "commandType": "turn_on",
+          "measurements": [
+            54.58589299999994,
+            65.97881899999993,
+            57.9476480000003
+          ],
+          "min": 54.58589299999994,
+          "max": 65.97881899999993,
+          "avg": 59.50412000000006,
+          "median": 57.9476480000003,
+          "stdDev": 4.779584676897939
+        },
+        {
+          "commandType": "brightness",
+          "measurements": [
+            173.0551929999997,
+            196.9945770000004,
+            214.64939200000026
+          ],
+          "min": 173.0551929999997,
+          "max": 214.64939200000026,
+          "avg": 194.89972066666678,
+          "median": 196.9945770000004,
+          "stdDev": 17.04524694073381
+        },
+        {
+          "commandType": "rgb_color",
+          "measurements": [
+            157.60173200000008,
+            109.96487499999967,
+            171.7477740000004
+          ],
+          "min": 109.96487499999967,
+          "max": 171.7477740000004,
+          "avg": 146.43812700000004,
+          "median": 157.60173200000008,
+          "stdDev": 26.429165829415197
+        },
+        {
+          "commandType": "color_temp",
+          "measurements": [
+            178.9805680000004,
+            213.92497699999967,
+            174.86888
+          ],
+          "min": 174.86888,
+          "max": 213.92497699999967,
+          "avg": 189.2581416666667,
+          "median": 178.9805680000004,
+          "stdDev": 17.52267233374446
+        },
+        {
+          "commandType": "rapid_sequence",
+          "measurements": [
+            123.6300770000001,
+            129.5656690000002,
+            110.37147399999988
+          ],
+          "min": 110.37147399999988,
+          "max": 129.5656690000002,
+          "avg": 121.1890733333334,
+          "median": 123.6300770000001,
+          "stdDev": 8.023845902475932
+        }
+      ],
+      "totalMeasurements": 15,
+      "reliabilityScore": 0.8962440066829294,
+      "recommendedInterval": 430
+    },
+    {
+      "entityId": "light.e14_02",
+      "latencyMs": 220,
+      "minTransitionMs": 55,
+      "maxTransitionMs": 220,
+      "colorAccuracy": 0.9,
+      "brightnessLinearity": 0.85,
+      "lastCalibrated": "2025-11-06T08:27:52.239Z",
+      "calibrationMethod": "auto",
+      "notes": "3 rounds, 15 measurements",
+      "statistics": [
+        {
+          "commandType": "turn_on",
+          "measurements": [
+            55.23116200000004,
+            90.96838699999898,
+            71.26965500000006
+          ],
+          "min": 55.23116200000004,
+          "max": 90.96838699999898,
+          "avg": 72.48973466666637,
+          "median": 71.26965500000006,
+          "stdDev": 14.61514644629324
+        },
+        {
+          "commandType": "brightness",
+          "measurements": [
+            130.442774000001,
+            144.16666900000018,
+            94.58582000000024
+          ],
+          "min": 94.58582000000024,
+          "max": 144.16666900000018,
+          "avg": 123.06508766666714,
+          "median": 130.442774000001,
+          "stdDev": 20.90275641496427
+        },
+        {
+          "commandType": "rgb_color",
+          "measurements": [
+            121.96222999999918,
+            219.7402149999998,
+            100.25974700000006
+          ],
+          "min": 100.25974700000006,
+          "max": 219.7402149999998,
+          "avg": 147.32073066666635,
+          "median": 121.96222999999918,
+          "stdDev": 51.969130102531444
+        },
+        {
+          "commandType": "color_temp",
+          "measurements": [
+            122.91165499999988,
+            137.86722599999848,
+            130.23399900000004
+          ],
+          "min": 122.91165499999988,
+          "max": 137.86722599999848,
+          "avg": 130.33762666666613,
+          "median": 130.23399900000004,
+          "stdDev": 6.10602598553122
+        },
+        {
+          "commandType": "rapid_sequence",
+          "measurements": [
+            83.75843733333325,
+            67.1516033333337,
+            64.55476999999944
+          ],
+          "min": 64.55476999999944,
+          "max": 83.75843733333325,
+          "avg": 71.82160355555546,
+          "median": 67.1516033333337,
+          "stdDev": 8.50693389022553
+        }
+      ],
+      "totalMeasurements": 15,
+      "reliabilityScore": 0.8126725192914568,
+      "recommendedInterval": 440
+    },
+    {
+      "entityId": "light.e14_05",
+      "latencyMs": 581,
+      "minTransitionMs": 51,
+      "maxTransitionMs": 581,
+      "colorAccuracy": 0.9,
+      "brightnessLinearity": 0.85,
+      "lastCalibrated": "2025-11-06T08:27:57.761Z",
+      "calibrationMethod": "auto",
+      "notes": "3 rounds, 15 measurements",
+      "statistics": [
+        {
+          "commandType": "turn_on",
+          "measurements": [
+            116.79555400000027,
+            61.676306999997905,
+            57.82667500000025
+          ],
+          "min": 57.82667500000025,
+          "max": 116.79555400000027,
+          "avg": 78.76617866666614,
+          "median": 61.676306999997905,
+          "stdDev": 26.93671543719406
+        },
+        {
+          "commandType": "brightness",
+          "measurements": [
+            580.6038700000008,
+            144.38515899999766,
+            114.9403850000017
+          ],
+          "min": 114.9403850000017,
+          "max": 580.6038700000008,
+          "avg": 279.9764713333334,
+          "median": 144.38515899999766,
+          "stdDev": 212.91527783102407
+        },
+        {
+          "commandType": "rgb_color",
+          "measurements": [
+            153.34049200000118,
+            108.08379100000093,
+            101.88594799999919
+          ],
+          "min": 101.88594799999919,
+          "max": 153.34049200000118,
+          "avg": 121.10341033333377,
+          "median": 108.08379100000093,
+          "stdDev": 22.935058901903954
+        },
+        {
+          "commandType": "color_temp",
+          "measurements": [
+            118.99048200000107,
+            111.95967600000222,
+            127.22207999999955
+          ],
+          "min": 111.95967600000222,
+          "max": 127.22207999999955,
+          "avg": 119.39074600000095,
+          "median": 118.99048200000107,
+          "stdDev": 6.237275175216369
+        },
+        {
+          "commandType": "rapid_sequence",
+          "measurements": [
+            62.964069666666546,
+            63.918299666667735,
+            51.11947300000126
+          ],
+          "min": 51.11947300000126,
+          "max": 63.918299666667735,
+          "avg": 59.33394744444518,
+          "median": 62.964069666666546,
+          "stdDev": 5.821559442969572
+        }
+      ],
+      "totalMeasurements": 15,
+      "reliabilityScore": 0.5826630848520054,
+      "recommendedInterval": 1162
+    },
+    {
+      "entityId": "light.e14_01",
+      "latencyMs": 376,
+      "minTransitionMs": 52,
+      "maxTransitionMs": 376,
+      "colorAccuracy": 0.9,
+      "brightnessLinearity": 0.85,
+      "lastCalibrated": "2025-11-06T08:28:02.956Z",
+      "calibrationMethod": "auto",
+      "notes": "3 rounds, 15 measurements",
+      "statistics": [
+        {
+          "commandType": "turn_on",
+          "measurements": [
+            65.50141699999949,
+            55.130668999998306,
+            74.62991000000329
+          ],
+          "min": 55.130668999998306,
+          "max": 74.62991000000329,
+          "avg": 65.08733200000036,
+          "median": 65.50141699999949,
+          "stdDev": 7.965914874617858
+        },
+        {
+          "commandType": "brightness",
+          "measurements": [
+            132.64114899999913,
+            113.52562599999874,
+            91.736023999998
+          ],
+          "min": 91.736023999998,
+          "max": 132.64114899999913,
+          "avg": 112.63426633333195,
+          "median": 113.52562599999874,
+          "stdDev": 16.711337555842135
+        },
+        {
+          "commandType": "rgb_color",
+          "measurements": [
+            375.9625049999995,
+            102.43653199999972,
+            99.44099399999686
+          ],
+          "min": 99.44099399999686,
+          "max": 375.9625049999995,
+          "avg": 192.61334366666537,
+          "median": 102.43653199999972,
+          "stdDev": 129.6532028996459
+        },
+        {
+          "commandType": "color_temp",
+          "measurements": [
+            123.56136499999775,
+            102.14229200000045,
+            122.14827499999956
+          ],
+          "min": 102.14229200000045,
+          "max": 123.56136499999775,
+          "avg": 115.95064399999926,
+          "median": 122.14827499999956,
+          "stdDev": 9.781006920010055
+        },
+        {
+          "commandType": "rapid_sequence",
+          "measurements": [
+            51.688809666668625,
+            71.13226633333397,
+            60.10894966666698
+          ],
+          "min": 51.688809666668625,
+          "max": 71.13226633333397,
+          "avg": 60.976675222223186,
+          "median": 60.10894966666698,
+          "stdDev": 7.961436742906283
+        }
+      ],
+      "totalMeasurements": 15,
+      "reliabilityScore": 0.6855750685078746,
+      "recommendedInterval": 752
+    },
+    {
+      "entityId": "light.e14_06",
+      "latencyMs": 171,
+      "minTransitionMs": 55,
+      "maxTransitionMs": 171,
+      "colorAccuracy": 0.9,
+      "brightnessLinearity": 0.85,
+      "lastCalibrated": "2025-11-06T08:28:07.998Z",
+      "calibrationMethod": "auto",
+      "notes": "3 rounds, 15 measurements",
+      "statistics": [
+        {
+          "commandType": "turn_on",
+          "measurements": [
+            55.25499899999704,
+            68.63562499999898,
+            63.99844099999973
+          ],
+          "min": 55.25499899999704,
+          "max": 68.63562499999898,
+          "avg": 62.62968833333192,
+          "median": 63.99844099999973,
+          "stdDev": 5.547696274723089
+        },
+        {
+          "commandType": "brightness",
+          "measurements": [
+            132.91798199999903,
+            110.72487600000022,
+            127.40782500000205
+          ],
+          "min": 110.72487600000022,
+          "max": 132.91798199999903,
+          "avg": 123.68356100000044,
+          "median": 127.40782500000205,
+          "stdDev": 9.435256408389291
+        },
+        {
+          "commandType": "rgb_color",
+          "measurements": [
+            171.00773400000253,
+            120.1137290000006,
+            107.99927800000296
+          ],
+          "min": 107.99927800000296,
+          "max": 171.00773400000253,
+          "avg": 133.04024700000204,
+          "median": 120.1137290000006,
+          "stdDev": 27.29880989566201
+        },
+        {
+          "commandType": "color_temp",
+          "measurements": [
+            141.05824999999822,
+            113.09543699999995,
+            125.00866899999892
+          ],
+          "min": 113.09543699999995,
+          "max": 141.05824999999822,
+          "avg": 126.38745199999903,
+          "median": 125.00866899999892,
+          "stdDev": 11.45732690287559
+        },
+        {
+          "commandType": "rapid_sequence",
+          "measurements": [
+            58.449163666665605,
+            55.86370033333151,
+            56.91658200000044
+          ],
+          "min": 55.86370033333151,
+          "max": 58.449163666665605,
+          "avg": 57.07648199999918,
+          "median": 56.91658200000044,
+          "stdDev": 1.06154954963753
+        }
+      ],
+      "totalMeasurements": 15,
+      "reliabilityScore": 0.8910128493458181,
+      "recommendedInterval": 343
+    },
+    {
+      "entityId": "light.e14_03_2",
+      "latencyMs": 76,
+      "minTransitionMs": 13,
+      "maxTransitionMs": 76,
+      "brightnessLinearity": 0.85,
+      "lastCalibrated": "2025-11-06T08:28:10.811Z",
+      "calibrationMethod": "auto",
+      "notes": "3 rounds, 9 measurements",
+      "statistics": [
+        {
+          "commandType": "turn_on",
+          "measurements": [
+            55.87737500000003,
+            58.90467399999761,
+            62.40812000000005
+          ],
+          "min": 55.87737500000003,
+          "max": 62.40812000000005,
+          "avg": 59.0633896666659,
+          "median": 58.90467399999761,
+          "stdDev": 2.668526504882523
+        },
+        {
+          "commandType": "brightness",
+          "measurements": [
+            65.04960500000016,
+            56.14421999999831,
+            76.00119099999938
+          ],
+          "min": 56.14421999999831,
+          "max": 76.00119099999938,
+          "avg": 65.73167199999928,
+          "median": 65.04960500000016,
+          "stdDev": 8.12090864653649
+        },
+        {
+          "commandType": "rapid_sequence",
+          "measurements": [
+            13.43977166666688,
+            24.097986666667566,
+            12.724643000000166
+          ],
+          "min": 12.724643000000166,
+          "max": 24.097986666667566,
+          "avg": 16.754133777778204,
+          "median": 13.43977166666688,
+          "stdDev": 5.201088584306725
+        }
+      ],
+      "totalMeasurements": 9,
+      "reliabilityScore": 0.887032040800247,
+      "recommendedInterval": 153
+    }
+  ]
+}

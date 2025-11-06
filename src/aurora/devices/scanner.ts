@@ -82,20 +82,32 @@ export class DeviceScanner {
    */
   private extractCapabilities(state: any): DeviceCapabilities {
     const attrs = state.attributes || {};
+    
+    // Modern Home Assistant uses supported_color_modes
+    const colorModes = attrs.supported_color_modes || [];
+    
+    // Check for color support via color modes
+    const supportsColor = colorModes.includes('hs') || 
+                         colorModes.includes('rgb') || 
+                         colorModes.includes('xy') ||
+                         colorModes.includes('rgbw') ||
+                         colorModes.includes('rgbww');
+    
+    const supportsColorTemp = colorModes.includes('color_temp');
+    const supportsBrightness = colorModes.includes('brightness') ||
+                               colorModes.length > 0; // Most modes support brightness
+    
+    // Fallback to legacy feature flags if color modes not available
     const supportedFeatures = attrs.supported_features || 0;
-
-    // Home Assistant feature flags
     const SUPPORT_BRIGHTNESS = 1;
     const SUPPORT_COLOR_TEMP = 2;
     const SUPPORT_EFFECT = 4;
-    const SUPPORT_FLASH = 8;
     const SUPPORT_COLOR = 16;
-    const SUPPORT_TRANSITION = 32;
 
     return {
-      supportsBrightness: (supportedFeatures & SUPPORT_BRIGHTNESS) !== 0,
-      supportsColorTemp: (supportedFeatures & SUPPORT_COLOR_TEMP) !== 0,
-      supportsColor: (supportedFeatures & SUPPORT_COLOR) !== 0,
+      supportsBrightness: supportsBrightness || (supportedFeatures & SUPPORT_BRIGHTNESS) !== 0,
+      supportsColorTemp: supportsColorTemp || (supportedFeatures & SUPPORT_COLOR_TEMP) !== 0,
+      supportsColor: supportsColor || (supportedFeatures & SUPPORT_COLOR) !== 0,
       supportsEffects: (supportedFeatures & SUPPORT_EFFECT) !== 0,
       effects: attrs.effect_list || [],
       minMireds: attrs.min_mireds,

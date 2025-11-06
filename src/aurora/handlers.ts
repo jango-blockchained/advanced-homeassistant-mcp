@@ -19,6 +19,7 @@ import type {
   RenderTimeline,
   RenderSettings,
 } from './types';
+import { getProfileManager } from './profiles';
 
 /**
  * Aurora system state manager
@@ -145,14 +146,35 @@ export class AuroraManager {
       throw new Error('No devices available for timeline rendering');
     }
 
+    // Load profile manager and get adaptive interval
+    const profileManager = await getProfileManager();
+    const intensity = args.intensity ?? DEFAULT_CONFIG.rendering.intensity;
+    
+    let minCommandInterval: number;
+    if (profileManager.hasProfiles()) {
+      // Use adaptive interval based on intensity
+      const deviceIds = devices.map(d => d.entityId);
+      minCommandInterval = profileManager.getOptimalIntervalForDevices(deviceIds);
+      
+      // Further adapt based on intensity level
+      const adaptiveInterval = profileManager.getAdaptiveInterval(intensity);
+      minCommandInterval = Math.max(minCommandInterval, adaptiveInterval);
+      
+      // Validate against safe ranges
+      minCommandInterval = profileManager.validateInterval(minCommandInterval);
+    } else {
+      // Fallback to default config if no profiles
+      minCommandInterval = DEFAULT_CONFIG.rendering.minCommandInterval;
+    }
+
     // Build render settings
     const renderSettings: RenderSettings = {
-      intensity: args.intensity ?? DEFAULT_CONFIG.rendering.intensity,
+      intensity,
       colorMapping: args.color_mapping ?? DEFAULT_CONFIG.rendering.colorMapping,
-      brightnessMapping: DEFAULT_CONFIG.rendering.brightnessMapping,
       beatSync: args.beat_sync ?? DEFAULT_CONFIG.rendering.beatSync,
+      brightnessMapping: DEFAULT_CONFIG.rendering.brightnessMapping,
       smoothTransitions: args.smooth_transitions ?? DEFAULT_CONFIG.rendering.smoothTransitions,
-      minCommandInterval: DEFAULT_CONFIG.rendering.minCommandInterval,
+      minCommandInterval,
     };
 
     // Generate timeline
