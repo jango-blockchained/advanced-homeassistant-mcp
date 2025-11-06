@@ -149,6 +149,87 @@ async function main(): Promise<void> {
       customSiteTitle: 'Home Assistant MCP API Documentation'
     }));
 
+    // MCP Discovery endpoint for Smithery
+    app.get('/.well-known/mcp-config', (_req: Request, res: Response) => {
+      res.json({
+        schemaVersion: "1.0",
+        name: "Home Assistant MCP Server",
+        version: process.env.npm_package_version ?? "1.1.0",
+        description: "An advanced MCP server for Home Assistant. 🔋 Batteries included.",
+        vendor: {
+          name: "jango-blockchained",
+          url: "https://github.com/jango-blockchained"
+        },
+        repository: {
+          type: "git",
+          url: "https://github.com/jango-blockchained/homeassistant-mcp"
+        },
+        runtime: "container",
+        transport: {
+          type: "http",
+          protocol: "json-rpc",
+          version: "2.0"
+        },
+        configuration: {
+          type: "object",
+          required: ["hassToken"],
+          properties: {
+            hassToken: {
+              type: "string",
+              title: "Home Assistant Token",
+              description: "Long-lived access token for connecting to Home Assistant API. Generate this from your Home Assistant profile.",
+              sensitive: true
+            },
+            hassHost: {
+              type: "string",
+              default: "http://homeassistant.local:8123",
+              title: "Home Assistant Host",
+              description: "The URL of your Home Assistant instance"
+            },
+            hassSocketUrl: {
+              type: "string",
+              default: "ws://homeassistant.local:8123",
+              title: "Home Assistant WebSocket URL",
+              description: "The WebSocket URL for real-time Home Assistant events"
+            },
+            port: {
+              type: "number",
+              default: 7123,
+              title: "MCP Server Port",
+              description: "The port on which the MCP server will listen for connections."
+            },
+            debug: {
+              type: "boolean",
+              default: false,
+              title: "Debug Mode",
+              description: "Enable detailed debug logging for troubleshooting."
+            }
+          }
+        },
+        capabilities: {
+          tools: true,
+          resources: true,
+          prompts: true,
+          streaming: false
+        },
+        categories: [
+          "smart-home",
+          "automation",
+          "iot",
+          "home-assistant"
+        ],
+        endpoints: {
+          health: "/health",
+          api: "/api/mcp",
+          docs: "/api-docs"
+        },
+        authentication: {
+          type: "environment",
+          variables: ["HASS_TOKEN", "HASS_HOST", "HASS_SOCKET_URL"]
+        }
+      });
+    });
+
     // Health check endpoint
     app.get('/health', (_req: Request, res: Response) => {
       res.json({

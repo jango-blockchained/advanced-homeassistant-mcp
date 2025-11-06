@@ -18,7 +18,7 @@ import { tools } from "./tools/index.js";
 import { listResources, getResource } from "./mcp/resources.js";
 import { getAllPrompts, renderPrompt } from "./mcp/prompts.js";
 
-const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 7123;
+const port = (process.env.PORT ?? "7123") ? parseInt(process.env.PORT ?? "7123", 10) : 7123;
 
 async function main(): Promise<void> {
     try {
