@@ -1,340 +1,214 @@
-# 🏠 Home Assistant MCP
+# 📚 Home Assistant MCP Documentation
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/blob/main/LICENSE)
 [![Bun](https://img.shields.io/badge/bun-%3E%3D1.0.26-black)](https://bun.sh)
 [![TypeScript](https://img.shields.io/badge/typescript-%5E5.0.0-blue.svg)](https://www.typescriptlang.org)
 [![smithery badge](https://smithery.ai/badge/@jango-blockchained/homeassitant-mcp)](https://smithery.ai/server/@jango-blockchained/homeassitant-mcp)
 
-> **Bridge the gap between AI assistants and your smart home** 🚀
+> **Complete documentation hub for Home Assistant MCP Server** 📖
 
-A powerful, secure, and extensible Model Context Protocol (MCP) server that enables AI assistants like Claude, GPT, and Cursor to seamlessly interact with Home Assistant. Control your lights, climate, automations, and more through natural language commands.
+Your gateway to mastering AI-powered smart home control through the Model Context Protocol.
 
----
+## 🚀 Quick Links
 
-## ✨ Feature Overview
+- **[README](../README.md)** - Project overview and quick start
+- **[Complete Tools Reference](./TOOLS_REFERENCE.md)** - All 24 available tools
+- **[Smart Features Guide](./SMART_FEATURES.md)** - Maintenance & Smart Scenarios
+- **[Quick Start Scenarios](./QUICK_START_SCENARIOS.md)** - AI assistant usage examples
 
-### 🤖 AI-Powered Smart Home Control
+## 🚀 Quick Links
 
-- **Natural Language Processing**: Turn "dim the living room lights to 50%" into actual device commands
-- **Multi-Assistant Support**: Works with Claude, GPT-4, Cursor, and other MCP-compatible assistants
-- **Intelligent Context**: Remembers device states, relationships, and user preferences
-
-### 🛡️ Enterprise-Grade Security
-
-- **Rate Limiting**: Protects against abuse with configurable request limits
-- **Input Sanitization**: Prevents XSS and injection attacks
-- **JWT Authentication**: Secure token-based access control
-- **Security Headers**: Comprehensive protection against web vulnerabilities
-
-### ⚡ High-Performance Architecture
-
-- **Bun Runtime**: 4x faster than Node.js with built-in TypeScript support
-- **Streaming Responses**: Real-time updates for long-running operations
-- **Modular Design**: Clean separation of concerns with extensible plugin system
-- **Multiple Transports**: HTTP REST API, WebSocket, and Standard I/O support
-
-### 🏠 Comprehensive Device Control
-
-- **Lighting Control**: Brightness, color temperature, RGB colors, and effects
-- **Climate Management**: Thermostats, HVAC modes, fan control, and scheduling
-- **Media Players**: Control media playback, volume, and sources
-- **Covers**: Control blinds, curtains, and garage doors
-- **Locks**: Smart lock control with code support
-- **Fans**: Speed control, oscillation, and direction
-- **Vacuums**: Robot vacuum control and scheduling
-- **Alarm Systems**: Arm/disarm and security management
-- **Automation & Scenes**: Trigger automations, activate scenes, and manage routines
-- **Device Discovery**: Intelligent device listing with filtering and search
-- **Notification System**: Send alerts through Home Assistant's notification channels
+- **[README](../README.md)** - Project overview and quick start
+- **[Complete Tools Reference](./TOOLS_REFERENCE.md)** - All 24 available tools
+- **[Smart Features Guide](./SMART_FEATURES.md)** - Maintenance & Smart Scenarios
+- **[Quick Start Scenarios](./QUICK_START_SCENARIOS.md)** - AI assistant usage examples
 
 ---
 
-## 🚀 Quick Start
+## 📖 Documentation Structure
 
-Get up and running in minutes:
+### Getting Started
+- **[Installation](../README.md#-installation)** - Multiple installation methods
+- **[Configuration](../README.md#-configuration)** - Environment setup
+- **[Quick Start](../README.md#-quick-start)** - Get running in minutes
 
-```bash
-# Clone and install
-git clone https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
-cd advanced-homeassistant-mcp
-bun install
+### Core Features
 
-# Configure environment
-cp .env.example .env
-# Edit .env with your Home Assistant details
+#### Device Control
+All tools for controlling your smart home devices:
+- **[Lights Control](./TOOLS_REFERENCE.md#-lights-control-lights_control)** - Full lighting management
+- **[Climate Control](./TOOLS_REFERENCE.md#️-climate-control-climate_control)** - HVAC and thermostats
+- **[Media Players](./TOOLS_REFERENCE.md#-media-player-control-media_player_control)** - Audio/video control
+- **[Covers](./TOOLS_REFERENCE.md#-cover-control-cover_control)** - Blinds, curtains, garage doors
+- **[Locks](./TOOLS_REFERENCE.md#-lock-control-lock_control)** - Smart lock control
+- **[Fans](./TOOLS_REFERENCE.md#-fan-control-fan_control)** - Fan speed and oscillation
+- **[Vacuums](./TOOLS_REFERENCE.md#-vacuum-control-vacuum_control)** - Robot vacuum control
+- **[Alarms](./TOOLS_REFERENCE.md#-alarm-control-alarm_control)** - Security systems
 
-# Start the server
-bun run start:stdio
-```
+#### Automation
+- **[Automation Management](./TOOLS_REFERENCE.md#️-automation-management-automation)** - List, toggle, trigger
+- **[Scene Management](./TOOLS_REFERENCE.md#-scene-management-scene)** - Activate scenes
+- **[Automation Config](./TOOLS_REFERENCE.md#-automation-config-automation_config)** - Create/update automations
 
-That's it! Your AI assistant can now control your smart home. 🤖✨
+#### System Management
+- **[Device Discovery](./TOOLS_REFERENCE.md#-device-discovery-list_devices)** - List and filter devices
+- **[Notifications](./TOOLS_REFERENCE.md#-notifications-notify)** - Send alerts
+- **[History](./TOOLS_REFERENCE.md#-history-get_history)** - Query historical data
+- **[Add-on Management](./TOOLS_REFERENCE.md#-add-on-management-addon)** - Control add-ons
+- **[Package Management](./TOOLS_REFERENCE.md#-package-management-package)** - HACS integration
 
----
+### Smart Features 🆕
 
-## 📦 Installation
+#### Maintenance Tool
+Spook-like features for system health and cleanup:
+- **[Find Orphaned Devices](./SMART_FEATURES.md#1-find_orphaned_devices)** - Detect unavailable devices
+- **[Analyze Light Usage](./SMART_FEATURES.md#2-analyze_light_usage)** - Usage patterns by room
+- **[Energy Consumption](./SMART_FEATURES.md#3-analyze_energy_consumption)** - Monitor power usage
+- **[Device Health Check](./SMART_FEATURES.md#5-device_health_check)** - Comprehensive health scan
+- **[Find Unavailable Entities](./SMART_FEATURES.md#4-find_unavailable_entities)** - List problematic entities
 
-### Prerequisites
-
-- 🚀 [Bun](https://bun.sh) (v1.0.26+) - *Recommended*
-- 🏠 [Home Assistant](https://www.home-assistant.io/) instance
-
-### Option 1: NPX (Easiest)
-
-```bash
-npx @jango-blockchained/homeassistant-mcp@latest
-```
-
-### Option 2: Bunx with GitHub (No NPM Login Required)
-
-If you can't login to npm, use Bunx to run directly from GitHub:
-
-```bash
-# Install Bun first if you don't have it
-curl -fsSL https://bun.sh/install | bash
-
-# Then run from GitHub
-bunx github:jango-blockchained/homeassistant-mcp
-```
-
-Alternatively, install directly from Git:
-
-```bash
-bun add git+https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
-homeassistant-mcp
-```
-
-### Option 3: Local Installation
-
-```bash
-# Install globally
-bun add -g @jango-blockchained/homeassistant-mcp
-
-# Or locally
-bun add homeassistant-mcp
-
-# Run
-homeassistant-mcp
-```
-
-### Option 4: From Source (Most Flexible)
-
-```bash
-git clone https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
-cd advanced-homeassistant-mcp
-bun install
-bun run build
-bun run start:stdio
-```
+#### Smart Scenarios Tool
+Intelligent automation detection and management:
+- **[Nobody Home Detection](./SMART_FEATURES.md#nobody-home-detection)** - Auto turn off & reduce climate
+- **[Window/Heating Conflicts](./SMART_FEATURES.md#windowheating-conflicts)** - Auto disable heating
+- **[Energy Saving](./SMART_FEATURES.md#energy-saving-detection)** - Detect waste opportunities
+- **[Scenario Detection](./QUICK_START_SCENARIOS.md#smart-scenarios-examples)** - All-in-one analysis
 
 ---
 
-## 🛠️ Usage
+## 💡 Usage Examples
 
-### AI Assistant Integration
+### For Users
+- **[Quick Start Scenarios](./QUICK_START_SCENARIOS.md)** - Conversational examples with AI
+- **[Example Commands](../README.md#-example-commands)** - Natural language queries
 
-#### Claude Desktop
-
-Add to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "homeassistant-mcp": {
-      "command": "npx",
-      "args": ["@jango-blockchained/homeassistant-mcp@latest"]
-    }
-  }
-}
-```
-
-Or if you can't login to npm, use bunx:
-
-```json
-{
-  "mcpServers": {
-    "homeassistant-mcp": {
-      "command": "bunx",
-      "args": ["github:jango-blockchained/homeassistant-mcp"]
-    }
-  }
-}
-```
-
-#### VS Code + Claude Extension
-
-The `.vscode/settings.json` is pre-configured for immediate use.
-
-#### Cursor
-
-Add to `.cursor/config/config.json`:
-
-```json
-{
-  "mcpServers": {
-    "homeassistant-mcp": {
-      "command": "npx",
-      "args": ["@jango-blockchained/homeassistant-mcp@latest"]
-    }
-  }
-}
-```
-
-Or with bunx:
-
-```json
-{
-  "mcpServers": {
-    "homeassistant-mcp": {
-      "command": "bunx",
-      "args": ["github:jango-blockchained/homeassistant-mcp"]
-    }
-  }
-}
-```
-
-### API Usage
-
-Start the HTTP server:
-
-```bash
-bun run start -- --http
-```
-
-Available endpoints:
-
-- `POST /api/tools/call` - Execute tools
-- `GET /api/resources/list` - List resources
-- `GET /api/health` - Health check
-- `WebSocket /api/ws` - Real-time updates
-
-### Configuration
-
-Create a `.env` file:
-
-```env
-# Home Assistant
-HASS_HOST=http://your-ha-instance:8123
-HASS_TOKEN=your_long_lived_access_token
-
-# Server
-PORT=3000
-NODE_ENV=production
-
-# Security
-JWT_SECRET=your-secret-key
-RATE_LIMIT_WINDOW=15
-RATE_LIMIT_MAX=50
-```
+### For Developers
+- **[Tools Reference](./TOOLS_REFERENCE.md)** - Complete API documentation
+- **[Implementation Details](./IMPLEMENTATION_SUMMARY.md)** - Technical overview
+- **[Architecture](../README.md#️-architecture)** - System design
 
 ---
 
-## 🏗️ Architecture
+## 🔧 Advanced Topics
 
-```text
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   AI Assistant  │◄──►│   MCP Server    │◄──►│ Home Assistant  │
-│  (Claude/GPT)   │    │                 │    │                 │
-└─────────────────┘    │ ┌─────────────┐ │    └─────────────────┘
-                       │ │  Transport  │ │
-                       │ │   Layer     │ │
-                       │ └─────────────┘ │
-                       │ ┌─────────────┐ │
-                       │ │ Middleware  │ │
-                       │ │   Layer     │ │
-                       │ └─────────────┘ │
-                       │ ┌─────────────┐ │
-                       │ │   Tools     │ │
-                       │ │   Layer     │ │
-                       └─────────────────┘
-```
+### Deployment
+- **[Smithery Deployment](../README.md#option-1-npx-easiest)** - One-click install
+- **[Docker Deployment](../README.md#option-3-local-installation)** - Container setup
+- **[Manual Installation](../README.md#option-4-from-source-most-flexible)** - From source
 
-### Core Components
+### Integration
+- **[Claude Desktop](../README.md#claude-desktop)** - MCP client setup
+- **[Cursor](../README.md#cursor)** - IDE integration
+- **[VS Code](../README.md#vs-code--claude-extension)** - Editor integration
 
-- **Transport Layer**: HTTP, WebSocket, Stdio
-- **Middleware Layer**: Security, validation, logging
-- **Tools Layer**: Device control, automation, notifications
-- **Resource Manager**: State management and caching
-
-### Built-in Tools
-
-- 🔦 **Lights Control**: Full spectrum lighting management
-- 🌡️ **Climate Control**: HVAC and thermostat operations
-- ⚙️ **Automation**: Scene and automation triggers
-- 📱 **Notifications**: Multi-channel alert system
-- 📋 **Device Management**: Discovery and organization
-- 📺 **Media Players**: Control media playback, volume, and sources
-- 🪟 **Covers**: Control blinds, curtains, and garage doors
-- 🔒 **Locks**: Smart lock control with code support
-- 💨 **Fans**: Speed control, oscillation, and direction
-- 🤖 **Vacuums**: Robot vacuum control and scheduling
-- 🚨 **Alarm Systems**: Arm/disarm and security management
-
-### MCP Features
-
-- 📝 **Prompts**: Pre-defined prompt templates for common home automation tasks
-  - Morning/evening routines
-  - Energy saving suggestions
-  - Security setup
-  - Climate optimization
-  - Media control
-  - Troubleshooting helpers
-  
-- 📊 **Resources**: Direct access to Home Assistant states and configurations
-  - Device lists by type (lights, climate, sensors, etc.)
-  - Area/room configurations
-  - Automation and scene listings
-  - Dashboard summaries with current home status
+### Security
+- **[Rate Limiting](../README.md#️-enterprise-grade-security)** - Protection features
+- **[Authentication](../README.md#️-enterprise-grade-security)** - JWT tokens
+- **[Input Sanitization](../README.md#️-enterprise-grade-security)** - XSS prevention
 
 ---
 
-## 🎯 Example Commands
+## 🎓 Tutorials & Guides
 
-Once integrated, your AI assistant can understand commands like:
+### Beginner
+1. [Quick Start Guide](../README.md#-quick-start) - Get started in 5 minutes
+2. [Basic Commands](../README.md#-example-commands) - Common operations
+3. [Using with AI](./QUICK_START_SCENARIOS.md) - AI assistant examples
 
-> "Turn off all lights in the bedroom"  
-> "Set the thermostat to 72°F"  
-> "Activate the movie scene"  
-> "What's the current temperature in the living room?"  
-> "Notify everyone that dinner is ready"  
-> "Play music on the living room speaker"  
-> "Open the garage door"  
-> "Lock all doors"  
-> "Start the robot vacuum"  
-> "Set the bedroom fan to 50%"  
-> "Arm the alarm in away mode"
+### Intermediate
+1. [Device Control Patterns](./TOOLS_REFERENCE.md#usage-patterns) - Best practices
+2. [Automation Creation](./TOOLS_REFERENCE.md#-automation-config-automation_config) - Building automations
+3. [Scene Management](./TOOLS_REFERENCE.md#-scene-management-scene) - Organizing scenes
 
-You can also use prompts for guided assistance:
-> "Help me set up a morning routine"  
-> "Show me energy saving tips"  
-> "How do I control my media players?"
+### Advanced
+1. [Smart Scenarios](./SMART_FEATURES.md) - Intelligent automation
+2. [Maintenance Tasks](./SMART_FEATURES.md#maintenance-tool) - System optimization
+3. [Custom Integrations](./IMPLEMENTATION_SUMMARY.md) - Extending functionality
 
 ---
 
-## 🤝 Contributing
+## 📊 Tool Categories
 
-We welcome contributions! Here's how to get involved:
+### Device Control (13 tools)
+Control all your smart home devices through unified interfaces.
+→ [See all Device Control tools](./TOOLS_REFERENCE.md#device-control-tools)
 
-1. 🍴 Fork the repository
-2. 🌿 Create a feature branch
-3. 💻 Make your changes
-4. 🧪 Add tests if applicable
-5. 📝 Update documentation
-6. 🔄 Submit a pull request
+### Automation (3 tools)
+Manage scenes, automations, and complex workflows.
+→ [See all Automation tools](./TOOLS_REFERENCE.md#automation-tools)
 
-### Development Setup
+### System Management (6 tools)
+Device discovery, notifications, history, and package management.
+→ [See all System Management tools](./TOOLS_REFERENCE.md#system-management-tools)
 
-```bash
-bun install
-bun run build
-bun test
-```
+### Smart Features (2 tools)
+AI-powered maintenance and scenario detection.
+→ [See all Smart Feature tools](./TOOLS_REFERENCE.md#smart-features-tools)
 
-### Code Style
+**Total: 24 Tools** - See [Complete Reference](./TOOLS_REFERENCE.md)
 
-- TypeScript with strict mode
-- ESLint for code quality
-- Prettier for formatting
-- Husky for pre-commit hooks
+---
+
+## 🔍 Find What You Need
+
+### By Task
+- **Control Devices** → [Device Control Tools](./TOOLS_REFERENCE.md#device-control-tools)
+- **Create Automations** → [Automation Tools](./TOOLS_REFERENCE.md#automation-tools)
+- **System Health** → [Maintenance Tool](./SMART_FEATURES.md#maintenance-tool)
+- **Energy Saving** → [Smart Scenarios](./SMART_FEATURES.md#smart-scenarios-tool)
+- **Get Notified** → [Notifications](./TOOLS_REFERENCE.md#-notifications-notify)
+
+### By Device Type
+- **Lights** → [Lights Control](./TOOLS_REFERENCE.md#-lights-control-lights_control)
+- **Thermostats** → [Climate Control](./TOOLS_REFERENCE.md#️-climate-control-climate_control)
+- **Entertainment** → [Media Players](./TOOLS_REFERENCE.md#-media-player-control-media_player_control)
+- **Security** → [Locks](./TOOLS_REFERENCE.md#-lock-control-lock_control) & [Alarms](./TOOLS_REFERENCE.md#-alarm-control-alarm_control)
+- **Cleaning** → [Vacuums](./TOOLS_REFERENCE.md#-vacuum-control-vacuum_control)
+
+### By Use Case
+- **Leaving Home** → [Nobody Home Scenario](./SMART_FEATURES.md#nobody-home-detection)
+- **Saving Energy** → [Energy Analysis](./SMART_FEATURES.md#energy-saving-detection)
+- **Troubleshooting** → [Device Health Check](./SMART_FEATURES.md#device-health-check)
+- **Media Control** → [Media Player Control](./TOOLS_REFERENCE.md#-media-player-control-media_player_control)
+
+---
+
+## 🆘 Support & Resources
+
+### Documentation
+- 📖 [Complete Tools Reference](./TOOLS_REFERENCE.md)
+- 🚀 [Quick Start Guide](./QUICK_START_SCENARIOS.md)
+- 🏗️ [Architecture Overview](../README.md#️-architecture)
+
+### Community
+- 💬 [GitHub Discussions](https://github.com/jango-blockchained/homeassistant-mcp/discussions)
+- 🐛 [Issue Tracker](https://github.com/jango-blockchained/homeassistant-mcp/issues)
+- ⭐ [GitHub Repository](https://github.com/jango-blockchained/homeassistant-mcp)
+
+### External Resources
+- 🏠 [Home Assistant Docs](https://www.home-assistant.io/docs/)
+- 🤖 [Model Context Protocol](https://modelcontextprotocol.io/)
+- 📦 [Smithery.ai](https://smithery.ai)
+
+---
+
+## 🎯 Quick Navigation
+
+| Category | Documentation |
+|----------|--------------|
+| 🎬 Getting Started | [README](../README.md) |
+| 🛠️ All Tools | [Tools Reference](./TOOLS_REFERENCE.md) |
+| 🧠 Smart Features | [Smart Features](./SMART_FEATURES.md) |
+| 💬 Usage Examples | [Quick Start](./QUICK_START_SCENARIOS.md) |
+| 🏗️ Development | [Implementation](./IMPLEMENTATION_SUMMARY.md) |
+
+---
+
+---
+
+**Ready to get started?** Begin with the [Quick Start Guide](../README.md#-quick-start)!
+
+**Need help?** Check out our [Quick Start Scenarios](./QUICK_START_SCENARIOS.md) for AI assistant examples.
 
 ---
 
@@ -344,14 +218,4 @@ MIT License - see [LICENSE](https://github.com/jango-blockchained/advanced-homea
 
 ---
 
-## 🙏 Acknowledgments
-
-Built with ❤️ using:
-
-- [Bun](https://bun.sh) - The fast JavaScript runtime
-- [Home Assistant](https://www.home-assistant.io/) - The open-source home automation platform
-- [Model Context Protocol](https://modelcontextprotocol.io/) - The AI integration standard
-
----
-
-Transform your smart home into an AI-powered experience
+Transform your smart home into an AI-powered experience 🚀
