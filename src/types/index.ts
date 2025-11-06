@@ -10,9 +10,9 @@ export interface Tool {
   /** Description of what the tool does */
   description: string;
   /** Zod schema for validating tool parameters */
-  parameters: z.ZodType<any>;
+  parameters: z.ZodType<unknown>;
   /** Function to execute the tool with the given parameters */
-  execute: (params: any) => Promise<any>;
+  execute: (params: unknown) => Promise<unknown>;
 }
 
 /**
@@ -83,7 +83,7 @@ export interface HassState {
     /** Entity description */
     description?: string;
     /** Additional attributes */
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -140,9 +140,9 @@ export interface HassAddonInfoResponse {
     /** Status information */
     status: string;
     /** Add-on options */
-    options: Record<string, any>;
+    options: Record<string, unknown>;
     /** Additional properties */
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

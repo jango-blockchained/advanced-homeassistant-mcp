@@ -26,12 +26,12 @@ export { MCPErrorCode, MCPServerEvents };
 /**
  * Tool definition interface
  */
-export interface ToolDefinition {
+export interface ToolDefinition<TParams = unknown, TReturn = unknown> {
     name: string;
     description: string;
-    parameters?: z.ZodType<any>;
-    returnType?: z.ZodType<any>;
-    execute: (params: any, context: MCPContext) => Promise<any>;
+    parameters?: z.ZodType<TParams>;
+    returnType?: z.ZodType<TReturn>;
+    execute: (params: TParams, context: MCPContext) => Promise<TReturn>;
     metadata?: ToolMetadata;
 }
 
@@ -53,8 +53,8 @@ export interface ToolMetadata {
  */
 export interface ToolExample {
     description: string;
-    params: any;
-    expectedResult?: any;
+    params: Record<string, unknown>;
+    expectedResult?: unknown;
 }
 
 /**
@@ -77,7 +77,7 @@ export interface MCPRequest {
 export interface MCPResponse {
     jsonrpc?: string;
     id?: string | number;
-    result?: any;
+    result?: unknown;
     error?: MCPError;
 }
 
@@ -87,7 +87,7 @@ export interface MCPResponse {
 export interface MCPError {
     code: number;
     message: string;
-    data?: any;
+    data?: unknown;
 }
 
 /**
