@@ -23,6 +23,21 @@ import { alarmControlTool } from "./homeassistant/alarm.tool.js";
 import { maintenanceTool } from "./homeassistant/maintenance.tool.js";
 import { smartScenariosTool } from "./homeassistant/smart-scenarios.tool.js";
 
+// Aurora tools
+import {
+  auroraTools,
+  auroraAnalyzeAudioTool,
+  auroraScanDevicesTool,
+  auroraProfileDeviceTool,
+  auroraRenderTimelineTool,
+  auroraPlayTimelineTool,
+  auroraControlPlaybackTool,
+  auroraGetStatusTool,
+  auroraListTimelinesTool,
+  auroraExportTimelineTool,
+  auroraImportTimelineTool,
+} from "./aurora/index.js";
+
 // Tool category types
 export enum ToolCategory {
   DEVICE = "device",
@@ -71,6 +86,8 @@ export const tools: Tool[] = [
   alarmControlTool,
   maintenanceTool,
   smartScenariosTool,
+  // Aurora tools
+  ...auroraTools,
 ];
 
 // Function to get a tool by name
@@ -107,4 +124,15 @@ export {
   alarmControlTool,
   maintenanceTool,
   smartScenariosTool,
+  // Aurora tools
+  auroraAnalyzeAudioTool,
+  auroraScanDevicesTool,
+  auroraProfileDeviceTool,
+  auroraRenderTimelineTool,
+  auroraPlayTimelineTool,
+  auroraControlPlaybackTool,
+  auroraGetStatusTool,
+  auroraListTimelinesTool,
+  auroraExportTimelineTool,
+  auroraImportTimelineTool,
 };
