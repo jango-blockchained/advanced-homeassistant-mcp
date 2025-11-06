@@ -18,6 +18,7 @@ const TEST_ENV = {
     HASS_HOST: 'http://localhost:8123',
     HASS_TOKEN: 'test_token_for_testing',
     HASS_SOCKET_URL: 'ws://localhost:8123/api/websocket',
+    // NOTE: This is a test-only JWT secret - NEVER use this in production!
     JWT_SECRET: 'test_jwt_secret_key_min_32_chars_long_string'
 };
 
