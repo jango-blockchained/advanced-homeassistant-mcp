@@ -9,6 +9,7 @@ import type {
   ExecutionCommand,
   QueueStats,
 } from '../types';
+import { LocalAudioPlayer } from '../audio/player';
 
 export class TimelineExecutor {
   private hassCallService: (domain: string, service: string, data: Record<string, unknown>) => Promise<unknown>;
@@ -16,6 +17,7 @@ export class TimelineExecutor {
   private commandQueue: ExecutionCommand[];
   private playbackTimer: NodeJS.Timeout | null = null;
   private startTime: number = 0;
+  private audioPlayer: LocalAudioPlayer | null = null;
 
   constructor(hassCallService: (domain: string, service: string, data: Record<string, unknown>) => Promise<unknown>) {
     this.hassCallService = hassCallService;
@@ -36,7 +38,7 @@ export class TimelineExecutor {
   /**
    * Start playback of a timeline
    */
-  play(timeline: RenderTimeline, startPosition: number = 0): void {
+  async play(timeline: RenderTimeline, startPosition: number = 0, audioFile?: string): Promise<void> {
     if (this.state.state === 'playing') {
       throw new Error('Timeline is already playing');
     }
@@ -59,6 +61,14 @@ export class TimelineExecutor {
     // Queue all commands
     this.queueCommands(timeline, startPosition);
 
+    // Start local audio playback if audio file provided
+    if (audioFile) {
+      if (!this.audioPlayer) {
+        this.audioPlayer = new LocalAudioPlayer();
+      }
+      await this.audioPlayer.play(audioFile, startPosition);
+    }
+
     // Start playback
     this.startTime = Date.now() - (startPosition * 1000);
     this.startPlaybackLoop();
@@ -73,19 +83,31 @@ export class TimelineExecutor {
     }
 
     this.stopPlaybackLoop();
+    
+    // Pause local audio if playing
+    if (this.audioPlayer?.isPlaying() === true) {
+      this.audioPlayer.pause();
+    }
+    
     this.state.state = 'paused';
   }
 
   /**
    * Resume playback
    */
-  resume(): void {
+  async resume(): Promise<void> {
     if (this.state.state !== 'paused') {
       return;
     }
 
     this.state.state = 'playing';
     this.startTime = Date.now() - (this.state.position * 1000);
+    
+    // Resume local audio if it was playing
+    if (this.audioPlayer) {
+      await this.audioPlayer.resume();
+    }
+    
     this.startPlaybackLoop();
   }
 
@@ -94,6 +116,12 @@ export class TimelineExecutor {
    */
   stop(): void {
     this.stopPlaybackLoop();
+    
+    // Stop local audio
+    if (this.audioPlayer) {
+      this.audioPlayer.stop();
+    }
+    
     this.commandQueue = [];
     this.state.state = 'stopped';
     this.state.position = 0;
@@ -261,7 +289,7 @@ export class TimelineExecutor {
   /**
    * Seek to a specific position in the timeline
    */
-  seek(position: number): void {
+  async seek(position: number): Promise<void> {
     if (!this.state.timeline) {
       throw new Error('No timeline loaded');
     }
@@ -272,12 +300,17 @@ export class TimelineExecutor {
       this.pause();
     }
 
+    // Seek local audio if playing
+    if (this.audioPlayer) {
+      await this.audioPlayer.seek(position);
+    }
+
     // Reset queue from new position
     this.queueCommands(this.state.timeline, position);
     this.state.position = position;
 
     if (wasPlaying) {
-      this.resume();
+      await this.resume();
     }
   }
 

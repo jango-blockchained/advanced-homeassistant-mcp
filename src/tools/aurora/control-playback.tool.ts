@@ -11,6 +11,7 @@ import { getAuroraManager } from "./manager.js";
 const controlPlaybackSchema = z.object({
   action: z.enum(["pause", "resume", "stop", "seek"]).describe("Playback action to perform"),
   position: z.number().optional().describe("Position in seconds (required for seek action)"),
+  media_player: z.string().optional().describe("Home Assistant media player entity ID to control in sync with lights"),
 });
 
 type ControlPlaybackParams = z.infer<typeof controlPlaybackSchema>;
@@ -23,15 +24,22 @@ async function executeControlPlayback(args: ControlPlaybackParams): Promise<unkn
     const result = await manager.handleControlPlayback({
       action: args.action,
       position: args.position,
+      media_player: args.media_player,
     });
 
     logger.info(`Playback ${args.action} complete: position=${result.position}s`);
 
-    return {
+    const response: Record<string, unknown> = {
       success: true,
       status: result.status,
       position: result.position,
     };
+
+    if (args.media_player !== undefined && args.media_player !== '') {
+      response.media_player_controlled = true;
+    }
+
+    return response;
   } catch (error) {
     logger.error("Failed to control playback:", error);
     return {

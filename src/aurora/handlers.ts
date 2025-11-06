@@ -212,7 +212,10 @@ export class AuroraManager {
   async handlePlayTimeline(args: {
     timeline_id: string;
     start_position?: number;
-  }): Promise<{ status: string; timeline: RenderTimeline }> {
+    media_player?: string;
+    audio_url?: string;
+    local_audio?: boolean; // Default true - play on host system
+  }): Promise<{ status: string; timeline: RenderTimeline; media_started?: boolean; local_audio?: boolean }> {
     const timeline = this.timelines.get(args.timeline_id);
     
     if (!timeline) {
@@ -226,15 +229,61 @@ export class AuroraManager {
       );
     }
 
-    // Play timeline
-    const startPosition = args.start_position || 0;
-    await this.executor.play(timeline, startPosition);
+    const startPosition = args.start_position ?? 0;
+    let mediaStarted = false;
+    let localAudio = false;
+
+    // Default behavior: play on local system if no media_player specified
+    const useLocalAudio = args.local_audio !== false && !args.media_player;
+    
+    if (useLocalAudio && timeline.audioFile) {
+      // Play audio locally on the host system
+      try {
+        await this.executor.play(timeline, startPosition, timeline.audioFile);
+        localAudio = true;
+      } catch (error) {
+        throw new Error(`Failed to start local audio playback: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    } else if (args.media_player !== undefined && args.media_player !== '' && args.audio_url !== undefined && args.audio_url !== '') {
+      // Play via Home Assistant media_player
+      try {
+        // Start music playback first
+        await this.hassApi.callService('media_player', 'play_media', {
+          entity_id: args.media_player,
+          media_content_id: args.audio_url,
+          media_content_type: 'music',
+        });
+
+        // If starting from a position, seek the media player
+        if (startPosition > 0) {
+          await this.hassApi.callService('media_player', 'media_seek', {
+            entity_id: args.media_player,
+            seek_position: startPosition,
+          });
+        }
+
+        mediaStarted = true;
+
+        // Small delay to ensure media player is starting
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Start timeline without local audio
+        await this.executor.play(timeline, startPosition);
+      } catch (error) {
+        throw new Error(`Failed to start media playback: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    } else {
+      // No audio, just lights
+      await this.executor.play(timeline, startPosition);
+    }
 
     this.currentTimeline = timeline;
 
     return {
       status: 'playing',
       timeline,
+      media_started: mediaStarted,
+      local_audio: localAudio,
     };
   }
 
@@ -244,11 +293,46 @@ export class AuroraManager {
   async handleControlPlayback(args: {
     action: 'pause' | 'resume' | 'stop' | 'seek';
     position?: number;
+    media_player?: string;
   }): Promise<{ status: string; position: number }> {
     if (!this.executor) {
       throw new Error('No active playback');
     }
 
+    // Control media player if provided
+    if (args.media_player) {
+      try {
+        switch (args.action) {
+          case 'pause':
+            await this.hassApi.callService('media_player', 'media_pause', {
+              entity_id: args.media_player,
+            });
+            break;
+          case 'resume':
+            await this.hassApi.callService('media_player', 'media_play', {
+              entity_id: args.media_player,
+            });
+            break;
+          case 'stop':
+            await this.hassApi.callService('media_player', 'media_stop', {
+              entity_id: args.media_player,
+            });
+            break;
+          case 'seek':
+            if (args.position !== undefined) {
+              await this.hassApi.callService('media_player', 'media_seek', {
+                entity_id: args.media_player,
+                seek_position: args.position,
+              });
+            }
+            break;
+        }
+      } catch (error) {
+        // Continue with light control even if media player fails
+      }
+    }
+
+    // Control light timeline
     switch (args.action) {
       case 'pause':
         this.executor.pause();
@@ -263,7 +347,7 @@ export class AuroraManager {
         if (args.position === undefined) {
           throw new Error('Position required for seek action');
         }
-        await this.executor.seek(args.position);
+        this.executor.seek(args.position);
         break;
     }
 
