@@ -7,6 +7,10 @@ export { AudioCapture } from './audio/capture';
 export { AudioAnalyzer } from './audio/analyzer';
 export { DeviceScanner } from './devices/scanner';
 export { DeviceProfiler } from './devices/profiler';
+export { AudioLightMapper } from './rendering/mapper';
+export { SynchronizationCalculator } from './rendering/synchronizer';
+export { TimelineGenerator } from './rendering/timeline';
+export { TimelineExecutor } from './execution/executor';
 
 export * from './types';
 
