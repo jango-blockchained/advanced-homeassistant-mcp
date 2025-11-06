@@ -20,6 +20,8 @@ import { lockControlTool } from "./homeassistant/lock.tool.js";
 import { fanControlTool } from "./homeassistant/fan.tool.js";
 import { vacuumControlTool } from "./homeassistant/vacuum.tool.js";
 import { alarmControlTool } from "./homeassistant/alarm.tool.js";
+import { maintenanceTool } from "./homeassistant/maintenance.tool.js";
+import { smartScenariosTool } from "./homeassistant/smart-scenarios.tool.js";
 
 // Tool category types
 export enum ToolCategory {
@@ -67,6 +69,8 @@ export const tools: Tool[] = [
   fanControlTool,
   vacuumControlTool,
   alarmControlTool,
+  maintenanceTool,
+  smartScenariosTool,
 ];
 
 // Function to get a tool by name
@@ -101,4 +105,6 @@ export {
   fanControlTool,
   vacuumControlTool,
   alarmControlTool,
+  maintenanceTool,
+  smartScenariosTool,
 };

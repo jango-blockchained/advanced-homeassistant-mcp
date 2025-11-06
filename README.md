@@ -43,6 +43,8 @@ A powerful, secure, and extensible Model Context Protocol (MCP) server that enab
 - **Automation & Scenes**: Trigger automations, activate scenes, and manage routines
 - **Device Discovery**: Intelligent device listing with filtering and search
 - **Notification System**: Send alerts through Home Assistant's notification channels
+- **Smart Maintenance**: Find orphaned devices, analyze usage patterns, energy monitoring
+- **Intelligent Scenarios**: Auto-detect and manage nobody-home, window/heating conflicts, energy waste
 
 ---
 
@@ -298,19 +300,47 @@ RATE_LIMIT_MAX=50
 - **Tools Layer**: Device control, automation, notifications
 - **Resource Manager**: State management and caching
 
-### Built-in Tools
+### Built-in Tools (24 Total)
 
-- 🔦 **Lights Control**: Full spectrum lighting management
-- 🌡️ **Climate Control**: HVAC and thermostat operations
-- ⚙️ **Automation**: Scene and automation triggers
+#### 🏠 Device Control (13 tools)
+- 🔦 **Lights Control**: Brightness, color temp, RGB, effects
+- 🌡️ **Climate Control**: HVAC modes, temperature, fan control
+- 📺 **Media Players**: Playback, volume, sources, sound modes
+- 🪟 **Covers**: Blinds, curtains, garage doors, position control
+- 🔒 **Locks**: Lock/unlock with code support
+- 💨 **Fans**: Speed, oscillation, direction, presets
+- 🤖 **Vacuums**: Cleaning, docking, spot clean, fan speed
+- 🚨 **Alarm Control**: Arm/disarm modes, security management
+- 🎛️ **Generic Control**: Universal device control interface
+
+#### ⚙️ Automation & Scenes (3 tools)
+- 🎬 **Scenes**: Activate predefined scenes
+- ⚙️ **Automations**: List, toggle, trigger automations
+- 🔧 **Automation Config**: Create/update/delete complex automations
+
+#### 🔧 System Management (6 tools)
+- 📋 **Device Discovery**: List and filter devices by domain/area
 - 📱 **Notifications**: Multi-channel alert system
-- 📋 **Device Management**: Discovery and organization
-- 📺 **Media Players**: Control media playback, volume, and sources
-- 🪟 **Covers**: Control blinds, curtains, and garage doors
-- 🔒 **Locks**: Smart lock control with code support
-- 💨 **Fans**: Speed control, oscillation, and direction
-- 🤖 **Vacuums**: Robot vacuum control and scheduling
-- 🚨 **Alarm Systems**: Arm/disarm and security management
+- 📊 **History**: Query historical state data
+- 📦 **Add-on Management**: Install, configure, control add-ons
+- 📦 **Package Management**: HACS integration and custom components
+- 🔔 **Event Subscription**: Real-time SSE event streaming
+
+#### 🧠 Smart Features (2 tools)
+- 🔧 **Maintenance Tool**: Spook-like maintenance features
+  - Find orphaned/unavailable devices
+  - Analyze light usage patterns by room
+  - Monitor energy consumption
+  - Device health checks with battery warnings
+  - Entity cleanup recommendations
+  
+- 🧠 **Smart Scenarios**: Intelligent automation detection
+  - Nobody home: Auto turn off lights, reduce climate
+  - Window/heating conflicts: Auto disable heating
+  - Energy saving: Detect daytime lights, standby power
+  - Generate automation configs
+
+> 📖 **See [Complete Tools Reference](docs/TOOLS_REFERENCE.md) for detailed documentation**
 
 ### MCP Features
 
@@ -328,27 +358,57 @@ RATE_LIMIT_MAX=50
   - Automation and scene listings
   - Dashboard summaries with current home status
 
+- 🛠️ **24 Comprehensive Tools**: Full device control and smart automation
+  - See [Complete Tools Reference](docs/TOOLS_REFERENCE.md) for all available tools
+  - Device control, automation, system management, and smart features
+  - Natural language to Home Assistant API translation
+
 ---
 
 ## 🎯 Example Commands
 
 Once integrated, your AI assistant can understand commands like:
 
-> "Turn off all lights in the bedroom"
-> "Set the thermostat to 72°F"
-> "Activate the movie scene"
-> "What's the current temperature in the living room?"
-> "Notify everyone that dinner is ready"
-> "Play music on the living room speaker"
-> "Open the garage door"
-> "Lock all doors"
-> "Start the robot vacuum"
-> "Set the bedroom fan to 50%"
-> "Arm the alarm in away mode"
+**Device Control:**
+> "Turn off all lights in the bedroom"  
+> "Set the thermostat to 72°F"  
+> "Play music on the living room speaker"  
+> "Open the garage door"  
+> "Lock all doors"  
+> "Start the robot vacuum"  
+> "Set the bedroom fan to 50%"  
+
+**Automation & Scenes:**
+> "Activate the movie scene"  
+> "Trigger the morning routine automation"  
+> "Show me all my automations"  
+
+**Information & Monitoring:**
+> "What's the current temperature in the living room?"  
+> "Show me all unavailable devices"  
+> "Which lights are currently on?"  
+
+**Notifications:**
+> "Notify everyone that dinner is ready"  
+> "Send an alert to my phone"  
+
+**Smart Maintenance:**
+> "Check my Home Assistant health"  
+> "Find orphaned or unavailable devices"  
+> "Analyze my light usage patterns"  
+> "Show me my energy consumption"  
+> "Which devices have low battery?"  
+
+**Smart Scenarios:**
+> "I'm leaving home, activate away mode"  
+> "Are any windows open with heating on?"  
+> "Check for energy-wasting issues"  
+> "Turn off everything, I'm going on vacation"  
+> "What can I do to save energy?"  
 
 You can also use prompts for guided assistance:
-> "Help me set up a morning routine"
-> "Show me energy saving tips"
+> "Help me set up a morning routine"  
+> "Show me energy saving tips"  
 > "How do I control my media players?"
 
 ---

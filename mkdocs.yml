@@ -51,10 +51,15 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Features: FEATURE_SUMMARY.md
-  - Interactive Testing: INTERACTIVE_TEST_GUIDE.md
-  - Performance: PERFORMANCE_OPTIMIZATION.md
-  - Tool Fixes: TOOL_FIXES_SUMMARY.md
+  - Getting Started:
+      - Quick Start: QUICK_START_SCENARIOS.md
+  - Tools:
+      - Complete Reference: TOOLS_REFERENCE.md
+      - Smart Features: SMART_FEATURES.md
+  - Development:
+      - Implementation: IMPLEMENTATION_SUMMARY.md
+  - Additional Resources:
+      - Microphone Setup: MICROPHONE_PERMISSIONS.md
 
 plugins:
   - search
