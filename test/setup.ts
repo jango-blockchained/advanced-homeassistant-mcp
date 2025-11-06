@@ -14,7 +14,11 @@ const TEST_ENV = {
     SILENT_STARTUP: 'false',
     CORS_ORIGIN: '*',
     RATE_LIMIT_MAX_REQUESTS: '100',
-    RATE_LIMIT_MAX_AUTH_REQUESTS: '5'
+    RATE_LIMIT_MAX_AUTH_REQUESTS: '5',
+    HASS_HOST: 'http://localhost:8123',
+    HASS_TOKEN: 'test_token_for_testing',
+    HASS_SOCKET_URL: 'ws://localhost:8123/api/websocket',
+    JWT_SECRET: 'test_jwt_secret_key_min_32_chars_long_string'
 };
 
 beforeAll(() => {
