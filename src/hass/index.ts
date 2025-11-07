@@ -106,14 +106,60 @@ class HomeAssistantAPI {
       method: "POST",
       body: JSON.stringify(data),
     });
-    // Clear related states cache when services are called as they may change state
+    
+    // Smart cache invalidation: only clear affected entities
+    // Full state cache is only cleared if it's a domain-wide operation
+    if (service === 'reload' || service === 'turn_on' || service === 'turn_off') {
+      // For individual device changes, only invalidate specific domain caches
+      this.invalidateDomainCache(domain);
+    } else {
+      // For other services, clear all state caches to be safe
+      this.invalidateAllStateCache();
+    }
+  }
+
+  /**
+   * Invalidate cache entries for a specific domain
+   * E.g., 'light' domain invalidates all light.* entity caches
+   */
+  private invalidateDomainCache(domain: string): void {
+    // Remove full states cache
     this.cache.delete("states");
-    // Also clear individual state caches that might be affected
+    
+    // Remove only domain-specific entity caches
+    const keysToDelete: string[] = [];
     for (const key of this.cache.keys()) {
-      if (key.startsWith("state_")) {
-        this.cache.delete(key);
+      if (key.startsWith(`state_${domain}.`)) {
+        keysToDelete.push(key);
       }
     }
+    
+    for (const key of keysToDelete) {
+      this.cache.delete(key);
+    }
+    
+    logger.debug(`Invalidated cache for domain: ${domain} (${keysToDelete.length} entries)`);
+  }
+
+  /**
+   * Invalidate all state-related caches
+   * Used when full cache clear is necessary
+   */
+  private invalidateAllStateCache(): void {
+    this.cache.delete("states");
+    
+    const keysToDelete: string[] = [];
+    for (const key of this.cache.keys()) {
+      if (key.startsWith("state_")) {
+        keysToDelete.push(key);
+      }
+    }
+    
+    for (const key of keysToDelete) {
+      this.cache.delete(key);
+    }
+    
+    logger.debug(`Cleared all state cache (${keysToDelete.length} entries)`);
   }
 }
 

@@ -146,22 +146,37 @@ export class HomeAssistantWebSocketClient extends EventEmitter implements HassWe
     }
 
     subscribe(callback: (data: any) => void): () => void {
+        let subscriptionId: number | null = null;
+
         // Subscribe to all state changes
         this.send({
             type: 'subscribe_events',
             event_type: 'state_changed'
         }).then((result) => {
-            if (result.id) {
-                this.subscriptions.set(result.id, callback);
+            if (result && typeof result === 'object' && 'id' in result) {
+                subscriptionId = result.id as number;
+                this.subscriptions.set(subscriptionId, callback);
+                logger.debug(`WebSocket subscription created with ID: ${subscriptionId}`);
             }
         }).catch((error) => {
             logger.error('Failed to subscribe to events:', error);
         });
 
-        // Return unsubscribe function
+        // Return unsubscribe function that properly cleans up
         return () => {
-            // For now, we don't implement individual unsubscriptions
-            // In a full implementation, we'd track subscription IDs
+            if (subscriptionId !== null) {
+                this.send({
+                    type: 'unsubscribe_events',
+                    subscription: subscriptionId
+                }).then(() => {
+                    this.subscriptions.delete(subscriptionId!);
+                    logger.debug(`WebSocket subscription ${subscriptionId} removed`);
+                }).catch((error) => {
+                    logger.error(`Failed to unsubscribe from WebSocket events:`, error);
+                    // Manually clean up even if unsubscribe fails
+                    this.subscriptions.delete(subscriptionId!);
+                });
+            }
         };
     }
 

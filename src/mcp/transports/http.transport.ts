@@ -155,6 +155,7 @@ export class HttpTransport implements TransportLayer {
             res.setHeader('Content-Type', 'text/event-stream');
             res.setHeader('Cache-Control', 'no-cache');
             res.setHeader('Connection', 'keep-alive');
+            res.setHeader('X-Accel-Buffering', 'no'); // Disable proxy buffering
 
             // Store the client
             this.sseClients.set(clientId, { id: clientId, response: res });
@@ -162,12 +163,29 @@ export class HttpTransport implements TransportLayer {
             // Send initial connection established event
             res.write(`event: connected\ndata: ${JSON.stringify({ clientId })}\n\n`);
 
-            // Client disconnection handler
-            req.on('close', () => {
-                if (this.debug) {
-                    logger.debug(`SSE client disconnected: ${clientId}`);
+            // Client disconnection handler - cleanup when client closes connection
+            const cleanupClient = () => {
+                if (this.sseClients.has(clientId)) {
+                    try {
+                        res.end();
+                    } catch (err) {
+                        logger.debug(`Error ending SSE response: ${String(err)}`);
+                    }
+                    this.sseClients.delete(clientId);
+                    if (this.debug) {
+                        logger.debug(`SSE client cleaned up: ${clientId}`);
+                    }
                 }
-                this.sseClients.delete(clientId);
+            };
+
+            // Handle client disconnect
+            req.on('close', cleanupClient);
+            req.on('end', cleanupClient);
+
+            // Handle response errors
+            res.on('error', (err) => {
+                logger.error(`SSE response error for client ${clientId}:`, err);
+                cleanupClient();
             });
 
             if (this.debug) {

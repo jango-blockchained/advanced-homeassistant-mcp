@@ -18,10 +18,17 @@ export class TimelineExecutor {
   private playbackTimer: NodeJS.Timeout | null = null;
   private startTime: number = 0;
   private audioPlayer: LocalAudioPlayer | null = null;
+  
+  // Sliding window parameters to prevent unbounded queue growth
+  private readonly MAX_QUEUE_SIZE = 5000; // Max commands in memory
+  private readonly LOOKAHEAD_SECONDS = 2.0; // Queue commands 2 seconds ahead
+  private queueStartIndex: number = 0; // Track start of sliding window
+  private allCommands: ExecutionCommand[] = []; // All commands from timeline (sorted)
 
   constructor(hassCallService: (domain: string, service: string, data: Record<string, unknown>) => Promise<unknown>) {
     this.hassCallService = hassCallService;
     this.commandQueue = [];
+    this.allCommands = [];
     this.state = {
       state: 'idle',
       position: 0,
@@ -135,11 +142,12 @@ export class TimelineExecutor {
   }
 
   /**
-   * Queue all commands from timeline
+   * Queue commands from timeline using sliding window to prevent unbounded growth
+   * Instead of queuing all commands upfront, we load just-in-time with lookahead
    */
   private queueCommands(timeline: RenderTimeline, startPosition: number): void {
-    this.commandQueue = [];
-
+    // Store all commands sorted by timestamp (for random access)
+    this.allCommands = [];
     for (const track of timeline.tracks) {
       for (const command of track.commands) {
         // Skip commands before start position
@@ -155,14 +163,58 @@ export class TimelineExecutor {
           status: 'pending',
         };
 
-        this.commandQueue.push(executionCommand);
+        this.allCommands.push(executionCommand);
       }
     }
 
-    // Sort by scheduled time
-    this.commandQueue.sort((a, b) => a.scheduledTime - b.scheduledTime);
+    // Sort all commands by timestamp
+    this.allCommands.sort((a, b) => a.scheduledTime - b.scheduledTime);
 
+    // Initialize sliding window: load first batch of commands
+    this.queueStartIndex = 0;
+    this.updateSlidingWindow(startPosition);
+
+    // Report initial queue size
     this.state.queueStats.queued = this.commandQueue.length;
+  }
+
+  /**
+   * Update the sliding window of commands to execute
+   * Keeps only commands within LOOKAHEAD_SECONDS of current time in memory
+   */
+  private updateSlidingWindow(currentTime: number): void {
+    // Calculate window bounds
+    const windowStart = currentTime;
+    const windowEnd = currentTime + this.LOOKAHEAD_SECONDS;
+
+    // Find start index (commands that are still pending)
+    let startIdx = this.queueStartIndex;
+    while (startIdx < this.allCommands.length && 
+           this.allCommands[startIdx].scheduledTime < windowStart &&
+           this.allCommands[startIdx].status !== 'pending') {
+      startIdx++;
+    }
+
+    // Find end index (commands within lookahead window)
+    let endIdx = startIdx;
+    let commandCount = 0;
+    while (endIdx < this.allCommands.length &&
+           this.allCommands[endIdx].scheduledTime <= windowEnd &&
+           commandCount < this.MAX_QUEUE_SIZE) {
+      if (this.allCommands[endIdx].status === 'pending') {
+        commandCount++;
+      }
+      endIdx++;
+    }
+
+    // Extract window into commandQueue
+    this.commandQueue = this.allCommands.slice(startIdx, endIdx);
+    this.queueStartIndex = startIdx;
+
+    // Update stats
+    this.state.queueStats.queued = this.commandQueue.filter(
+      cmd => cmd.status === 'pending'
+    ).length;
   }
 
   /**
@@ -192,6 +244,11 @@ export class TimelineExecutor {
   private executeScheduledCommands(): void {
     const currentTime = (Date.now() - this.startTime) / 1000;
     this.state.position = currentTime;
+
+    // Update sliding window: load new commands if approaching end of current window
+    if (currentTime > (this.commandQueue[0]?.scheduledTime || 0) + this.LOOKAHEAD_SECONDS - 0.5) {
+      this.updateSlidingWindow(currentTime);
+    }
 
     // Find commands to execute (with lookahead window to prevent flooding)
     const commandsToExecute: ExecutionCommand[] = [];

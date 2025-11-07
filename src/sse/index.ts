@@ -301,6 +301,9 @@ export class SSEManager extends EventEmitter {
 
     logger.info(`Broadcasting state change for ${entity.entity_id}`);
 
+    // Serialize message once for all clients (performance optimization)
+    let serializedMessage: string | null = null;
+
     // Send to relevant subscribers only
     this.clients.forEach((client) => {
       if (!client.authenticated || this.isRateLimited(client)) return;
@@ -310,7 +313,11 @@ export class SSEManager extends EventEmitter {
         client.subscriptions.has(`domain:${domain}`) ||
         client.subscriptions.has("event:state_changed")
       ) {
-        this.sendToClient(client, message);
+        // Lazy-serialize message on first send
+        if (serializedMessage === null) {
+          serializedMessage = JSON.stringify(message);
+        }
+        this.sendToClientPreSerialized(client, serializedMessage);
       }
     });
   }
@@ -327,12 +334,19 @@ export class SSEManager extends EventEmitter {
 
     logger.info(`Broadcasting event: ${event.event_type}`);
 
+    // Serialize message once for all clients (performance optimization)
+    let serializedMessage: string | null = null;
+
     // Send to relevant subscribers only
     this.clients.forEach((client) => {
       if (!client.authenticated || this.isRateLimited(client)) return;
 
       if (client.subscriptions.has(`event:${event.event_type}`)) {
-        this.sendToClient(client, message);
+        // Lazy-serialize message on first send
+        if (serializedMessage === null) {
+          serializedMessage = JSON.stringify(message);
+        }
+        this.sendToClientPreSerialized(client, serializedMessage);
       }
     });
   }
@@ -383,6 +397,22 @@ export class SSEManager extends EventEmitter {
       totalClients: this.clients.size,
       authenticatedClients: authenticatedCount,
     };
+  }
+
+  /**
+   * Send pre-serialized data to client (optimization to avoid multiple JSON.stringify calls)
+   */
+  private sendToClientPreSerialized(client: SSEClient, serializedData: string): void {
+    try {
+      logger.info(`Attempting to send data to client ${client.id}`);
+      client.send(serializedData);
+      this.updateRateLimit(client);
+    } catch (error) {
+      logger.error(`Failed to send data to client ${client.id}:`, error);
+      logger.info(`Removing client ${client.id} due to send error`);
+      this.removeClient(client.id);
+      logger.info(`Client count after removal: ${this.clients.size}`);
+    }
   }
 
   private sendToClient(client: SSEClient, data: any): void {

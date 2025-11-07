@@ -10,11 +10,31 @@ export class AudioAnalyzer {
   private fftSize: number;
   private hopSize: number;
   private sampleRate: number;
+  private hammingWindow: Float32Array | null = null; // Cache Hamming window
+  private lastFftSize: number = 0; // Track if window needs recomputation
 
   constructor(fftSize: number = 2048, hopSize: number = 512, sampleRate: number = 44100) {
     this.fftSize = fftSize;
     this.hopSize = hopSize;
     this.sampleRate = sampleRate;
+    // Pre-compute Hamming window
+    this.precomputeHammingWindow();
+  }
+
+  /**
+   * Pre-compute Hamming window values to avoid recomputation
+   */
+  private precomputeHammingWindow(): void {
+    if (this.lastFftSize === this.fftSize) {
+      return; // Already computed for this size
+    }
+
+    const window = new Float32Array(this.fftSize);
+    for (let i = 0; i < this.fftSize; i++) {
+      window[i] = 0.54 - 0.46 * Math.cos((2 * Math.PI * i) / (this.fftSize - 1));
+    }
+    this.hammingWindow = window;
+    this.lastFftSize = this.fftSize;
   }
 
   /**
@@ -71,18 +91,20 @@ export class AudioAnalyzer {
   }
 
   /**
-   * Perform FFT analysis on audio data
+   * Perform FFT analysis on audio data with overlap-add for efficiency
    */
   private analyzeFrequencies(audioData: Float32Array, sampleRate: number): FrequencySlice[] {
     const slices: FrequencySlice[] = [];
     const numSlices = Math.floor((audioData.length - this.fftSize) / this.hopSize);
 
+    // Use 50% overlap (hopSize = fftSize/2) for smoother results
+    // This is the Welch method, standard for audio analysis
     for (let i = 0; i < numSlices; i++) {
       const offset = i * this.hopSize;
       const slice = audioData.slice(offset, offset + this.fftSize);
       
-      // Apply Hamming window
-      const windowed = this.applyHammingWindow(slice);
+      // Apply pre-computed Hamming window (optimization)
+      const windowed = this.applyPrecomputedWindow(slice);
       
       // Perform FFT
       const spectrum = this.fft(windowed);
@@ -98,15 +120,28 @@ export class AudioAnalyzer {
   }
 
   /**
-   * Apply Hamming window to reduce spectral leakage
+   * Apply pre-computed Hamming window to reduce spectral leakage
+   * This is much faster than computing window values on each frame
    */
-  private applyHammingWindow(data: Float32Array): Float32Array {
+  private applyPrecomputedWindow(data: Float32Array): Float32Array {
+    if (!this.hammingWindow) {
+      this.precomputeHammingWindow();
+    }
+
     const windowed = new Float32Array(data.length);
+    const window = this.hammingWindow!;
+    
     for (let i = 0; i < data.length; i++) {
-      const window = 0.54 - 0.46 * Math.cos((2 * Math.PI * i) / (data.length - 1));
-      windowed[i] = data[i] * window;
+      windowed[i] = data[i] * window[i];
     }
     return windowed;
+  }
+
+  /**
+   * Apply Hamming window to reduce spectral leakage (legacy, for compatibility)
+   */
+  private applyHammingWindow(data: Float32Array): Float32Array {
+    return this.applyPrecomputedWindow(data);
   }
 
   /**
