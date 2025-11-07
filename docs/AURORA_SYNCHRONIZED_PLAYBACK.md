@@ -291,5 +291,5 @@ const playback = await aurora_play_timeline({
 ## See Also
 
 - [Aurora Architecture](AURORA_ARCHITECTURE.md)
-- [Device Profiling Guide](AURORA_DEVICE_PROFILING.md)
-- [Timeline Rendering](AURORA_TIMELINE_RENDERING.md)
+- [Aurora Concept](AURORA_CONCEPT.md)
+- [Aurora Sound Sources](AURORA_SOUND_SOURCES.md)

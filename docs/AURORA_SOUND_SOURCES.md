@@ -373,7 +373,7 @@ Integrate with Home Assistant media players for automatic sync.
 - [Aurora Architecture](./AURORA_ARCHITECTURE.md)
 - [Aurora Concept](./AURORA_CONCEPT.md)
 - [Aurora Phase 2 Complete](./AURORA_PHASE2_COMPLETE.md)
-- [Main README](../README.md)
+- [Getting Started](./GETTING_STARTED.md)
 
 ---
 
