@@ -759,8 +759,8 @@ sudo iptables -A OUTPUT -p tcp --sport 4000 -j DROP
 **Please DO NOT** create a public issue.
 
 Instead:
-1. Email: security@example.com (if available)
-2. Use GitHub Security Advisories
+1. Use GitHub Security Advisories (preferred)
+2. Create a private security advisory in the repository
 3. Provide details:
    - Vulnerability description
    - Steps to reproduce
