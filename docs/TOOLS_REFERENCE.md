@@ -767,7 +767,7 @@ All tools follow consistent error handling:
 
 - [Smart Features Documentation](./SMART_FEATURES.md)
 - [Quick Start Guide](./QUICK_START_SCENARIOS.md)
-- [API Documentation](./API.md)
+- [Implementation Summary](./IMPLEMENTATION_SUMMARY.md)
 - [Home Assistant Docs](https://www.home-assistant.io/docs/)
 
 ---

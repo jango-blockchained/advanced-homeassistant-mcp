@@ -11,14 +11,7 @@ Your gateway to mastering AI-powered smart home control through the Model Contex
 
 ## 🚀 Quick Links
 
-- **[README](../README.md)** - Project overview and quick start
-- **[Complete Tools Reference](./TOOLS_REFERENCE.md)** - All 24 available tools
-- **[Smart Features Guide](./SMART_FEATURES.md)** - Maintenance & Smart Scenarios
-- **[Quick Start Scenarios](./QUICK_START_SCENARIOS.md)** - AI assistant usage examples
-
-## 🚀 Quick Links
-
-- **[README](../README.md)** - Project overview and quick start
+- **[Getting Started](./GETTING_STARTED.md)** - Project overview and quick start
 - **[Complete Tools Reference](./TOOLS_REFERENCE.md)** - All 24 available tools
 - **[Smart Features Guide](./SMART_FEATURES.md)** - Maintenance & Smart Scenarios
 - **[Quick Start Scenarios](./QUICK_START_SCENARIOS.md)** - AI assistant usage examples
@@ -28,9 +21,9 @@ Your gateway to mastering AI-powered smart home control through the Model Contex
 ## 📖 Documentation Structure
 
 ### Getting Started
-- **[Installation](../README.md#-installation)** - Multiple installation methods
-- **[Configuration](../README.md#-configuration)** - Environment setup
-- **[Quick Start](../README.md#-quick-start)** - Get running in minutes
+- **[Installation](./INSTALLATION.md)** - Multiple installation methods
+- **[Configuration](./CONFIGURATION.md)** - Environment setup
+- **[Quick Start](./GETTING_STARTED.md)** - Get running in minutes
 
 ### Core Features
 
@@ -80,39 +73,37 @@ Intelligent automation detection and management:
 
 ### For Users
 - **[Quick Start Scenarios](./QUICK_START_SCENARIOS.md)** - Conversational examples with AI
-- **[Example Commands](../README.md#-example-commands)** - Natural language queries
+- **[Real-World Examples](./EXAMPLES.md)** - Natural language queries
 
 ### For Developers
 - **[Tools Reference](./TOOLS_REFERENCE.md)** - Complete API documentation
 - **[Implementation Details](./IMPLEMENTATION_SUMMARY.md)** - Technical overview
-- **[Architecture](../README.md#️-architecture)** - System design
+- **[Architecture](./ARCHITECTURE.md)** - System design
 
 ---
 
 ## 🔧 Advanced Topics
 
 ### Deployment
-- **[Smithery Deployment](../README.md#option-1-npx-easiest)** - One-click install
-- **[Docker Deployment](../README.md#option-3-local-installation)** - Container setup
-- **[Manual Installation](../README.md#option-4-from-source-most-flexible)** - From source
+- **[Smithery Deployment](./SMITHERY_DEPLOYMENT.md)** - One-click install
+- **[Installation Guide](./INSTALLATION.md)** - All installation methods
+- **[Configuration](./CONFIGURATION.md)** - Setup and customization
 
 ### Integration
-- **[Claude Desktop](../README.md#claude-desktop)** - MCP client setup
-- **[Cursor](../README.md#cursor)** - IDE integration
-- **[VS Code](../README.md#vs-code--claude-extension)** - Editor integration
+- **[Getting Started](./GETTING_STARTED.md)** - MCP client setup
+- **[Installation](./INSTALLATION.md)** - IDE integration options
 
 ### Security
-- **[Rate Limiting](../README.md#️-enterprise-grade-security)** - Protection features
-- **[Authentication](../README.md#️-enterprise-grade-security)** - JWT tokens
-- **[Input Sanitization](../README.md#️-enterprise-grade-security)** - XSS prevention
+- **[Security Guide](./SECURITY.md)** - Complete security documentation
+- **[Configuration](./CONFIGURATION.md)** - Security settings
 
 ---
 
 ## 🎓 Tutorials & Guides
 
 ### Beginner
-1. [Quick Start Guide](../README.md#-quick-start) - Get started in 5 minutes
-2. [Basic Commands](../README.md#-example-commands) - Common operations
+1. [Quick Start Guide](./GETTING_STARTED.md) - Get started in 5 minutes
+2. [Basic Commands](./EXAMPLES.md) - Common operations
 3. [Using with AI](./QUICK_START_SCENARIOS.md) - AI assistant examples
 
 ### Intermediate
@@ -178,7 +169,7 @@ AI-powered maintenance and scenario detection.
 ### Documentation
 - 📖 [Complete Tools Reference](./TOOLS_REFERENCE.md)
 - 🚀 [Quick Start Guide](./QUICK_START_SCENARIOS.md)
-- 🏗️ [Architecture Overview](../README.md#️-architecture)
+- 🏗️ [Architecture Overview](./ARCHITECTURE.md)
 
 ### Community
 - 💬 [GitHub Discussions](https://github.com/jango-blockchained/homeassistant-mcp/discussions)
@@ -196,7 +187,7 @@ AI-powered maintenance and scenario detection.
 
 | Category | Documentation |
 |----------|--------------|
-| 🎬 Getting Started | [README](../README.md) |
+| 🎬 Getting Started | [Getting Started](./GETTING_STARTED.md) |
 | 🛠️ All Tools | [Tools Reference](./TOOLS_REFERENCE.md) |
 | 🧠 Smart Features | [Smart Features](./SMART_FEATURES.md) |
 | 💬 Usage Examples | [Quick Start](./QUICK_START_SCENARIOS.md) |
@@ -204,9 +195,7 @@ AI-powered maintenance and scenario detection.
 
 ---
 
----
-
-**Ready to get started?** Begin with the [Quick Start Guide](../README.md#-quick-start)!
+**Ready to get started?** Begin with the [Quick Start Guide](./GETTING_STARTED.md)!
 
 **Need help?** Check out our [Quick Start Scenarios](./QUICK_START_SCENARIOS.md) for AI assistant examples.
 
