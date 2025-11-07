@@ -7,188 +7,205 @@
 
 > **Complete documentation hub for Home Assistant MCP Server** 📖
 
-Your gateway to mastering AI-powered smart home control through the Model Context Protocol.
+Your comprehensive guide to mastering AI-powered smart home control through the Model Context Protocol.
 
-## 🚀 Quick Links
+## 🎯 Quick Start Paths
 
-- **[README](../README.md)** - Project overview and quick start
-- **[Complete Tools Reference](./TOOLS_REFERENCE.md)** - All 24 available tools
-- **[Smart Features Guide](./SMART_FEATURES.md)** - Maintenance & Smart Scenarios
-- **[Quick Start Scenarios](./QUICK_START_SCENARIOS.md)** - AI assistant usage examples
+### 👤 For End Users
 
-## 🚀 Quick Links
+**New to Home Assistant MCP?**
+1. **[Getting Started Guide](GETTING_STARTED.md)** - Learn what it is and get running in minutes
+2. **[Installation](INSTALLATION.md)** - Choose your installation method
+3. **[Quick Start Scenarios](QUICK_START_SCENARIOS.md)** - See it in action with examples
+4. **[Examples](EXAMPLES.md)** - Real-world usage patterns
 
-- **[README](../README.md)** - Project overview and quick start
-- **[Complete Tools Reference](./TOOLS_REFERENCE.md)** - All 24 available tools
-- **[Smart Features Guide](./SMART_FEATURES.md)** - Maintenance & Smart Scenarios
-- **[Quick Start Scenarios](./QUICK_START_SCENARIOS.md)** - AI assistant usage examples
+**Want to learn more?**
+5. **[Tools Reference](TOOLS_REFERENCE.md)** - Explore all 24 available commands
+6. **[Smart Features](SMART_FEATURES.md)** - Advanced automation and maintenance
+7. **[Configuration](CONFIGURATION.md)** - Fine-tune your setup
+8. **[FAQ](FAQ.md)** - Find answers to common questions
 
----
+**Having issues?**
+- **[Troubleshooting](TROUBLESHOOTING.md)** - Solve common problems
+- **[FAQ](FAQ.md)** - Check frequently asked questions
 
-## 📖 Documentation Structure
+### 🔧 For Developers
 
-### Getting Started
-- **[Installation](../README.md#-installation)** - Multiple installation methods
-- **[Configuration](../README.md#-configuration)** - Environment setup
-- **[Quick Start](../README.md#-quick-start)** - Get running in minutes
+**Want to contribute?**
+1. **[Architecture](ARCHITECTURE.md)** - Understand the system design
+2. **[Development](DEVELOPMENT.md)** - Set up your dev environment
+3. **[Contributing](CONTRIBUTING.md)** - Learn the contribution process
 
-### Core Features
+**Reference materials:**
+- **[Implementation Summary](IMPLEMENTATION_SUMMARY.md)** - Technical overview
+- **[README](../README.md)** - Project overview
 
-#### Device Control
-All tools for controlling your smart home devices:
-- **[Lights Control](./TOOLS_REFERENCE.md#-lights-control-lights_control)** - Full lighting management
-- **[Climate Control](./TOOLS_REFERENCE.md#️-climate-control-climate_control)** - HVAC and thermostats
-- **[Media Players](./TOOLS_REFERENCE.md#-media-player-control-media_player_control)** - Audio/video control
-- **[Covers](./TOOLS_REFERENCE.md#-cover-control-cover_control)** - Blinds, curtains, garage doors
-- **[Locks](./TOOLS_REFERENCE.md#-lock-control-lock_control)** - Smart lock control
-- **[Fans](./TOOLS_REFERENCE.md#-fan-control-fan_control)** - Fan speed and oscillation
-- **[Vacuums](./TOOLS_REFERENCE.md#-vacuum-control-vacuum_control)** - Robot vacuum control
-- **[Alarms](./TOOLS_REFERENCE.md#-alarm-control-alarm_control)** - Security systems
+### 🔐 For System Administrators
 
-#### Automation
-- **[Automation Management](./TOOLS_REFERENCE.md#️-automation-management-automation)** - List, toggle, trigger
-- **[Scene Management](./TOOLS_REFERENCE.md#-scene-management-scene)** - Activate scenes
-- **[Automation Config](./TOOLS_REFERENCE.md#-automation-config-automation_config)** - Create/update automations
+**Deploying in production?**
+1. **[Installation](INSTALLATION.md)** - Production deployment methods
+2. **[Configuration](CONFIGURATION.md)** - Production configuration
+3. **[Security](SECURITY.md)** - Secure your deployment
+4. **[Smithery Deployment](SMITHERY_DEPLOYMENT.md)** - Cloud deployment
 
-#### System Management
-- **[Device Discovery](./TOOLS_REFERENCE.md#-device-discovery-list_devices)** - List and filter devices
-- **[Notifications](./TOOLS_REFERENCE.md#-notifications-notify)** - Send alerts
-- **[History](./TOOLS_REFERENCE.md#-history-get_history)** - Query historical data
-- **[Add-on Management](./TOOLS_REFERENCE.md#-add-on-management-addon)** - Control add-ons
-- **[Package Management](./TOOLS_REFERENCE.md#-package-management-package)** - HACS integration
-
-### Smart Features 🆕
-
-#### Maintenance Tool
-Spook-like features for system health and cleanup:
-- **[Find Orphaned Devices](./SMART_FEATURES.md#1-find_orphaned_devices)** - Detect unavailable devices
-- **[Analyze Light Usage](./SMART_FEATURES.md#2-analyze_light_usage)** - Usage patterns by room
-- **[Energy Consumption](./SMART_FEATURES.md#3-analyze_energy_consumption)** - Monitor power usage
-- **[Device Health Check](./SMART_FEATURES.md#5-device_health_check)** - Comprehensive health scan
-- **[Find Unavailable Entities](./SMART_FEATURES.md#4-find_unavailable_entities)** - List problematic entities
-
-#### Smart Scenarios Tool
-Intelligent automation detection and management:
-- **[Nobody Home Detection](./SMART_FEATURES.md#nobody-home-detection)** - Auto turn off & reduce climate
-- **[Window/Heating Conflicts](./SMART_FEATURES.md#windowheating-conflicts)** - Auto disable heating
-- **[Energy Saving](./SMART_FEATURES.md#energy-saving-detection)** - Detect waste opportunities
-- **[Scenario Detection](./QUICK_START_SCENARIOS.md#smart-scenarios-examples)** - All-in-one analysis
+**Monitoring and maintenance:**
+- **[Troubleshooting](TROUBLESHOOTING.md)** - Debug production issues
+- **[FAQ](FAQ.md)** - Common operational questions
 
 ---
 
-## 💡 Usage Examples
+## 📖 Complete Documentation Index
 
-### For Users
-- **[Quick Start Scenarios](./QUICK_START_SCENARIOS.md)** - Conversational examples with AI
-- **[Example Commands](../README.md#-example-commands)** - Natural language queries
+### 🎓 Getting Started (For Beginners)
 
-### For Developers
-- **[Tools Reference](./TOOLS_REFERENCE.md)** - Complete API documentation
-- **[Implementation Details](./IMPLEMENTATION_SUMMARY.md)** - Technical overview
-- **[Architecture](../README.md#️-architecture)** - System design
+Perfect for new users who want to quickly get up and running:
 
----
+| Guide | Description | Est. Time |
+|-------|-------------|-----------|
+| **[Getting Started](GETTING_STARTED.md)** | Complete beginner's guide with step-by-step setup | 15 min |
+| **[Installation](INSTALLATION.md)** | All installation methods (Smithery, NPX, Docker, Source) | 10 min |
+| **[Configuration](CONFIGURATION.md)** | Environment variables and settings reference | 20 min |
+| **[Quick Start Scenarios](QUICK_START_SCENARIOS.md)** | Conversational examples with your AI assistant | 10 min |
+| **[Troubleshooting](TROUBLESHOOTING.md)** | Common issues and detailed solutions | As needed |
+| **[FAQ](FAQ.md)** | Frequently asked questions with quick answers | As needed |
 
-## 🔧 Advanced Topics
+### 📘 User Guide (For Regular Users)
 
-### Deployment
-- **[Smithery Deployment](../README.md#option-1-npx-easiest)** - One-click install
-- **[Docker Deployment](../README.md#option-3-local-installation)** - Container setup
-- **[Manual Installation](../README.md#option-4-from-source-most-flexible)** - From source
+Comprehensive guides for using all features:
 
-### Integration
-- **[Claude Desktop](../README.md#claude-desktop)** - MCP client setup
-- **[Cursor](../README.md#cursor)** - IDE integration
-- **[VS Code](../README.md#vs-code--claude-extension)** - Editor integration
+| Guide | Description |
+|-------|-------------|
+| **[Tools Reference](TOOLS_REFERENCE.md)** | Complete documentation of all 24 tools with examples |
+| **[Smart Features](SMART_FEATURES.md)** | Maintenance and intelligent scenario detection |
+| **[Examples](EXAMPLES.md)** | Real-world usage patterns and automation ideas |
+| **[Smithery Deployment](SMITHERY_DEPLOYMENT.md)** | Deploy via Smithery registry |
 
-### Security
-- **[Rate Limiting](../README.md#️-enterprise-grade-security)** - Protection features
-- **[Authentication](../README.md#️-enterprise-grade-security)** - JWT tokens
-- **[Input Sanitization](../README.md#️-enterprise-grade-security)** - XSS prevention
+### 🔧 Developer Guide (For Contributors)
 
----
+Technical documentation for developers and contributors:
 
-## 🎓 Tutorials & Guides
+| Guide | Description |
+|-------|-------------|
+| **[Architecture](ARCHITECTURE.md)** | System design, components, and data flow |
+| **[Development](DEVELOPMENT.md)** | Development setup, building, testing, debugging |
+| **[Contributing](CONTRIBUTING.md)** | How to contribute code and documentation |
+| **[Implementation Summary](IMPLEMENTATION_SUMMARY.md)** | Technical implementation details |
 
-### Beginner
-1. [Quick Start Guide](../README.md#-quick-start) - Get started in 5 minutes
-2. [Basic Commands](../README.md#-example-commands) - Common operations
-3. [Using with AI](./QUICK_START_SCENARIOS.md) - AI assistant examples
+### 🔐 Operations & Security
 
-### Intermediate
-1. [Device Control Patterns](./TOOLS_REFERENCE.md#usage-patterns) - Best practices
-2. [Automation Creation](./TOOLS_REFERENCE.md#-automation-config-automation_config) - Building automations
-3. [Scene Management](./TOOLS_REFERENCE.md#-scene-management-scene) - Organizing scenes
+Guides for system administrators and security-conscious users:
 
-### Advanced
-1. [Smart Scenarios](./SMART_FEATURES.md) - Intelligent automation
-2. [Maintenance Tasks](./SMART_FEATURES.md#maintenance-tool) - System optimization
-3. [Custom Integrations](./IMPLEMENTATION_SUMMARY.md) - Extending functionality
+| Guide | Description |
+|-------|-------------|
+| **[Security](SECURITY.md)** | Security best practices and hardening guide |
+| **[Microphone Permissions](MICROPHONE_PERMISSIONS.md)** | Voice control setup and permissions |
 
 ---
 
-## 📊 Tool Categories
+## 🎯 Quick Navigation by Task
+
+### Installing & Configuring
+
+- **First time setup** → [Getting Started](GETTING_STARTED.md)
+- **Choose installation method** → [Installation](INSTALLATION.md)
+- **Configure settings** → [Configuration](CONFIGURATION.md)
+- **Deploy to cloud** → [Smithery Deployment](SMITHERY_DEPLOYMENT.md)
+
+### Using the System
+
+- **Basic commands** → [Getting Started: Basic Usage](GETTING_STARTED.md#basic-usage)
+- **All available tools** → [Tools Reference](TOOLS_REFERENCE.md)
+- **Advanced features** → [Smart Features](SMART_FEATURES.md)
+- **Real-world examples** → [Examples](EXAMPLES.md)
+- **Quick scenarios** → [Quick Start Scenarios](QUICK_START_SCENARIOS.md)
+
+### Troubleshooting
+
+- **Common problems** → [Troubleshooting Guide](TROUBLESHOOTING.md)
+- **Quick answers** → [FAQ](FAQ.md)
+- **Installation issues** → [Troubleshooting: Installation](TROUBLESHOOTING.md#installation-issues)
+- **Connection problems** → [Troubleshooting: Connection](TROUBLESHOOTING.md#connection-problems)
+- **Authentication errors** → [Troubleshooting: Authentication](TROUBLESHOOTING.md#authentication-errors)
+
+### Contributing to the Project
+
+- **Getting started** → [Contributing Guide](CONTRIBUTING.md)
+- **Development setup** → [Development: Setup](DEVELOPMENT.md#development-setup)
+- **System architecture** → [Architecture](ARCHITECTURE.md)
+- **Code style** → [Development: Code Style](DEVELOPMENT.md#code-style)
+- **Testing** → [Development: Testing](DEVELOPMENT.md#testing)
+
+### Security & Operations
+
+- **Security setup** → [Security Guide](SECURITY.md)
+- **Production config** → [Configuration: Production](CONFIGURATION.md#production-configuration)
+- **Monitoring** → [Security: Monitoring](SECURITY.md#monitoring--auditing)
+
+---
+
+## 📊 Complete Tool Coverage
+
+All 24 tools are fully documented with examples, parameters, and use cases.
 
 ### Device Control (13 tools)
-Control all your smart home devices through unified interfaces.
-→ [See all Device Control tools](./TOOLS_REFERENCE.md#device-control-tools)
+
+| Tool | Description | Documentation |
+|------|-------------|---------------|
+| 🔦 **Lights** | Control brightness, color, temperature, effects | [Reference](TOOLS_REFERENCE.md#-lights-control-lights_control) |
+| 🌡️ **Climate** | Thermostats, HVAC modes, temperature control | [Reference](TOOLS_REFERENCE.md#️-climate-control-climate_control) |
+| 📺 **Media Players** | Playback, volume, sources, sound modes | [Reference](TOOLS_REFERENCE.md#-media-player-control-media_player_control) |
+| 🪟 **Covers** | Blinds, curtains, garage doors, position control | [Reference](TOOLS_REFERENCE.md#-cover-control-cover_control) |
+| 🔒 **Locks** | Lock/unlock with code support | [Reference](TOOLS_REFERENCE.md#-lock-control-lock_control) |
+| 💨 **Fans** | Speed, oscillation, direction, presets | [Reference](TOOLS_REFERENCE.md#-fan-control-fan_control) |
+| 🤖 **Vacuums** | Cleaning, docking, spot clean, fan speed | [Reference](TOOLS_REFERENCE.md#-vacuum-control-vacuum_control) |
+| 🚨 **Alarms** | Arm/disarm modes, security management | [Reference](TOOLS_REFERENCE.md#-alarm-control-alarm_control) |
+| 🎛️ **Generic Control** | Universal device control interface | [Reference](TOOLS_REFERENCE.md#-generic-control-control) |
 
 ### Automation (3 tools)
-Manage scenes, automations, and complex workflows.
-→ [See all Automation tools](./TOOLS_REFERENCE.md#automation-tools)
+
+| Tool | Description | Documentation |
+|------|-------------|---------------|
+| ⚙️ **Automations** | List, toggle, trigger automations | [Reference](TOOLS_REFERENCE.md#️-automation-management-automation) |
+| 🎬 **Scenes** | Activate predefined scenes | [Reference](TOOLS_REFERENCE.md#-scene-management-scene) |
+| 🔧 **Automation Config** | Create/update/delete complex automations | [Reference](TOOLS_REFERENCE.md#-automation-config-automation_config) |
 
 ### System Management (6 tools)
-Device discovery, notifications, history, and package management.
-→ [See all System Management tools](./TOOLS_REFERENCE.md#system-management-tools)
+
+| Tool | Description | Documentation |
+|------|-------------|---------------|
+| 📋 **Device Discovery** | List and filter devices by domain/area | [Reference](TOOLS_REFERENCE.md#-device-discovery-list_devices) |
+| 📱 **Notifications** | Multi-channel alert system | [Reference](TOOLS_REFERENCE.md#-notifications-notify) |
+| 📊 **History** | Query historical state data | [Reference](TOOLS_REFERENCE.md#-history-get_history) |
+| 📦 **Add-on Management** | Install, configure, control add-ons | [Reference](TOOLS_REFERENCE.md#-add-on-management-addon) |
+| 📦 **Package Management** | HACS integration and custom components | [Reference](TOOLS_REFERENCE.md#-package-management-package) |
+| 🔔 **Event Subscription** | Real-time SSE event streaming | [Reference](TOOLS_REFERENCE.md#-event-subscription-subscribe_events) |
 
 ### Smart Features (2 tools)
-AI-powered maintenance and scenario detection.
-→ [See all Smart Feature tools](./TOOLS_REFERENCE.md#smart-features-tools)
 
-**Total: 24 Tools** - See [Complete Reference](./TOOLS_REFERENCE.md)
+| Tool | Description | Documentation |
+|------|-------------|---------------|
+| 🔧 **Maintenance** | Find orphaned devices, analyze usage, energy monitoring | [Reference](SMART_FEATURES.md#maintenance-tool) |
+| 🧠 **Smart Scenarios** | Nobody home, window/heating conflicts, energy saving | [Reference](SMART_FEATURES.md#smart-scenarios-tool) |
 
----
-
-## 🔍 Find What You Need
-
-### By Task
-- **Control Devices** → [Device Control Tools](./TOOLS_REFERENCE.md#device-control-tools)
-- **Create Automations** → [Automation Tools](./TOOLS_REFERENCE.md#automation-tools)
-- **System Health** → [Maintenance Tool](./SMART_FEATURES.md#maintenance-tool)
-- **Energy Saving** → [Smart Scenarios](./SMART_FEATURES.md#smart-scenarios-tool)
-- **Get Notified** → [Notifications](./TOOLS_REFERENCE.md#-notifications-notify)
-
-### By Device Type
-- **Lights** → [Lights Control](./TOOLS_REFERENCE.md#-lights-control-lights_control)
-- **Thermostats** → [Climate Control](./TOOLS_REFERENCE.md#️-climate-control-climate_control)
-- **Entertainment** → [Media Players](./TOOLS_REFERENCE.md#-media-player-control-media_player_control)
-- **Security** → [Locks](./TOOLS_REFERENCE.md#-lock-control-lock_control) & [Alarms](./TOOLS_REFERENCE.md#-alarm-control-alarm_control)
-- **Cleaning** → [Vacuums](./TOOLS_REFERENCE.md#-vacuum-control-vacuum_control)
-
-### By Use Case
-- **Leaving Home** → [Nobody Home Scenario](./SMART_FEATURES.md#nobody-home-detection)
-- **Saving Energy** → [Energy Analysis](./SMART_FEATURES.md#energy-saving-detection)
-- **Troubleshooting** → [Device Health Check](./SMART_FEATURES.md#device-health-check)
-- **Media Control** → [Media Player Control](./TOOLS_REFERENCE.md#-media-player-control-media_player_control)
+→ **[View Complete Tools Reference](TOOLS_REFERENCE.md)** for detailed documentation
 
 ---
 
 ## 🆘 Support & Resources
 
-### Documentation
-- 📖 [Complete Tools Reference](./TOOLS_REFERENCE.md)
-- 🚀 [Quick Start Guide](./QUICK_START_SCENARIOS.md)
-- 🏗️ [Architecture Overview](../README.md#️-architecture)
+### Get Help
 
-### Community
-- 💬 [GitHub Discussions](https://github.com/jango-blockchained/homeassistant-mcp/discussions)
-- 🐛 [Issue Tracker](https://github.com/jango-blockchained/homeassistant-mcp/issues)
-- ⭐ [GitHub Repository](https://github.com/jango-blockchained/homeassistant-mcp)
+- 💬 **[GitHub Discussions](https://github.com/jango-blockchained/advanced-homeassistant-mcp/discussions)** - Ask questions and get community help
+- 🐛 **[Issue Tracker](https://github.com/jango-blockchained/advanced-homeassistant-mcp/issues)** - Report bugs and request features
+- 📖 **[FAQ](FAQ.md)** - Frequently asked questions
+- 🔧 **[Troubleshooting](TROUBLESHOOTING.md)** - Solve common problems
 
 ### External Resources
-- 🏠 [Home Assistant Docs](https://www.home-assistant.io/docs/)
-- 🤖 [Model Context Protocol](https://modelcontextprotocol.io/)
-- 📦 [Smithery.ai](https://smithery.ai)
+
+- 🏠 **[Home Assistant Documentation](https://www.home-assistant.io/docs/)** - Official HA docs
+- 🤖 **[Model Context Protocol](https://modelcontextprotocol.io/)** - MCP specification
+- 📦 **[Smithery.ai](https://smithery.ai)** - MCP server registry
+- ⭐ **[GitHub Repository](https://github.com/jango-blockchained/advanced-homeassistant-mcp)** - Source code
 
 ---
 

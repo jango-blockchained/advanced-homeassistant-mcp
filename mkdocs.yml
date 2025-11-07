@@ -52,13 +52,24 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started:
-      - Quick Start: QUICK_START_SCENARIOS.md
-  - Tools:
-      - Complete Reference: TOOLS_REFERENCE.md
+      - Getting Started Guide: GETTING_STARTED.md
+      - Installation: INSTALLATION.md
+      - Configuration: CONFIGURATION.md
+      - Quick Start Scenarios: QUICK_START_SCENARIOS.md
+      - Troubleshooting: TROUBLESHOOTING.md
+      - FAQ: FAQ.md
+  - User Guide:
+      - Complete Tools Reference: TOOLS_REFERENCE.md
       - Smart Features: SMART_FEATURES.md
-  - Development:
-      - Implementation: IMPLEMENTATION_SUMMARY.md
-  - Additional Resources:
+      - Real-World Examples: EXAMPLES.md
+      - Smithery Deployment: SMITHERY_DEPLOYMENT.md
+  - Developer Guide:
+      - Architecture: ARCHITECTURE.md
+      - Development Setup: DEVELOPMENT.md
+      - Contributing: CONTRIBUTING.md
+      - Implementation Summary: IMPLEMENTATION_SUMMARY.md
+  - Operations & Security:
+      - Security Guide: SECURITY.md
       - Microphone Setup: MICROPHONE_PERMISSIONS.md
 
 plugins:
