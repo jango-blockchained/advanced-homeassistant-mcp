@@ -89,7 +89,7 @@ export class TimelineGenerator {
   }
 
   /**
-   * Generate commands for a single device
+   * Generate commands for a single device with optimized parameters
    */
   private async generateDeviceTrack(
     device: LightDevice,
@@ -113,6 +113,11 @@ export class TimelineGenerator {
       ? settings.zoneSettings[device.area]
       : undefined;
 
+    // Use optimized transition times from profile if available
+    const transitionTime = profile 
+      ? Math.min(profile.maxTransitionMs, settings.minCommandInterval) / 1000
+      : settings.minCommandInterval / 1000;
+
     // Generate commands based on frequency data
     let lastCommandTime = -settings.minCommandInterval / 1000;
 
@@ -125,17 +130,26 @@ export class TimelineGenerator {
       // Check if this timestamp is a beat
       const isBeat = this.mapper.isBeat(slice.timestamp, audioFeatures.beats);
 
-      // Generate command parameters
-      const params = this.mapper.generateCommand(device, slice, isBeat, zoneSettings);
+      // Generate command parameters optimized for device capabilities
+      const params = this.generateOptimizedCommand(
+        device,
+        slice,
+        isBeat,
+        zoneSettings,
+        profile,
+        transitionTime
+      );
 
-      // Determine command type
+      // Determine command type based on capabilities and parameters
       let commandType: TimedCommand['type'] = 'turn_on';
       
-      if (params.rgb_color) {
+      if (params.rgb_color && device.capabilities.supportsColor) {
         commandType = 'set_color';
-      } else if (params.brightness !== undefined) {
+      } else if (params.effect && device.capabilities.supportsEffects) {
+        commandType = 'effect';
+      } else if (params.brightness !== undefined && device.capabilities.supportsBrightness) {
         commandType = 'set_brightness';
-      } else if (params.color_temp !== undefined) {
+      } else if (params.color_temp !== undefined && device.capabilities.supportsColorTemp) {
         commandType = 'set_color_temp';
       }
 
@@ -152,12 +166,15 @@ export class TimelineGenerator {
 
     // Add beat emphasis commands if enabled
     if (settings.beatSync) {
-      this.addBeatEmphasisCommands(commands, audioFeatures.beats, device, settings);
+      this.addBeatEmphasisCommands(commands, audioFeatures.beats, device, profile, settings);
     }
+
+    // Optimize timeline by removing redundant commands
+    const optimizedCommands = this.removeRedundantCommands(commands);
 
     // Apply synchronization compensation
     const compensatedCommands = this.synchronizer.compensateCommands(
-      commands,
+      optimizedCommands,
       compensationMs
     );
 
@@ -167,6 +184,175 @@ export class TimelineGenerator {
       commands: compensatedCommands,
       compensationMs,
     };
+  }
+
+  /**
+   * Generate command parameters optimized for device profile and capabilities
+   */
+  private generateOptimizedCommand(
+    device: LightDevice,
+    slice: FrequencySlice,
+    isBeat: boolean,
+    zoneSettings: ZoneSettings | undefined,
+    profile: DeviceProfile | undefined,
+    transitionTime: number
+  ): CommandParams {
+    const params: CommandParams = {};
+
+    // Apply zone-specific intensity multiplier
+    const zoneIntensity = zoneSettings?.intensityMultiplier ?? 1.0;
+    const effectiveIntensity = this.mapper.settings.intensity * zoneIntensity;
+
+    // Color mapping with device capability awareness
+    if (device.capabilities.supportsColor) {
+      const colorMapping = zoneSettings?.colorMapping || this.mapper.settings.colorMapping;
+      const originalMapping = this.mapper.settings.colorMapping;
+      this.mapper.settings.colorMapping = colorMapping;
+      
+      const color = this.mapper.mapFrequencyToColor(slice);
+      params.rgb_color = this.optimizeColorForDevice(color, device, profile);
+      
+      this.mapper.settings.colorMapping = originalMapping;
+    }
+
+    // Brightness mapping with profile optimization
+    if (device.capabilities.supportsBrightness) {
+      const brightness = this.mapper.mapAmplitudeToBrightness(slice);
+      const optimizedBrightness = Math.round(brightness * effectiveIntensity);
+      
+      // Clamp to device brightness range
+      const minBrightness = device.capabilities.minBrightness ?? 0;
+      const maxBrightness = device.capabilities.maxBrightness ?? 255;
+      
+      params.brightness = Math.max(
+        minBrightness,
+        Math.min(maxBrightness, optimizedBrightness)
+      );
+
+      // Apply brightness curve compensation if available
+      if (profile?.brightnessCurve) {
+        params.brightness = this.applyBrightnessCurveCompensation(
+          params.brightness,
+          profile.brightnessCurve
+        );
+      }
+    }
+
+    // Color temperature for devices that support it but not RGB
+    if (
+      device.capabilities.supportsColorTemp &&
+      !device.capabilities.supportsColor
+    ) {
+      const colorTemp = this.mapper.mapFrequencyToColorTemp(slice, device);
+      params.color_temp = colorTemp;
+    }
+
+    // Beat synchronization with device-aware effects
+    if (this.mapper.settings.beatSync && isBeat) {
+      if (device.capabilities.supportsEffects && device.capabilities.effects?.length) {
+        // Use effect-based beat emphasis if device supports it
+        const beatEffect = this.selectBeatEffect(device, profile);
+        if (beatEffect) {
+          params.effect = beatEffect;
+          params.transition = 0; // Effects are instant
+        }
+      } else if (params.brightness !== undefined) {
+        // Fallback: boost brightness on beats
+        params.brightness = Math.min(255, params.brightness * 1.2);
+      }
+    }
+
+    // Transition time optimized for device profile
+    params.transition = this.selectOptimalTransitionTime(device, profile, transitionTime);
+
+    return params;
+  }
+
+  /**
+   * Optimize color output for device capabilities
+   */
+  private optimizeColorForDevice(
+    color: [number, number, number],
+    device: LightDevice,
+    profile: DeviceProfile | undefined
+  ): [number, number, number] {
+    // If device has color accuracy profile, apply correction
+    if (profile?.colorAccuracy && profile.colorAccuracy < 0.95) {
+      // Reduce intensity slightly for devices with lower color accuracy
+      const correctionFactor = profile.colorAccuracy;
+      return [
+        Math.round(color[0] * correctionFactor),
+        Math.round(color[1] * correctionFactor),
+        Math.round(color[2] * correctionFactor),
+      ];
+    }
+
+    return color;
+  }
+
+  /**
+   * Apply brightness curve compensation
+   */
+  private applyBrightnessCurveCompensation(
+    requestedBrightness: number,
+    brightnessCurve: any
+  ): number {
+    // TODO: Implement brightness curve compensation
+    // This would apply inverse curve transformation to account for
+    // non-linear brightness response
+    return requestedBrightness;
+  }
+
+  /**
+   * Select optimal beat effect based on device and profile
+   */
+  private selectBeatEffect(
+    device: LightDevice,
+    profile: DeviceProfile | undefined
+  ): string | undefined {
+    if (!device.capabilities.effects || device.capabilities.effects.length === 0) {
+      return undefined;
+    }
+
+    // Prefer fast-responding effects
+    if (profile?.effectsPerformance) {
+      const fastEffects = profile.effectsPerformance.filter(
+        e => e.supported && e.responseTimeMs && e.responseTimeMs < 200
+      );
+
+      if (fastEffects.length > 0) {
+        // Pick a strobe/flash effect if available
+        const flashEffect = fastEffects.find(e =>
+          e.effectName.toLowerCase().includes('flash') ||
+          e.effectName.toLowerCase().includes('strobe')
+        );
+        return flashEffect?.effectName || fastEffects[0].effectName;
+      }
+    }
+
+    // Default to first available effect
+    return device.capabilities.effects[0];
+  }
+
+  /**
+   * Select optimal transition time based on device profile
+   */
+  private selectOptimalTransitionTime(
+    device: LightDevice,
+    profile: DeviceProfile | undefined,
+    suggestedTime: number
+  ): number {
+    if (!profile) {
+      return suggestedTime;
+    }
+
+    // Clamp suggested time to device's proven capabilities
+    const clamped = Math.max(
+      profile.minTransitionMs / 1000,
+      Math.min(profile.maxTransitionMs / 1000, suggestedTime)
+    );
+
+    return clamped;
   }
 
   /**

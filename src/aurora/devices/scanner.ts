@@ -112,8 +112,14 @@ export class DeviceScanner {
       effects: attrs.effect_list || [],
       minMireds: attrs.min_mireds,
       maxMireds: attrs.max_mireds,
+      minColorTempKelvin: attrs.min_color_temp_kelvin,
+      maxColorTempKelvin: attrs.max_color_temp_kelvin,
       minBrightness: 0,
       maxBrightness: 255,
+      colorModes: colorModes.length > 0 ? colorModes : undefined,
+      currentColorMode: attrs.color_mode,
+      brightnessPercentage: attrs.brightness ? Math.round((attrs.brightness / 255) * 100) : undefined,
+      effectSpeed: attrs.effect_speed || undefined,
     };
   }
 

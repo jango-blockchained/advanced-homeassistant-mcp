@@ -61,6 +61,71 @@ export const ListAlarmsResponseSchema = z.object({
   alarms: z.array(AlarmSchema),
 });
 
+// Light
+export const LightAttributesSchema = z.object({
+  friendly_name: z.string().optional(),
+  // Brightness support
+  brightness: z.number().min(0).max(255).optional(),
+  min_brightness: z.number().min(0).max(255).optional(),
+  max_brightness: z.number().min(0).max(255).optional(),
+  // Color support
+  rgb_color: z.tuple([
+    z.number().min(0).max(255),
+    z.number().min(0).max(255),
+    z.number().min(0).max(255)
+  ]).optional(),
+  xy_color: z.tuple([
+    z.number().min(0).max(1),
+    z.number().min(0).max(1)
+  ]).optional(),
+  hs_color: z.tuple([
+    z.number().min(0).max(360),
+    z.number().min(0).max(100)
+  ]).optional(),
+  // Color temperature
+  color_temp: z.number().optional(),
+  color_temp_kelvin: z.number().optional(),
+  min_color_temp_kelvin: z.number().optional(),
+  max_color_temp_kelvin: z.number().optional(),
+  min_mireds: z.number().optional(),
+  max_mireds: z.number().optional(),
+  // Color modes (modern Home Assistant)
+  color_mode: z.string().optional(),
+  supported_color_modes: z.array(z.string()).optional(),
+  // Effects
+  effect: z.string().optional(),
+  effect_list: z.array(z.string()).optional(),
+  // Transitions
+  transition: z.number().optional(),
+  // State
+  supported_features: z.number().optional(),
+  // Additional light attributes
+  is_hue_group: z.boolean().optional(),
+  is_deconz_light: z.boolean().optional(),
+  effect_speed: z.number().optional(),
+  icon: z.string().optional(),
+  entity_category: z.string().optional(),
+  // Device info
+  device_info: z.object({
+    identifiers: z.array(z.array(z.string())).optional(),
+    manufacturer: z.string().optional(),
+    model: z.string().optional(),
+    name: z.string().optional(),
+    sw_version: z.string().optional(),
+    hw_version: z.string().optional(),
+  }).optional(),
+});
+
+export const LightSchema = z.object({
+  entity_id: z.string(),
+  state: z.enum(["on", "off", "unavailable", "unknown"]),
+  state_attributes: LightAttributesSchema,
+});
+
+export const ListLightsResponseSchema = z.object({
+  lights: z.array(LightSchema),
+});
+
 // Devices
 
 export const DeviceSchema = z.object({

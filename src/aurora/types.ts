@@ -84,10 +84,22 @@ export interface DeviceCapabilities {
   minMireds?: number;
   /** Max color temperature in mireds */
   maxMireds?: number;
+  /** Min color temperature in Kelvin */
+  minColorTempKelvin?: number;
+  /** Max color temperature in Kelvin */
+  maxColorTempKelvin?: number;
   /** Min brightness (usually 0) */
   minBrightness?: number;
   /** Max brightness (usually 255) */
   maxBrightness?: number;
+  /** Supported color modes (e.g., 'hs', 'rgb', 'xy', 'color_temp') */
+  colorModes?: string[];
+  /** Current color mode */
+  currentColorMode?: string;
+  /** Brightness range as percentage */
+  brightnessPercentage?: number;
+  /** Effect speed capability (0-1, 0 = no support) */
+  effectSpeed?: number;
 }
 
 export interface DeviceProfile {
@@ -109,6 +121,71 @@ export interface DeviceProfile {
   calibrationMethod: 'auto' | 'manual' | 'estimated';
   /** Additional notes */
   notes?: string;
+  // Enhanced measurement data
+  /** Effect performance metrics */
+  effectsPerformance?: EffectPerformance[];
+  /** Detailed transition measurements */
+  transitionProfiles?: TransitionProfile[];
+  /** Color accuracy data by mode */
+  colorAccuracyByMode?: Record<string, number>;
+  /** Brightness curve linearity data */
+  brightnessCurve?: BrightnessCurveData;
+  /** Response time consistency (standard deviation) */
+  responseTimeConsistency?: number;
+  /** Peak response time (99th percentile) */
+  peakResponseTimeMs?: number;
+  /** Average power consumption during operations */
+  avgPowerConsumption?: number;
+  /** Manufacturer/model information for reference */
+  deviceInfo?: {
+    manufacturer?: string;
+    model?: string;
+    hwVersion?: string;
+    swVersion?: string;
+  };
+  /** Last test results */
+  lastTestResults?: ProfileTestResult[];
+}
+
+export interface EffectPerformance {
+  /** Effect name */
+  effectName: string;
+  /** Whether effect is supported/available */
+  supported: boolean;
+  /** Response time in ms */
+  responseTimeMs?: number;
+  /** Smoothness rating (0-1) */
+  smoothness?: number;
+  /** Color accuracy when using effect (0-1) */
+  colorAccuracy?: number;
+  /** Notes about effect behavior */
+  notes?: string;
+}
+
+export interface TransitionProfile {
+  /** Transition duration in seconds */
+  duration: number;
+  /** Actual time taken in milliseconds */
+  actualTimeMs: number;
+  /** Smoothness rating (0-1) */
+  smoothness: number;
+  /** Number of measurements */
+  samples: number;
+  /** Consistency (standard deviation) */
+  consistency: number;
+}
+
+export interface BrightnessCurveData {
+  /** Measured brightness at different input levels */
+  measurements: Array<{
+    input: number;
+    output: number;
+    timestamp: Date;
+  }>;
+  /** Linear regression fit (R² value) */
+  linearityFit?: number;
+  /** Curve type (linear, logarithmic, etc.) */
+  curveType?: string;
 }
 
 // ============================================================================

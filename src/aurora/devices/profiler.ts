@@ -1,9 +1,17 @@
 /**
  * Device Profiler Module
- * Automated testing and profiling of light devices
+ * Automated testing and profiling of light devices with comprehensive data collection
  */
 
-import type { LightDevice, DeviceProfile, ProfileTestResult, ProfileTestSuite } from '../types';
+import type {
+  LightDevice,
+  DeviceProfile,
+  ProfileTestResult,
+  ProfileTestSuite,
+  EffectPerformance,
+  TransitionProfile,
+} from '../types';
+import { DeviceMeasurementCollector } from './measurement.js';
 
 export class DeviceProfiler {
   private hassCallService: (domain: string, service: string, data: any) => Promise<any>;
@@ -18,7 +26,7 @@ export class DeviceProfiler {
   }
 
   /**
-   * Profile a device with automated tests
+   * Profile a device with comprehensive automated tests
    */
   async profileDevice(device: LightDevice, iterations: number = 3): Promise<DeviceProfile> {
     const startTime = Date.now();
@@ -41,10 +49,23 @@ export class DeviceProfiler {
         results.push(...colorResults);
       }
 
+      // Test effects if supported
+      if (device.capabilities.supportsEffects && device.capabilities.effects) {
+        const effectResults = await this.testEffects(device.entityId, device.capabilities.effects);
+        results.push(...effectResults);
+      }
+
+      // Test brightness curve linearity
+      if (device.capabilities.supportsBrightness) {
+        const brightnessResults = await this.testBrightnessCurve(device.entityId);
+        results.push(...brightnessResults);
+      }
+
       // Calculate profile from results
-      const profile = this.createProfileFromResults(device.entityId, results);
+      const profile = this.createProfileFromResults(device.entityId, device, results);
       
       const duration = (Date.now() - startTime) / 1000;
+      profile.lastTestResults = results;
       
       return profile;
     } catch (error) {
@@ -99,51 +120,53 @@ export class DeviceProfiler {
   }
 
   /**
-   * Test transition speed capabilities
+   * Test transition speed capabilities with multiple durations
    */
   private async testTransitionSpeed(entityId: string, iterations: number): Promise<ProfileTestResult[]> {
     const results: ProfileTestResult[] = [];
     const transitionTimes = [0.5, 1.0, 2.0]; // seconds
 
     for (const transitionTime of transitionTimes) {
-      try {
-        // Set brightness to 0
-        await this.hassCallService('light', 'turn_on', {
-          entity_id: entityId,
-          brightness: 0,
-          transition: 0,
-        });
-        await this.sleep(500);
+      const measurements: number[] = [];
 
-        // Transition to full brightness
-        const startTime = Date.now();
-        await this.hassCallService('light', 'turn_on', {
-          entity_id: entityId,
-          brightness: 255,
-          transition: transitionTime,
-        });
+      for (let i = 0; i < iterations; i++) {
+        try {
+          // Set brightness to 0
+          await this.hassCallService('light', 'turn_on', {
+            entity_id: entityId,
+            brightness: 0,
+            transition: 0,
+          });
+          await this.sleep(500);
 
-        // Wait for transition to complete
-        await this.sleep(transitionTime * 1000 + 500);
-        const actualTime = Date.now() - startTime;
+          // Transition to full brightness
+          const startTime = Date.now();
+          await this.hassCallService('light', 'turn_on', {
+            entity_id: entityId,
+            brightness: 255,
+            transition: transitionTime,
+          });
+
+          // Wait for transition to complete
+          await this.sleep(transitionTime * 1000 + 500);
+          const actualTime = Date.now() - startTime;
+          measurements.push(actualTime);
+        } catch (error) {
+          // Skip failed measurement
+        }
+      }
+
+      if (measurements.length > 0) {
+        const avgTime = measurements.reduce((a, b) => a + b, 0) / measurements.length;
+        const consistency = DeviceMeasurementCollector.calculateConsistency(measurements);
 
         results.push({
           entityId,
           testType: 'transition',
           success: true,
-          value: actualTime,
+          value: Math.round(avgTime),
           unit: 'ms',
           timestamp: new Date(),
-        });
-      } catch (error) {
-        results.push({
-          entityId,
-          testType: 'transition',
-          success: false,
-          value: 0,
-          unit: 'ms',
-          timestamp: new Date(),
-          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
@@ -206,17 +229,123 @@ export class DeviceProfiler {
   }
 
   /**
+   * Test effect performance and compatibility
+   */
+  private async testEffects(entityId: string, effects: string[]): Promise<ProfileTestResult[]> {
+    const results: ProfileTestResult[] = [];
+
+    for (const effect of effects) {
+      try {
+        const startTime = Date.now();
+        
+        await this.hassCallService('light', 'turn_on', {
+          entity_id: entityId,
+          effect,
+          transition: 0,
+        });
+
+        const responseTime = Date.now() - startTime;
+        await this.sleep(200);
+
+        results.push({
+          entityId,
+          testType: 'effect',
+          success: true,
+          value: responseTime,
+          unit: 'ms',
+          timestamp: new Date(),
+          error: undefined,
+        });
+      } catch (error) {
+        results.push({
+          entityId,
+          testType: 'effect',
+          success: false,
+          value: 0,
+          unit: 'ms',
+          timestamp: new Date(),
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Test brightness curve linearity
+   */
+  private async testBrightnessCurve(entityId: string): Promise<ProfileTestResult[]> {
+    const results: ProfileTestResult[] = [];
+    const testPoints = [0, 64, 128, 192, 255]; // Test at different brightness levels
+
+    for (const brightness of testPoints) {
+      try {
+        await this.hassCallService('light', 'turn_on', {
+          entity_id: entityId,
+          brightness,
+          transition: 0,
+        });
+
+        await this.sleep(300);
+
+        // Get current state to verify brightness was set
+        const state = await this.hassGetState(entityId);
+        const actualBrightness = state?.attributes?.brightness || 0;
+
+        results.push({
+          entityId,
+          testType: 'brightness',
+          success: true,
+          value: Math.abs(brightness - actualBrightness),
+          unit: 'deviation',
+          timestamp: new Date(),
+        });
+      } catch (error) {
+        results.push({
+          entityId,
+          testType: 'brightness',
+          success: false,
+          value: 0,
+          unit: 'deviation',
+          timestamp: new Date(),
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
    * Create device profile from test results
    */
-  private createProfileFromResults(entityId: string, results: ProfileTestResult[]): DeviceProfile {
+  private createProfileFromResults(
+    entityId: string,
+    device: LightDevice,
+    results: ProfileTestResult[]
+  ): DeviceProfile {
     const latencyResults = results.filter(r => r.testType === 'latency' && r.success);
     const transitionResults = results.filter(r => r.testType === 'transition' && r.success);
     const colorResults = results.filter(r => r.testType === 'color' && r.success);
+    const effectResults = results.filter(r => r.testType === 'effect');
+    const brightnessResults = results.filter(r => r.testType === 'brightness' && r.success);
 
     // Calculate average latency
-    const avgLatency = latencyResults.length > 0
-      ? latencyResults.reduce((sum, r) => sum + r.value, 0) / latencyResults.length
+    const latencies = latencyResults.map(r => r.value);
+    const avgLatency = latencies.length > 0
+      ? latencies.reduce((sum, r) => sum + r, 0) / latencies.length
       : 250; // Default 250ms
+
+    // Calculate response time consistency
+    const responseTimeConsistency = latencies.length > 1
+      ? DeviceMeasurementCollector.calculateConsistency(latencies)
+      : undefined;
+
+    // Calculate peak response time (99th percentile)
+    const peakResponseTimeMs = latencies.length > 0
+      ? DeviceMeasurementCollector.calculatePercentile([...latencies].sort((a, b) => a - b), 99)
+      : undefined;
 
     // Calculate transition speed range
     const transitionValues = transitionResults.map(r => r.value);
@@ -228,15 +357,33 @@ export class DeviceProfiler {
       ? colorResults.reduce((sum, r) => sum + r.value, 0) / colorResults.length
       : undefined;
 
+    // Analyze effect performance
+    const effectsPerformance = effectResults.length > 0
+      ? DeviceMeasurementCollector.analyzeEffectPerformance(effectResults)
+      : undefined;
+
+    // Calculate brightness curve linearity
+    const brightnessDeviation = brightnessResults.map(r => r.value);
+    const brightnessLinearity = brightnessDeviation.length > 0
+      ? Math.max(0, 1 - (DeviceMeasurementCollector.calculateConsistency(brightnessDeviation) / 255))
+      : undefined;
+
     return {
       entityId,
       latencyMs: Math.round(avgLatency),
       minTransitionMs: Math.round(minTransition),
       maxTransitionMs: Math.round(maxTransition),
       colorAccuracy,
-      brightnessLinearity: undefined, // Not yet implemented
+      brightnessLinearity,
       lastCalibrated: new Date(),
       calibrationMethod: 'auto',
+      effectsPerformance,
+      responseTimeConsistency,
+      peakResponseTimeMs,
+      deviceInfo: {
+        manufacturer: device.manufacturer,
+        model: device.model,
+      },
     };
   }
 
@@ -300,3 +447,4 @@ export class DeviceProfiler {
     return daysSinceCalibration >= reprofileIntervalDays;
   }
 }
+
