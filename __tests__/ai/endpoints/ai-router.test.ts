@@ -7,7 +7,7 @@ import type { AIResponse, AIError } from '../../../src/ai/types/index.js';
 // Mock NLPProcessor
 mock.module('../../../src/ai/nlp/processor.js', () => ({
     NLPProcessor: mock(() => ({
-        processCommand: mock(async () => ({
+        processCommand: mock(() => Promise.resolve({
             intent: {
                 action: 'turn_on',
                 target: 'light.living_room',
@@ -20,11 +20,11 @@ mock.module('../../../src/ai/nlp/processor.js', () => ({
                 context: 0.9
             }
         })),
-        validateIntent: mock(async () => true),
-        suggestCorrections: mock(async () => [
+        validateIntent: mock(() => Promise.resolve(true)),
+        suggestCorrections: mock(() => Promise.resolve([
             'Try using simpler commands',
             'Specify the device name clearly'
-        ])
+        ]))
     }))
 }));
 

@@ -1,3 +1,4 @@
+import { logger } from "../../utils/logger.js";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { EventEmitter } from "events";
@@ -58,7 +59,7 @@ class MacOSIntegration extends EventEmitter {
 
       return this.permissions;
     } catch (error) {
-      console.error("Error checking permissions:", error);
+      logger.error("Error checking permissions:", error);
       return this.permissions;
     }
   }
@@ -79,7 +80,7 @@ class MacOSIntegration extends EventEmitter {
     try {
       await execAsync(`osascript -e '${script}'`);
     } catch (error) {
-      console.error("Error sending notification:", error);
+      logger.error("Error sending notification:", error);
       throw error;
     }
   }
@@ -119,7 +120,7 @@ class MacOSIntegration extends EventEmitter {
       const events = stdout.split(",").map((e) => e.trim());
       events.forEach((event) => this.emit("system_event", event));
     } catch (error) {
-      console.error("Error monitoring system events:", error);
+      logger.error("Error monitoring system events:", error);
     }
   }
 
@@ -132,7 +133,7 @@ class MacOSIntegration extends EventEmitter {
       const { stdout } = await execAsync(`osascript -e '${script}'`);
       return stdout;
     } catch (error) {
-      console.error("Error executing automation:", error);
+      logger.error("Error executing automation:", error);
       throw error;
     }
   }
@@ -163,7 +164,7 @@ class MacOSIntegration extends EventEmitter {
 
       return info;
     } catch (error) {
-      console.error("Error getting system info:", error);
+      logger.error("Error getting system info:", error);
       throw error;
     }
   }

@@ -146,7 +146,7 @@ export class MCPServer extends EventEmitter {
                     name: plainTool.name,
                     description: plainTool.description,
                     parameters: plainTool.parameters,
-                    execute: async (params: any, context: MCPContext) => {
+                    execute: async (params: unknown, context: MCPContext): Promise<unknown> => {
                         return plainTool.execute(params);
                     }
                 };
@@ -278,7 +278,14 @@ export class MCPServer extends EventEmitter {
                 id: request.id,
                 result: {
                     tools: Array.from(this.tools.values()).map(tool => {
-                        let inputSchema: any = {
+                        interface JSONSchema {
+                            type: string;
+                            properties?: Record<string, unknown>;
+                            required?: string[];
+                            [key: string]: unknown;
+                        }
+                        
+                        let inputSchema: JSONSchema = {
                             type: "object",
                             properties: {}
                         };
@@ -286,7 +293,7 @@ export class MCPServer extends EventEmitter {
                         if (tool.parameters) {
                             try {
                                 // Convert Zod schema to JSON Schema
-                                const jsonSchema = zodToJsonSchema(tool.parameters);
+                                const jsonSchema = zodToJsonSchema(tool.parameters) as JSONSchema;
                                 inputSchema = jsonSchema;
                             } catch (error) {
                                 logger.warn(`Failed to convert schema for tool ${tool.name}:`, error);

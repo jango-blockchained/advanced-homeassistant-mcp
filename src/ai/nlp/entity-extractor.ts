@@ -1,3 +1,4 @@
+import { logger } from "../../utils/logger.js";
 import { AIContext } from "../types/index.js";
 
 interface ExtractedEntities {
@@ -63,7 +64,7 @@ export class EntityExtractor {
 
       return entities;
     } catch (error) {
-      console.error("Entity extraction error:", error);
+      logger.error("Entity extraction error:", error);
       return {
         primary_target: "",
         parameters: {},

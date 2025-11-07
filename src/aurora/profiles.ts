@@ -6,6 +6,7 @@
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import type { DeviceProfile } from './types';
+import { logger } from '../utils/logger.js';
 
 export interface AuroraConfig {
   version: string;
@@ -103,7 +104,7 @@ export class AuroraProfileManager {
 
       return false;
     } catch (error) {
-      console.error('Failed to load Aurora profiles:', error);
+      logger.error('Failed to load Aurora profiles:', error);
       return false;
     }
   }

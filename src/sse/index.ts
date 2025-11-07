@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 import { HassEntity, HassEvent } from "../interfaces/hass.js";
 import { TokenManager } from "../security/index.js";
+import { logger } from "../utils/logger.js";
 
 // Constants
 const DEFAULT_MAX_CLIENTS = 1000;
@@ -70,7 +71,7 @@ export class SSEManager extends EventEmitter {
       options.maxConnectionAge || DEFAULT_MAX_CONNECTION_AGE;
     this.rateLimit = { ...DEFAULT_RATE_LIMIT, ...options.rateLimit };
 
-    console.log("Initializing SSE Manager...");
+    logger.info("Initializing SSE Manager...");
     this.startMaintenanceTasks();
   }
 
@@ -88,7 +89,7 @@ export class SSEManager extends EventEmitter {
             );
             client.lastPingAt = new Date();
           } catch (error) {
-            console.error(`Failed to ping client ${client.id}:`, error);
+            logger.error(`Failed to ping client ${client.id}:`, error);
             this.removeClient(client.id);
           }
         }
@@ -108,7 +109,7 @@ export class SSEManager extends EventEmitter {
           connectionAge > this.maxConnectionAge ||
           lastPingAge > this.pingInterval * 2
         ) {
-          console.log(`Removing inactive client ${clientId}`);
+          logger.info(`Removing inactive client ${clientId}`);
           this.removeClient(clientId);
         }
       });
@@ -129,7 +130,7 @@ export class SSEManager extends EventEmitter {
     // Validate token
     const validationResult = TokenManager.validateToken(token, client.ip);
     if (!validationResult.valid) {
-      console.warn(
+      logger.warn(
         `Invalid token for client ${client.id} from IP ${client.ip}: ${validationResult.error}`,
       );
       return null;
@@ -137,7 +138,7 @@ export class SSEManager extends EventEmitter {
 
     // Check client limit
     if (this.clients.size >= this.maxClients) {
-      console.warn(`Maximum client limit (${this.maxClients}) reached`);
+      logger.warn(`Maximum client limit (${this.maxClients}) reached`);
       return null;
     }
 
@@ -156,7 +157,7 @@ export class SSEManager extends EventEmitter {
     };
 
     this.clients.set(client.id, newClient);
-    console.log(`New client ${client.id} connected from IP ${client.ip}`);
+    logger.info(`New client ${client.id} connected from IP ${client.ip}`);
 
     return newClient;
   }
@@ -203,7 +204,7 @@ export class SSEManager extends EventEmitter {
   removeClient(clientId: string): void {
     if (this.clients.has(clientId)) {
       this.clients.delete(clientId);
-      console.log(`SSE client disconnected: ${clientId}`);
+      logger.info(`SSE client disconnected: ${clientId}`);
       this.emit("client_disconnected", {
         clientId,
         timestamp: new Date().toISOString(),
@@ -214,14 +215,14 @@ export class SSEManager extends EventEmitter {
   subscribeToEntity(clientId: string, entityId: string): void {
     const client = this.clients.get(clientId);
     if (!client?.authenticated) {
-      console.warn(
+      logger.warn(
         `Unauthenticated client ${clientId} attempted to subscribe to entity: ${entityId}`,
       );
       return;
     }
 
     client.subscriptions.add(`entity:${entityId}`);
-    console.log(`Client ${clientId} subscribed to entity: ${entityId}`);
+    logger.info(`Client ${clientId} subscribed to entity: ${entityId}`);
 
     // Send current state if available
     const currentState = this.entityStates.get(entityId);
@@ -242,14 +243,14 @@ export class SSEManager extends EventEmitter {
   subscribeToDomain(clientId: string, domain: string): void {
     const client = this.clients.get(clientId);
     if (!client?.authenticated) {
-      console.warn(
+      logger.warn(
         `Unauthenticated client ${clientId} attempted to subscribe to domain: ${domain}`,
       );
       return;
     }
 
     client.subscriptions.add(`domain:${domain}`);
-    console.log(`Client ${clientId} subscribed to domain: ${domain}`);
+    logger.info(`Client ${clientId} subscribed to domain: ${domain}`);
 
     // Send current states for all entities in domain
     this.entityStates.forEach((state, entityId) => {
@@ -271,14 +272,14 @@ export class SSEManager extends EventEmitter {
   subscribeToEvent(clientId: string, eventType: string): void {
     const client = this.clients.get(clientId);
     if (!client?.authenticated) {
-      console.warn(
+      logger.warn(
         `Unauthenticated client ${clientId} attempted to subscribe to event: ${eventType}`,
       );
       return;
     }
 
     client.subscriptions.add(`event:${eventType}`);
-    console.log(`Client ${clientId} subscribed to event: ${eventType}`);
+    logger.info(`Client ${clientId} subscribed to event: ${eventType}`);
   }
 
   broadcastStateChange(entity: HassEntity): void {
@@ -298,7 +299,7 @@ export class SSEManager extends EventEmitter {
       timestamp: new Date().toISOString(),
     };
 
-    console.log(`Broadcasting state change for ${entity.entity_id}`);
+    logger.info(`Broadcasting state change for ${entity.entity_id}`);
 
     // Send to relevant subscribers only
     this.clients.forEach((client) => {
@@ -324,7 +325,7 @@ export class SSEManager extends EventEmitter {
       timestamp: new Date().toISOString(),
     };
 
-    console.log(`Broadcasting event: ${event.event_type}`);
+    logger.info(`Broadcasting event: ${event.event_type}`);
 
     // Send to relevant subscribers only
     this.clients.forEach((client) => {
@@ -338,7 +339,7 @@ export class SSEManager extends EventEmitter {
 
   updateEntityState(entityId: string, state: HassEntity): void {
     if (!state || typeof state.state === 'undefined') {
-      console.warn(`Invalid state update for entity ${entityId}`);
+      logger.warn(`Invalid state update for entity ${entityId}`);
       return;
     }
 
@@ -386,14 +387,14 @@ export class SSEManager extends EventEmitter {
 
   private sendToClient(client: SSEClient, data: any): void {
     try {
-      console.log(`Attempting to send data to client ${client.id}`);
+      logger.info(`Attempting to send data to client ${client.id}`);
       client.send(JSON.stringify(data));
       this.updateRateLimit(client);
     } catch (error) {
-      console.error(`Failed to send data to client ${client.id}:`, error);
-      console.log(`Removing client ${client.id} due to send error`);
+      logger.error(`Failed to send data to client ${client.id}:`, error);
+      logger.info(`Removing client ${client.id} due to send error`);
       this.removeClient(client.id);
-      console.log(`Client count after removal: ${this.clients.size}`);
+      logger.info(`Client count after removal: ${this.clients.size}`);
     }
   }
 }
