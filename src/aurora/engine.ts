@@ -61,8 +61,14 @@ export class AuroraEngine {
             this.startInput();
         }
 
-        // Start animation loop
-        this.animate();
+        // Check if we're in a browser environment
+        if (typeof requestAnimationFrame !== 'undefined') {
+            // Start animation loop in browser
+            this.animate();
+        } else {
+            // In server/test environment, just update state
+            logger.info('Aurora animation started in non-browser environment (state tracking only)');
+        }
     }
 
     /**
@@ -77,7 +83,7 @@ export class AuroraEngine {
         
         this.state.active = false;
         
-        if (this.animationFrameId) {
+        if (this.animationFrameId && typeof cancelAnimationFrame !== 'undefined') {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = undefined;
         }
@@ -101,7 +107,7 @@ export class AuroraEngine {
         logger.info(`Pausing Aurora animation: ${this.config.name}`);
         this.state.active = false;
         
-        if (this.animationFrameId) {
+        if (this.animationFrameId && typeof cancelAnimationFrame !== 'undefined') {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = undefined;
         }
@@ -117,7 +123,13 @@ export class AuroraEngine {
 
         logger.info(`Resuming Aurora animation: ${this.config.name}`);
         this.state.active = true;
-        this.animate();
+        
+        // Check if we're in a browser environment
+        if (typeof requestAnimationFrame !== 'undefined') {
+            this.animate();
+        } else {
+            logger.info('Aurora animation resumed in non-browser environment (state tracking only)');
+        }
     }
 
     /**
@@ -205,7 +217,9 @@ export class AuroraEngine {
         }
 
         // Continue animation loop
-        this.animationFrameId = requestAnimationFrame(this.animate);
+        if (typeof requestAnimationFrame !== 'undefined') {
+            this.animationFrameId = requestAnimationFrame(this.animate);
+        }
     };
 
     /**
