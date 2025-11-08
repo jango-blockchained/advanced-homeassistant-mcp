@@ -3,8 +3,12 @@
  * Values can be overridden using environment variables
  */
 
+import { loadEnvironmentVariables } from './config/loadEnv.js';
 import { MCPServerConfigSchema, MCPServerConfigType } from './schemas/config.schema.js';
 import { logger } from './utils/logger.js';
+
+// Load environment variables before loading config
+loadEnvironmentVariables();
 
 function loadConfig(): MCPServerConfigType {
     try {

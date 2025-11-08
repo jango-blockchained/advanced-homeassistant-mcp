@@ -420,6 +420,21 @@ export class MCPServer extends EventEmitter {
     ): Promise<MCPResponse> {
         const { method, params = {} } = request;
 
+        // List of built-in MCP methods that don't need tool validation
+        const builtInMethods = [
+            'initialize',
+            'tools/list',
+            'tools/call',
+            'resources/list',
+            'resources/read',
+            '_internal_getContext'
+        ];
+
+        // Skip validation for built-in MCP methods
+        if (builtInMethods.includes(method)) {
+            return next();
+        }
+
         const tool = this.tools.get(method);
         if (!tool) {
             return {
