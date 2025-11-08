@@ -128,14 +128,15 @@ export default function DeviceGrid() {
                 >
                   {/* Selection indicator */}
                   {isSelected && (
-                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
+                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary light-pulse" />
                   )}
                   
                   {/* Device icon */}
                   <Lightbulb 
                     className={cn(
                       "w-6 h-6 mb-2 transition-colors",
-                      isSelected ? "text-primary" : "text-muted-foreground group-hover:text-primary"
+                      isSelected ? "text-primary light-glow" : "text-muted-foreground group-hover:text-primary",
+                      isOn && "light-beat"
                     )}
                     fill={isOn ? "currentColor" : "none"}
                   />
@@ -179,7 +180,7 @@ export default function DeviceGrid() {
 
         {/* Selection summary */}
         {selectedDevices.size > 0 && (
-          <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-lg light-glow">
             <div>
               <p className="text-xs text-muted-foreground mb-1">
                 Selected Devices
@@ -188,7 +189,7 @@ export default function DeviceGrid() {
                 {selectedDevices.size} {selectedDevices.size !== 1 ? 'devices' : 'device'}
               </p>
             </div>
-            <Sparkles className="w-6 h-6 text-primary" />
+            <Sparkles className="w-6 h-6 text-primary light-pulse" />
           </div>
         )}
       </CardContent>

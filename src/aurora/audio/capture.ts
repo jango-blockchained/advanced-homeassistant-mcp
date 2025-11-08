@@ -1,6 +1,7 @@
 /**
  * Audio Capture Module
  * Handles microphone input and file loading with support for multiple formats
+ * Supports both file paths and URLs
  */
 
 import * as fs from 'fs/promises';
@@ -8,7 +9,9 @@ import { detectFormatFromBuffer, detectFormatFromExtension, AudioFormat, isSuppo
 import { MP3Decoder } from './decoders/mp3-decoder';
 import { OGGDecoder } from './decoders/ogg-decoder';
 import { FLACDecoder } from './decoders/flac-decoder';
+import { AudioDownloader } from './downloader';
 import type { AudioBuffer } from '../types';
+import { logger } from '../../utils/logger.js';
 
 export class AudioCapture {
   private sampleRate: number;
@@ -20,10 +23,15 @@ export class AudioCapture {
   }
 
   /**
-   * Load audio from file
+   * Load audio from file or URL
    * Supports WAV, MP3, OGG, FLAC formats
    */
   async loadFromFile(filePath: string): Promise<AudioBuffer> {
+    // Check if input is a URL
+    if (AudioDownloader.isUrl(filePath)) {
+      return this.loadFromUrl(filePath);
+    }
+
     try {
       // Read file
       const fileBuffer = await fs.readFile(filePath);
@@ -56,6 +64,53 @@ export class AudioCapture {
       }
     } catch (error) {
       throw new Error(`Failed to load audio file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Load audio from URL with streaming
+   */
+  private async loadFromUrl(url: string): Promise<AudioBuffer> {
+    try {
+      logger.info(`[AudioCapture] Loading audio from URL: ${url}`);
+
+      // Download audio file
+      const downloader = new AudioDownloader();
+      const fileBuffer = await downloader.downloadFromUrl(url, (progress) => {
+        const percent = Math.round(progress.percentComplete);
+        logger.info(
+          `[AudioCapture] Download progress: ${percent}% (${(progress.bytesDownloaded / 1024 / 1024).toFixed(1)}MB)`
+        );
+      });
+
+      // Detect format from URL or buffer
+      const ext = AudioDownloader.getExtensionFromUrl(url);
+      let format = detectFormatFromExtension(`.${ext}`);
+
+      if (format === AudioFormat.UNKNOWN) {
+        format = detectFormatFromBuffer(fileBuffer);
+      }
+
+      // Check if format is supported
+      if (!isSupportedFormat(format)) {
+        throw new Error(`Unsupported audio format: ${getFormatName(format)}`);
+      }
+
+      // Decode based on format
+      switch (format) {
+        case AudioFormat.WAV:
+          return this.decodeWav(fileBuffer);
+        case AudioFormat.MP3:
+          return this.decodeMp3(fileBuffer);
+        case AudioFormat.OGG:
+          return this.decodeOgg(fileBuffer);
+        case AudioFormat.FLAC:
+          return this.decodeFlac(fileBuffer);
+        default:
+          throw new Error(`Format decoding not implemented: ${getFormatName(format)}`);
+      }
+    } catch (error) {
+      throw new Error(`Failed to load audio from URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

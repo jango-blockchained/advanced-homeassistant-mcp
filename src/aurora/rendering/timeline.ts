@@ -165,7 +165,7 @@ export class TimelineGenerator {
     }
 
     // Add beat emphasis commands if enabled
-    if (settings.beatSync) {
+    if (settings.beatSync && profile) {
       this.addBeatEmphasisCommands(commands, audioFeatures.beats, device, profile, settings);
     }
 
@@ -362,8 +362,14 @@ export class TimelineGenerator {
     commands: TimedCommand[],
     beats: number[],
     device: LightDevice,
+    profile: DeviceProfile,
     settings: RenderSettings
   ): void {
+    // Guard against undefined settings or profile
+    if (!settings || settings.intensity === undefined) {
+      return;
+    }
+
     for (const beatTime of beats) {
       // Find closest existing command
       const closestCommand = commands.reduce((closest, cmd) => {

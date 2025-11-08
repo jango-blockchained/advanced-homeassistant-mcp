@@ -76,6 +76,21 @@ const server = Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
 
+    // CORS headers for all responses
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders,
+      });
+    }
+
     // Serve Aurora API routes
     if (url.pathname.startsWith('/aurora/')) {
       return handleAuroraRoute(req, context);
@@ -115,11 +130,12 @@ const server = Bun.serve({
       return new Response(new Uint8Array(file), {
         headers: {
           'Content-Type': contentTypes[ext] || 'application/octet-stream',
+          ...corsHeaders,
         },
       });
     }
 
-    return new Response('Not Found', { status: 404 });
+    return new Response('Not Found', { status: 404, headers: corsHeaders });
   },
 });
 

@@ -72,11 +72,11 @@ export default function TimelineLibrary() {
             {timelines.map((timeline: any) => (
               <div
                 key={timeline.id}
-                className="p-3 bg-card border rounded-lg hover:border-primary/50 transition-all"
+                className="p-3 bg-card border rounded-lg hover:border-primary/50 transition-all light-reactive"
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm text-foreground truncate">
+                    <h3 className="font-medium text-sm text-foreground truncate light-glow">
                       {timeline.name}
                     </h3>
                     <p className="text-xs text-muted-foreground truncate mt-0.5">
@@ -110,7 +110,7 @@ export default function TimelineLibrary() {
                   <Button
                     onClick={() => handlePlay(timeline.id)}
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 light-beat"
                   >
                     <Play className="w-3 h-3" />
                     Play

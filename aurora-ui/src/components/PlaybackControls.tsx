@@ -119,7 +119,7 @@ export default function PlaybackControls() {
           <Button
             onClick={handleRender}
             disabled={!canRender || isRendering}
-            className="w-full h-12 text-base"
+            className={`w-full h-12 text-base ${isRendering ? 'light-intense' : ''}`}
           >
             {isRendering ? (
               <>
@@ -135,7 +135,7 @@ export default function PlaybackControls() {
           </Button>
 
           {isRendering && (
-            <Progress value={renderProgress} className="h-1.5" />
+            <Progress value={renderProgress} className="h-1.5 light-glow" />
           )}
 
           {!canRender && (
@@ -147,7 +147,7 @@ export default function PlaybackControls() {
 
         {/* Playback Timeline */}
         {playbackStatus.duration > 0 && (
-          <div className="space-y-2 p-3 bg-accent/50 border rounded-lg">
+          <div className={`space-y-2 p-3 bg-accent/50 border rounded-lg ${isPlaying ? 'light-beat' : ''}`}>
             <div className="flex items-center justify-between text-sm font-mono">
               <span className="text-foreground">
                 {formatDuration(playbackStatus.currentTime)}
@@ -169,7 +169,7 @@ export default function PlaybackControls() {
             <Button
               onClick={handlePlay}
               disabled={playbackStatus.state === 'idle'}
-              className="flex-1"
+              className="flex-1 light-reactive"
             >
               <Play className="w-5 h-5" fill="currentColor" />
               Play
@@ -180,7 +180,7 @@ export default function PlaybackControls() {
             <Button
               onClick={handlePause}
               variant="secondary"
-              className="flex-1"
+              className="flex-1 light-beat"
             >
               <Pause className="w-5 h-5" />
               Pause
@@ -190,7 +190,7 @@ export default function PlaybackControls() {
           {isPaused && (
             <Button
               onClick={handleResume}
-              className="flex-1"
+              className="flex-1 light-smooth"
             >
               <Play className="w-5 h-5" fill="currentColor" />
               Resume

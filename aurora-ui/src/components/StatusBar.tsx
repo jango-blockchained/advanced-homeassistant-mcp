@@ -36,8 +36,8 @@ export default function StatusBar() {
 
             {(isScanning || isAnalyzing || isRendering) && (
               <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                <span className="text-primary font-medium">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary light-pulse" />
+                <span className="text-primary font-medium light-smooth">
                   {isScanning && 'Scanning...'}
                   {isAnalyzing && 'Analyzing...'}
                   {isRendering && `Rendering ${Math.round(renderProgress)}%`}

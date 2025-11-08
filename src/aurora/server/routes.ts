@@ -5,6 +5,7 @@
 
 import type { Server } from 'bun';
 import { AudioAnalyzer } from '../audio/analyzer';
+import { AudioCapture } from '../audio/capture';
 import { TimelineGenerator } from '../rendering/timeline';
 import { TimelineExecutor } from '../execution/executor';
 import { DeviceScanner } from '../devices/scanner';
@@ -111,7 +112,7 @@ async function handleGetDevices(
   const devices = await scanner.scanDevices();
 
   return new Response(
-    JSON.stringify({ devices }),
+    JSON.stringify(devices),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
 }
@@ -187,9 +188,10 @@ async function handleRenderTimeline(
     audioFeatures = cached.audioFeatures;
   } else {
     // Analyze audio
+    const capture = new AudioCapture();
+    const audioBuffer = await capture.loadFromFile(body.audioFile);
     const analyzer = new AudioAnalyzer();
-    const audioBuffer = await analyzer.loadAudioFile(body.audioFile);
-    audioFeatures = await analyzer.analyzeAudio(audioBuffer);
+    audioFeatures = await analyzer.analyze(audioBuffer);
   }
 
   // Get device profiles
@@ -413,8 +415,15 @@ async function handleGetStatus(
     queueStats: { queued: 0, executed: 0, failed: 0, avgLatency: 0 },
   };
 
+  const status = {
+    state: state.state,
+    currentTime: state.position,
+    duration: state.timeline?.duration ?? 0,
+    timelineId: state.timeline?.id,
+  };
+
   return new Response(
-    JSON.stringify({ state }),
+    JSON.stringify(status),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
 }
