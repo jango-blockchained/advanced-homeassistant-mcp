@@ -1,9 +1,13 @@
 /**
  * Audio Capture Module
- * Handles microphone input and file loading
+ * Handles microphone input and file loading with support for multiple formats
  */
 
 import * as fs from 'fs/promises';
+import { detectFormatFromBuffer, detectFormatFromExtension, AudioFormat, isSupportedFormat, getFormatName } from './format-detector';
+import { MP3Decoder } from './decoders/mp3-decoder';
+import { OGGDecoder } from './decoders/ogg-decoder';
+import { FLACDecoder } from './decoders/flac-decoder';
 import type { AudioBuffer } from '../types';
 
 export class AudioCapture {
@@ -17,23 +21,38 @@ export class AudioCapture {
 
   /**
    * Load audio from file
-   * Supports WAV, MP3, OGG, etc. (depending on available codecs)
+   * Supports WAV, MP3, OGG, FLAC formats
    */
   async loadFromFile(filePath: string): Promise<AudioBuffer> {
     try {
       // Read file
       const fileBuffer = await fs.readFile(filePath);
+
+      // Detect format from extension first, then validate with buffer
+      let format = detectFormatFromExtension(filePath);
       
-      // Decode audio based on file extension
-      const extension = filePath.split('.').pop()?.toLowerCase();
-      
-      switch (extension) {
-        case 'wav':
-          return await this.decodeWav(fileBuffer);
-        case 'mp3':
-          return await this.decodeMp3(fileBuffer);
+      // Verify with buffer header if extension detection fails
+      if (format === AudioFormat.UNKNOWN) {
+        format = detectFormatFromBuffer(fileBuffer);
+      }
+
+      // Check if format is supported
+      if (!isSupportedFormat(format)) {
+        throw new Error(`Unsupported audio format: ${getFormatName(format)}`);
+      }
+
+      // Decode based on format
+      switch (format) {
+        case AudioFormat.WAV:
+          return this.decodeWav(fileBuffer);
+        case AudioFormat.MP3:
+          return this.decodeMp3(fileBuffer);
+        case AudioFormat.OGG:
+          return this.decodeOgg(fileBuffer);
+        case AudioFormat.FLAC:
+          return this.decodeFlac(fileBuffer);
         default:
-          throw new Error(`Unsupported audio format: ${extension}`);
+          throw new Error(`Format decoding not implemented: ${getFormatName(format)}`);
       }
     } catch (error) {
       throw new Error(`Failed to load audio file: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -43,7 +62,7 @@ export class AudioCapture {
   /**
    * Decode WAV file
    */
-  private async decodeWav(buffer: Buffer): Promise<AudioBuffer> {
+  private decodeWav(buffer: Buffer): AudioBuffer {
     // WAV file structure:
     // 0-3: "RIFF"
     // 4-7: File size - 8
@@ -138,20 +157,32 @@ export class AudioCapture {
   }
 
   /**
-   * Decode MP3 file (placeholder - requires external library)
+   * Decode MP3 file
    */
-  private async decodeMp3(buffer: Buffer): Promise<AudioBuffer> {
-    // TODO: Implement MP3 decoding using a library like 'mpg123' or 'node-lame'
-    // For now, throw an error
-    throw new Error('MP3 decoding not yet implemented. Please use WAV files for now.');
+  private decodeMp3(buffer: Buffer): AudioBuffer {
+    return MP3Decoder.decodeMp3(buffer);
+  }
+
+  /**
+   * Decode OGG file
+   */
+  private decodeOgg(buffer: Buffer): AudioBuffer {
+    return OGGDecoder.decodeOgg(buffer);
+  }
+
+  /**
+   * Decode FLAC file
+   */
+  private decodeFlac(buffer: Buffer): AudioBuffer {
+    return FLACDecoder.decodeFLAC(buffer);
   }
 
   /**
    * Capture from microphone (placeholder for live mode)
    */
-  async captureFromMicrophone(durationSeconds: number): Promise<AudioBuffer> {
+  captureFromMicrophone(_durationSeconds: number): Promise<AudioBuffer> {
     // TODO: Implement microphone capture using a library like 'node-microphone' or 'sox'
-    throw new Error('Microphone capture not yet implemented');
+    return Promise.reject(new Error('Microphone capture not yet implemented'));
   }
 
   /**
