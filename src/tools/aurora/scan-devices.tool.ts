@@ -28,7 +28,6 @@ async function executeScanDevices(args: ScanDevicesParams): Promise<unknown> {
     logger.info(`Found ${result.devices.length} devices`);
 
     return {
-      success: true,
       devices: result.devices.map(d => ({
         entity_id: d.entityId,
         name: d.name,
@@ -37,14 +36,12 @@ async function executeScanDevices(args: ScanDevicesParams): Promise<unknown> {
         model: d.model,
         capabilities: d.capabilities,
       })),
-      statistics: result.statistics,
+      statistics: result.statistics as Record<string, unknown>,
+      count: result.devices.length,
     };
   } catch (error) {
     logger.error("Failed to scan devices:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
+    throw error;
   }
 }
 
@@ -52,5 +49,5 @@ export const auroraScanDevicesTool: Tool = {
   name: "aurora_scan_devices",
   description: "Scan Home Assistant for available light devices that can be used with Aurora",
   parameters: scanDevicesSchema,
-  execute: executeScanDevices,
+  execute: (params: unknown) => executeScanDevices(params as ScanDevicesParams),
 };

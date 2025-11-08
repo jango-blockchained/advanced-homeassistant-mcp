@@ -30,9 +30,12 @@ RUN bun install --ignore-scripts
 # Install ts-node for running TypeScript directly
 RUN bun add ts-node --dev --ignore-scripts
 
-# Copy source files (skip TypeScript compilation for now)
+# Copy source files
 COPY src ./src
 COPY tsconfig*.json ./
+
+# Build the application (compile TypeScript to JavaScript)
+RUN bun run build:all
 
 # Create a smaller production image
 FROM oven/bun:1-slim as runner
@@ -68,8 +71,8 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 WORKDIR /app
 
-# Copy Python virtual environment from builder
-COPY --from=builder --chown=bunjs:nodejs /opt/venv /opt/venv
+# Copy dist from builder
+COPY --from=builder --chown=bunjs:nodejs /app/dist ./dist
 
 # Copy source files
 COPY --chown=bunjs:nodejs . .
@@ -88,10 +91,10 @@ USER bunjs
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:4000/health || exit 1
+    CMD curl -f http://localhost:${PORT:-7123}/health || exit 1
 
-# Expose port
-EXPOSE ${PORT:-4000}
+# Expose port (default 7123 for Smithery, can be overridden)
+EXPOSE ${PORT:-7123}
 
-# Start the application with audio setup
-CMD ["/bin/bash", "-c", "(/app/docker/speech/setup-audio.sh 2>&1 &) && bun run src/index.ts"] 
+# Start the HTTP MCP server (for Smithery deployment)
+CMD ["node", "dist/http-server.js"] 

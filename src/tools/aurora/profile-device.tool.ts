@@ -27,24 +27,22 @@ async function executeProfileDevice(args: ProfileDeviceParams): Promise<unknown>
 
     logger.info(`Device profiling complete: latency=${profile.latencyMs}ms`);
 
+    const testIterations = profile.lastTestResults ? profile.lastTestResults.length : 0;
+    
     return {
-      success: true,
-      profile: {
-        entity_id: args.entity_id,
-        latency_ms: profile.latencyMs,
-        min_transition_ms: profile.minTransitionMs,
-        max_transition_ms: profile.maxTransitionMs,
-        supports_transitions: profile.supportsTransitions,
-        last_calibrated: profile.lastCalibrated,
-        test_iterations: profile.measurements?.length || 0,
-      },
+      entity_id: args.entity_id,
+      latency_ms: profile.latencyMs,
+      min_transition_ms: profile.minTransitionMs,
+      max_transition_ms: profile.maxTransitionMs,
+      color_accuracy: profile.colorAccuracy,
+      brightness_linearity: profile.brightnessLinearity,
+      last_calibrated: profile.lastCalibrated,
+      calibration_method: profile.calibrationMethod,
+      test_iterations: testIterations,
     };
   } catch (error) {
     logger.error("Failed to profile device:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
+    throw error;
   }
 }
 
@@ -52,5 +50,5 @@ export const auroraProfileDeviceTool: Tool = {
   name: "aurora_profile_device",
   description: "Profile a light device to measure response latency and transition capabilities for accurate synchronization",
   parameters: profileDeviceSchema,
-  execute: executeProfileDevice,
+  execute: (params: unknown) => executeProfileDevice(params as ProfileDeviceParams),
 };

@@ -17,12 +17,34 @@ import { FastMCP } from "fastmcp";
 import { tools } from "./tools/index.js";
 import { listResources, getResource } from "./mcp/resources.js";
 import { getAllPrompts, renderPrompt } from "./mcp/prompts.js";
+import express from "express";
 
 const port = (process.env.PORT ?? "7123") ? parseInt(process.env.PORT ?? "7123", 10) : 7123;
 
 async function main(): Promise<void> {
     try {
         logger.info("Initializing FastMCP server with HTTP transport...");
+
+        // Create Express app for health checks and utility endpoints
+        const app = express();
+        app.use(express.json());
+
+        // Health check endpoint
+        app.get("/health", (req, res) => {
+            res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+        });
+
+        // .well-known/mcp-config endpoint for Smithery discovery
+        app.get("/.well-known/mcp-config", (req, res) => {
+            res.status(200).json({
+                name: "Home Assistant MCP Server",
+                version: "1.0.0",
+                transport: "httpStream",
+                mcp: {
+                    version: "2025-06-18"
+                }
+            });
+        });
 
         // Create the FastMCP server instance following v3.x best practices
         const server = new FastMCP({
@@ -122,7 +144,7 @@ async function main(): Promise<void> {
             logger.error("Error adding prompts:", error);
         }
 
-        // Start the server with HTTP stream transport (FastMCP 3.x)
+        // Start the server with HTTP stream transport (FastMCP 3.x) and Express app
         logger.info("Starting FastMCP with HTTP stream transport...");
         
         await server.start({
@@ -130,10 +152,13 @@ async function main(): Promise<void> {
             httpStream: {
                 port: port,
                 endpoint: "/mcp"
-            }
+            },
+            expressApp: app
         });
 
         logger.info(`✓ FastMCP HTTP server listening on port ${port}`);
+        logger.info(`✓ Health check available at http://localhost:${port}/health`);
+        logger.info(`✓ MCP config available at http://localhost:${port}/.well-known/mcp-config`);
         logger.info(`✓ MCP endpoint available at http://localhost:${port}/mcp`);
         logger.info(`✓ Server transport: HTTP Stream (FastMCP 3.x)`);
         logger.info(`✓ Ready for Smithery.ai hosted deployment`);

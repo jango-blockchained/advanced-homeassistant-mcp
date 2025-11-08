@@ -144,21 +144,42 @@ export class TimelineExecutor {
   /**
    * Queue commands from timeline using sliding window to prevent unbounded growth
    * Instead of queuing all commands upfront, we load just-in-time with lookahead
+   * 
+   * LATENCY COMPENSATION:
+   * Commands are sent EARLIER than their target timestamp to account for:
+   * - Network round-trip time (HTTP request/response)
+   * - Home Assistant processing time
+   * - Device response latency
+   * 
+   * Each device track has a compensationMs value that offsets command timing.
    */
   private queueCommands(timeline: RenderTimeline, startPosition: number): void {
     // Store all commands sorted by timestamp (for random access)
     this.allCommands = [];
     for (const track of timeline.tracks) {
+      // Get device-specific compensation (how early to send commands)
+      const compensationSeconds = (track.compensationMs || 0) / 1000;
+
       for (const command of track.commands) {
         // Skip commands before start position
         if (command.timestamp < startPosition) {
           continue;
         }
 
+        // Apply latency compensation: schedule command EARLIER so it arrives on-time
+        // If device has 150ms latency, send command 0.15s before target time
+        const compensatedTime = Math.max(0, command.timestamp - compensationSeconds);
+
         const executionCommand: ExecutionCommand = {
           entityId: track.entityId,
-          command,
-          scheduledTime: command.timestamp,
+          command: {
+            ...command,
+            // Store original timestamp for reference
+            originalTimestamp: command.timestamp,
+            // Use compensated timestamp for scheduling
+            timestamp: compensatedTime,
+          },
+          scheduledTime: compensatedTime,
           retries: 0,
           status: 'pending',
         };
@@ -167,7 +188,7 @@ export class TimelineExecutor {
       }
     }
 
-    // Sort all commands by timestamp
+    // Sort all commands by compensated timestamp
     this.allCommands.sort((a, b) => a.scheduledTime - b.scheduledTime);
 
     // Initialize sliding window: load first batch of commands
