@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # MCP Server - Development mode with hot reload
+  homeassistant-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: homeassistant-mcp-dev
+    restart: unless-stopped
+    environment:
+      - PORT=${PORT:-7123}
+      - NODE_ENV=development
+      - DEBUG=${DEBUG:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - HASS_HOST=${HASS_HOST:-http://host.docker.internal:8123}
+      - HASS_TOKEN=${HASS_TOKEN}
+    ports:
+      - "${PORT:-7123}:${PORT:-7123}"
+    volumes:
+      - ./src:/app/src
+      - ./dist:/app/dist
+      - ./logs:/app/logs
+    networks:
+      - homeassistant-mcp-network
+    env_file:
+      - .env
+      - .env.development
+    depends_on:
+      - aurora-server
+    command: ["sh", "-c", "npm run build:all && node dist/http-server.js"]
+
+  # Aurora Server - Development mode with hot reload
+  aurora-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.aurora
+    container_name: aurora-server-dev
+    restart: unless-stopped
+    environment:
+      - AURORA_PORT=${AURORA_PORT:-3000}
+      - NODE_ENV=development
+      - DEBUG=${DEBUG:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - HASS_HOST=${HASS_HOST:-http://host.docker.internal:8123}
+      - HASS_TOKEN=${HASS_TOKEN}
+    ports:
+      - "${AURORA_PORT:-3000}:${AURORA_PORT:-3000}"
+    volumes:
+      - ./src:/app/src
+      - ./aurora-server.ts:/app/aurora-server.ts
+      - ./dist:/app/dist
+      - ./logs:/app/logs
+      - ./audio:/app/audio
+      - ./aurora-profiles:/app/aurora-profiles
+      - /dev/snd:/dev/snd
+    devices:
+      - /dev/snd
+    networks:
+      - homeassistant-mcp-network
+    env_file:
+      - .env
+      - .env.development
+    command: ["sh", "-c", "bun run aurora-server.ts"]
+
+volumes:
+  logs:
+  audio-data:
+
+networks:
+  homeassistant-mcp-network:
+    driver: bridge

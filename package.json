@@ -37,9 +37,12 @@
     "start": "bun --smol run dist/index.js",
     "start:stdio": "node dist/stdio-server.js",
     "start:http": "node dist/http-server.js",
+    "start:aurora": "bun aurora-server.ts",
     "dev": "bun --hot --watch src/index.ts",
+    "dev:aurora": "bun --hot --watch aurora-server.ts",
     "build": "bun build ./src/index.ts --outdir ./dist --target bun --external '@valibot/to-json-schema' --external 'effect'",
     "build:all": "bun build ./src/index.ts --outdir ./dist --target bun --external '@valibot/to-json-schema' --external 'effect' && bun build ./src/stdio-server.ts --outdir ./dist --target node --external '@valibot/to-json-schema' --external 'effect' && bun build ./src/http-server.ts --outdir ./dist --target node --external '@valibot/to-json-schema' --external 'effect' && node scripts/optimize-dist.js",
+    "build:aurora": "bun build ./aurora-server.ts --outdir ./dist --target node",
     "build:node": "bun build ./src/index.ts ./src/stdio-server.ts --outdir ./dist --target node",
     "build:stdio": "bun build ./src/stdio-server.ts --outdir ./dist --target node --external:express --external:swagger-ui-express --external '@valibot/to-json-schema' --external 'effect'",
     "prepare": "test -d .husky && husky install || echo 'Skipping husky' && bun run build:all",
@@ -60,7 +63,12 @@
     "clean": "rm -rf dist .bun coverage .eslintcache .prettierignore",
     "typecheck": "bun x tsc --noEmit",
     "mcp:stdio": "bun run bin/stdio-server.js",
-    "mcp:build": "bun run build:all"
+    "mcp:build": "bun run build:all",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up",
+    "docker:logs": "docker-compose logs -f"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

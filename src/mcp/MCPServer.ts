@@ -348,17 +348,11 @@ export class MCPServer extends EventEmitter {
 
             try {
                 const result = await tool.execute(toolParams, context);
-                // Wrap result in MCP content format
+                // Return result directly - MCP clients expect raw object/array responses
+                // Do NOT wrap in content format for tools/call responses
                 return {
                     id: request.id,
-                    result: {
-                        content: [
-                            {
-                                type: "text",
-                                text: typeof result === 'string' ? result : JSON.stringify(result, null, 2)
-                            }
-                        ]
-                    }
+                    result: result
                 };
             } catch (error) {
                 logger.error(`Error executing tool ${toolName}:`, error);
@@ -386,17 +380,10 @@ export class MCPServer extends EventEmitter {
 
         try {
             const result = await tool.execute(params, context);
-            // Wrap result in MCP content format for consistency
+            // Return result directly without content wrapping
             return {
                 id: request.id,
-                result: {
-                    content: [
-                        {
-                            type: "text",
-                            text: typeof result === 'string' ? result : JSON.stringify(result, null, 2)
-                        }
-                    ]
-                }
+                result: result
             };
         } catch (error) {
             logger.error(`Error executing tool ${method}:`, error);
