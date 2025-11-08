@@ -33,6 +33,7 @@ RUN bun add ts-node --dev --ignore-scripts
 # Copy source files
 COPY src ./src
 COPY tsconfig*.json ./
+COPY scripts ./scripts
 
 # Build the application (compile TypeScript to JavaScript)
 RUN bun run build:all
