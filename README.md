@@ -251,6 +251,21 @@ Available endpoints:
 - `GET /api/resources/list` - List resources
 - `GET /api/health` - Health check
 - `WebSocket /api/ws` - Real-time updates
+- `GET /aurora` - Aurora animation web interface
+- `POST /api/aurora/*` - Aurora API endpoints
+
+### Aurora Animation System
+
+Access the Aurora web interface at: `http://localhost:3000/aurora`
+
+Features:
+- 🎨 Create endless, repeated, or one-shot animations
+- 🎤 Microphone/screen input support for reactive visualizations
+- 📊 Real-time session monitoring and control
+- 🌈 Interactive canvas visualization
+- 📖 Built-in usage instructions and guidelines
+
+See [Aurora Documentation](docs/AURORA.md) for detailed usage guide.
 
 ### Configuration
 
@@ -300,7 +315,7 @@ RATE_LIMIT_MAX=50
 - **Tools Layer**: Device control, automation, notifications
 - **Resource Manager**: State management and caching
 
-### Built-in Tools (24 Total)
+### Built-in Tools (33 Total)
 
 #### 🏠 Device Control (13 tools)
 - 🔦 **Lights Control**: Brightness, color temp, RGB, effects
@@ -340,7 +355,17 @@ RATE_LIMIT_MAX=50
   - Energy saving: Detect daytime lights, standby power
   - Generate automation configs
 
-> 📖 **See [Complete Tools Reference](docs/TOOLS_REFERENCE.md) for detailed documentation**
+#### 🌌 Aurora Animation System (9 tools)
+- 🎨 **Aurora**: Advanced animation and visualization system
+  - Get instructions and guidelines
+  - Create animation sessions with endless repeat support
+  - Microphone/screen/camera input processing
+  - Live and buffered input modes
+  - Session control (start, stop, pause, resume)
+  - Real-time state monitoring
+  - Web-based visual interface
+
+> 📖 **See [Complete Tools Reference](docs/TOOLS_REFERENCE.md) and [Aurora Documentation](docs/AURORA.md) for detailed documentation**
 
 ### MCP Features
 

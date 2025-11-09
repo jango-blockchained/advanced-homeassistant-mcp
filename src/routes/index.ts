@@ -10,9 +10,10 @@
 
 import { Router } from "express";
 import { mcpRoutes } from "./mcp.routes.js";
-import { sseRoutes } from "./sse.routes.js";
+import sseRoutes from "./sse.routes.js";
 import { toolRoutes } from "./tool.routes.js";
 import { healthRoutes } from "./health.routes.js";
+import auroraRoutes from "./aurora.routes.js";
 
 /**
  * Create main router instance
@@ -26,11 +27,13 @@ const router = Router();
  * - /sse: Server-Sent Events endpoints
  * - /tools: Tool management endpoints
  * - /health: Health check endpoint
+ * - /aurora: Aurora animation system endpoints
  */
 router.use("/mcp", mcpRoutes);
 router.use("/sse", sseRoutes);
 router.use("/tools", toolRoutes);
 router.use("/health", healthRoutes);
+router.use("/aurora", auroraRoutes);
 
 /**
  * Export the configured router
