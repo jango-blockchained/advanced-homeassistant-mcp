@@ -65,7 +65,7 @@ async function callAPI(endpoint, method = 'GET', data = null) {
         return result;
     } catch (error) {
         console.error('API Error:', error);
-        alert(`Error: ${error.message}`);
+        // alert(`Error: ${error.message}`);
         return { success: false, message: error.message };
     }
 }
@@ -446,12 +446,12 @@ function drawStats(frame, iteration, progress) {
     });
 }
 
-// Auto-refresh sessions every 5 seconds
-setInterval(() => {
-    if (document.getElementById('sessionsList').children.length > 0) {
-        listSessions();
-    }
-}, 5000);
+// Auto-refresh sessions every 5 seconds (disabled for demo)
+// setInterval(() => {
+//     if (document.getElementById('sessionsList').children.length > 0) {
+//         listSessions();
+//     }
+// }, 5000);
 
 // Initial load
 console.log('Aurora Client initialized');
