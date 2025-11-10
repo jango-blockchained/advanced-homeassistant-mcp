@@ -27,7 +27,7 @@ export default function PlaybackControls() {
       setError('Please select an audio file')
       return
     }
-    if (selectedDevices.size === 0) {
+    if (selectedDevices.length === 0) {
       setError('Please select at least one device')
       return
     }
@@ -41,7 +41,7 @@ export default function PlaybackControls() {
 
       const result = await api.renderTimeline({
         audioFile,
-        devices: Array.from(selectedDevices),
+        devices: selectedDevices,
         intensity,
         colorMapping,
         beatSync,
@@ -101,7 +101,7 @@ export default function PlaybackControls() {
     }
   }
 
-  const canRender = audioFile && selectedDevices.size > 0
+  const canRender = audioFile && selectedDevices.length > 0
   const isPlaying = playbackStatus.state === 'playing'
   const isPaused = playbackStatus.state === 'paused'
 

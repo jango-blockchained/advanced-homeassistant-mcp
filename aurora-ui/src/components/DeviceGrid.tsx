@@ -66,7 +66,7 @@ export default function DeviceGrid() {
                 </>
               )}
             </Button>
-            {selectedDevices.size > 0 && (
+            {selectedDevices.length > 0 && (
               <Button
                 onClick={clearDevices}
                 size="sm"
@@ -112,7 +112,7 @@ export default function DeviceGrid() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {devices.map(device => {
-              const isSelected = selectedDevices.has(device.entity_id)
+              const isSelected = selectedDevices.includes(device.entity_id)
               const isOn = device.state === 'on'
               
               return (
@@ -179,14 +179,14 @@ export default function DeviceGrid() {
         )}
 
         {/* Selection summary */}
-        {selectedDevices.size > 0 && (
+        {selectedDevices.length > 0 && (
           <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-lg light-glow">
             <div>
               <p className="text-xs text-muted-foreground mb-1">
                 Selected Devices
               </p>
               <p className="text-xl font-semibold text-foreground">
-                {selectedDevices.size} {selectedDevices.size !== 1 ? 'devices' : 'device'}
+                {selectedDevices.length} {selectedDevices.length !== 1 ? 'devices' : 'device'}
               </p>
             </div>
             <Sparkles className="w-6 h-6 text-primary light-pulse" />

@@ -187,24 +187,52 @@ async function handleRenderTimeline(
   if (cached?.audioFeatures) {
     audioFeatures = cached.audioFeatures;
   } else {
-    // Analyze audio
-    const capture = new AudioCapture();
-    const audioBuffer = await capture.loadFromFile(body.audioFile);
-    const analyzer = new AudioAnalyzer();
-    audioFeatures = await analyzer.analyze(audioBuffer);
+    try {
+      // Analyze audio
+      const capture = new AudioCapture();
+      const audioBuffer = await capture.loadFromFile(body.audioFile);
+      const analyzer = new AudioAnalyzer();
+      audioFeatures = await analyzer.analyze(audioBuffer);
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to analyze audio',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+  }
+
+  // Get devices from Home Assistant
+  const scanner = new DeviceScanner({
+    getStates: ctx.hassGetStates,
+    getState: ctx.hassGetState,
+    callService: ctx.hassCallService,
+  } as any);
+
+  const allDevices = await scanner.scanDevices();
+  const devices = allDevices.filter(d => body.devices.includes(d.entityId));
+
+  if (devices.length === 0) {
+    return new Response(
+      JSON.stringify({ error: 'No valid devices found' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   // Get device profiles
-  const deviceProfiles = await Promise.all(
-    body.devices.map(async (entityId) => {
-      const stored = await ctx.db.getDevice(entityId);
-      return {
-        entityId,
-        latencyMs: stored?.latencyMs || 100,
-        capabilities: stored?.capabilities || {},
-      };
-    })
-  );
+  const profiles = new Map();
+  for (const device of devices) {
+    const stored = await ctx.db.getDevice(device.entityId);
+    if (stored) {
+      profiles.set(device.entityId, {
+        entityId: device.entityId,
+        latencyMs: stored.latencyMs || 100,
+        capabilities: stored.capabilities || {},
+      });
+    }
+  }
 
   // Render timeline
   const generator = new TimelineGenerator();
@@ -217,42 +245,66 @@ async function handleRenderTimeline(
     minCommandInterval: body.settings?.minCommandInterval ?? 100,
   };
 
-  const timeline = await generator.generateTimeline(
-    audioFeatures,
-    deviceProfiles,
-    settings
-  );
+  let timeline;
+  try {
+    timeline = await generator.generateTimeline(
+      audioFeatures,
+      devices,
+      profiles,
+      settings,
+      {
+        name: body.name,
+        audioFile: body.audioFile,
+      }
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ 
+        error: 'Failed to render timeline',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 
-  // Store timeline
-  const timelineId = `timeline-${Date.now()}`;
-  const timelineName = body.name || `Timeline ${new Date().toISOString()}`;
+  // Store timeline metadata
+  const timelineId = timeline.id;
+  const timelineName = timeline.name;
   
-  await ctx.db.createTimeline({
-    id: timelineId,
-    name: timelineName,
-    audioFile: body.audioFile,
-    duration: audioFeatures.duration,
-    deviceCount: body.devices.length,
-    commandCount: timeline.tracks.reduce((sum, t) => sum + t.commands.length, 0),
-    createdAt: new Date(),
-  });
-
-  // Store tracks
-  for (const track of timeline.tracks) {
-    await ctx.db.addDeviceTrack(timelineId, {
-      entityId: track.entityId,
-      deviceName: track.deviceName,
-      compensationMs: track.compensationMs,
-      commandCount: track.commands.length,
+  try {
+    await ctx.db.createTimeline({
+      id: timelineId,
+      name: timelineName,
+      audioFile: body.audioFile,
+      duration: audioFeatures.duration,
+      deviceCount: devices.length,
+      commandCount: timeline.tracks.reduce((sum, t) => sum + t.commands.length, 0),
+      createdAt: new Date(),
     });
+
+    // Store tracks
+    for (const track of timeline.tracks) {
+      await ctx.db.addDeviceTrack(timelineId, {
+        entityId: track.entityId,
+        deviceName: track.deviceName,
+        compensationMs: track.compensationMs,
+        commandCount: track.commands.length,
+      });
+    }
+  } catch (error) {
+    // Database errors are not critical for rendering
+    console.error('Failed to store timeline metadata:', error);
   }
 
   return new Response(
     JSON.stringify({ 
+      success: true,
       timeline: {
-        ...timeline,
         id: timelineId,
         name: timelineName,
+        duration: audioFeatures.duration,
+        deviceCount: devices.length,
+        commandCount: timeline.tracks.reduce((sum, t) => sum + t.commands.length, 0),
       }
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -408,24 +460,35 @@ async function handleGetStatus(
   ctx: AuroraServerContext,
   corsHeaders: Record<string, string>
 ): Promise<Response> {
-  const state = ctx.executor?.getState() || {
-    state: 'idle',
-    position: 0,
-    mode: 'prerendered',
-    queueStats: { queued: 0, executed: 0, failed: 0, avgLatency: 0 },
-  };
+  try {
+    const state = ctx.executor?.getState() || {
+      state: 'idle',
+      position: 0,
+      mode: 'prerendered',
+      queueStats: { queued: 0, executed: 0, failed: 0, avgLatency: 0 },
+    };
 
-  const status = {
-    state: state.state,
-    currentTime: state.position,
-    duration: state.timeline?.duration ?? 0,
-    timelineId: state.timeline?.id,
-  };
+    const status = {
+      state: state.state,
+      currentTime: state.position,
+      duration: state.timeline?.duration ?? 0,
+      timelineId: state.timeline?.id,
+    };
 
-  return new Response(
-    JSON.stringify(status),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+    return new Response(
+      JSON.stringify(status),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        state: 'idle',
+        currentTime: 0,
+        duration: 0,
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 }
 
 /**

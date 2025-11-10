@@ -20,7 +20,7 @@ export default function StatusBar() {
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-tech-success" />
               <span className="text-muted-foreground">Devices:</span>
-              <span className="text-foreground font-medium">{selectedDevices.size}/{devices.length}</span>
+              <span className="text-foreground font-medium">{selectedDevices.length}/{devices.length}</span>
             </div>
             
             <div className="flex items-center gap-2">
