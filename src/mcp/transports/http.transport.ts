@@ -10,9 +10,16 @@ import { Server as HttpServer } from "http";
 import express, { Express, Request, Response, NextFunction } from "express";
 // Using a direct import now that we have the types
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { TransportLayer, MCPRequest, MCPResponse, MCPStreamPart, MCPNotification, MCPErrorCode } from "../types.js";
 import { logger } from "../../utils/logger.js";
 import { EventEmitter } from "events";
+import { apiRoutes } from "../../routes/index.js";
+
+// Get __dirname equivalent in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 type ServerSentEventsClient = {
     id: string;
@@ -145,6 +152,18 @@ export class HttpTransport implements TransportLayer {
                     timestamp: new Date().toISOString()
                 }
             });
+        });
+
+        // Mount API routes (includes Aurora routes)
+        this.app.use(`${this.apiPrefix}`, apiRoutes);
+
+        // Serve Aurora static files
+        const publicPath = path.join(__dirname, '../../../public');
+        this.app.use('/aurora', express.static(path.join(publicPath, 'aurora')));
+        
+        // Aurora UI endpoint
+        this.app.get('/aurora', (req: Request, res: Response) => {
+            res.sendFile(path.join(publicPath, 'aurora', 'index.html'));
         });
 
         // SSE stream endpoint

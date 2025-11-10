@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora - Animation & Visualization System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 968px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .panel h2 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .canvas-container {
+            grid-column: 1 / -1;
+            position: relative;
+            min-height: 400px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #animationCanvas {
+            width: 100%;
+            height: 400px;
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        select option {
+            background: #1e3c72;
+            color: #fff;
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00ffff, #0080ff);
+            border: none;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff0080, #ff0000);
+            border: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #00ff80, #00ff00);
+            border: none;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-active {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .status-inactive {
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        .status-paused {
+            background: #ffaa00;
+            box-shadow: 0 0 10px #ffaa00;
+        }
+
+        .session-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .session-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .session-name {
+            font-weight: 600;
+        }
+
+        .session-stats {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+        }
+
+        .info-box {
+            background: rgba(0, 255, 255, 0.1);
+            border-left: 3px solid #00ffff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .warning-box {
+            background: rgba(255, 170, 0, 0.1);
+            border-left: 3px solid #ffaa00;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .visualization-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        .input-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        #instructions {
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="fade-in">
+            <h1>🌌 Aurora</h1>
+            <p class="subtitle">Animation & Visualization System for Home Assistant MCP</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- Canvas Panel -->
+            <div class="panel canvas-container" style="grid-column: 1 / -1;">
+                <canvas id="animationCanvas"></canvas>
+                <div class="visualization-controls">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="showStats" checked>
+                        <label for="showStats" style="margin: 0;">Show Stats</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="showWaveform">
+                        <label for="showWaveform" style="margin: 0;">Show Waveform</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="showParticles">
+                        <label for="showParticles" style="margin: 0;">Show Particles</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Session Panel -->
+            <div class="panel fade-in">
+                <h2>🎨 Create Animation</h2>
+                
+                <div class="info-box">
+                    💡 Tip: Use 'endless' mode for continuous animations, or 'repeat' with a count for limited playback.
+                </div>
+
+                <form id="createSessionForm">
+                    <div class="form-group">
+                        <label for="sessionId">Session ID</label>
+                        <input type="text" id="sessionId" placeholder="my-animation" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="animationName">Animation Name</label>
+                        <input type="text" id="animationName" placeholder="pulse" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="duration">Duration (ms)</label>
+                        <input type="number" id="duration" value="2000" min="100" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mode">Mode</label>
+                        <select id="mode" required>
+                            <option value="once">Once</option>
+                            <option value="repeat">Repeat</option>
+                            <option value="endless" selected>Endless</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="repeatCountGroup" style="display: none;">
+                        <label for="repeatCount">Repeat Count</label>
+                        <input type="number" id="repeatCount" value="3" min="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="easing">Easing</label>
+                        <select id="easing">
+                            <option value="linear">Linear</option>
+                            <option value="ease-in">Ease In</option>
+                            <option value="ease-out">Ease Out</option>
+                            <option value="ease-in-out" selected>Ease In-Out</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inputSource">Input Source</label>
+                        <select id="inputSource">
+                            <option value="none" selected>None</option>
+                            <option value="microphone">Microphone</option>
+                            <option value="screen">Screen</option>
+                            <option value="camera">Camera</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="inputConfigGroup" style="display: none;">
+                        <label for="bufferMode">Buffer Mode</label>
+                        <select id="bufferMode">
+                            <option value="live" selected>Live</option>
+                            <option value="buffered">Buffered</option>
+                        </select>
+                    </div>
+
+                    <div class="checkbox-group" style="margin-bottom: 15px;">
+                        <input type="checkbox" id="autoStart" checked>
+                        <label for="autoStart" style="margin: 0;">Auto Start</label>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Create & Start Session</button>
+                </form>
+            </div>
+
+            <!-- Session Control Panel -->
+            <div class="panel fade-in">
+                <h2>⚙️ Session Control</h2>
+                
+                <div class="form-group">
+                    <label for="controlSessionId">Session ID</label>
+                    <input type="text" id="controlSessionId" placeholder="my-animation">
+                </div>
+
+                <div class="button-group">
+                    <button onclick="startSession()" class="btn-success">▶️ Start</button>
+                    <button onclick="stopSession()" class="btn-danger">⏹️ Stop</button>
+                    <button onclick="pauseSession()">⏸️ Pause</button>
+                    <button onclick="resumeSession()">⏯️ Resume</button>
+                </div>
+
+                <button onclick="getSessionState()" style="margin-top: 10px;">📊 Get State</button>
+                <button onclick="stopAllSessions()" class="btn-danger" style="margin-top: 10px;">🛑 Stop All</button>
+
+                <div class="input-status" id="inputStatus" style="display: none;">
+                    <span class="status-indicator status-active"></span>
+                    <span>Input Active: <span id="inputSourceName">None</span></span>
+                </div>
+            </div>
+
+            <!-- Active Sessions Panel -->
+            <div class="panel fade-in" style="grid-column: 1 / -1;">
+                <h2>📋 Active Sessions</h2>
+                <button onclick="listSessions()" style="margin-bottom: 15px;">🔄 Refresh List</button>
+                <div class="session-list" id="sessionsList">
+                    <p style="opacity: 0.6; text-align: center; padding: 20px;">No active sessions. Create one to get started!</p>
+                </div>
+            </div>
+
+            <!-- Instructions Panel -->
+            <div class="panel fade-in" style="grid-column: 1 / -1;">
+                <h2>📖 Aurora Instructions</h2>
+                <div class="warning-box">
+                    ⚠️ Important: These instructions should be reviewed at the beginning of any Aurora session to ensure proper usage.
+                </div>
+                <button onclick="getInstructions()" style="margin-bottom: 15px;">📥 Load Instructions</button>
+                <div id="instructions">
+                    Click "Load Instructions" to view the Aurora usage guidelines...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="aurora-client.js"></script>
+</body>
+</html>

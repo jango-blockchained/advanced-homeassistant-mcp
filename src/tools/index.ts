@@ -6,6 +6,7 @@ import { packageTool } from "./package.tool.js";
 import { automationConfigTool } from "./automation-config.tool.js";
 import { subscribeEventsTool } from "./subscribe-events.tool.js";
 import { getSSEStatsTool } from "./sse-stats.tool.js";
+import { auroraTools } from "../aurora/tool.js";
 
 // Import Tool objects (not classes) from homeassistant directory
 import { lightsControlTool } from "./homeassistant/lights.tool.js";
