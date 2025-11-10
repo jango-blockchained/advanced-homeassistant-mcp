@@ -154,17 +154,8 @@ export class HttpTransport implements TransportLayer {
             });
         });
 
-        // Mount API routes (includes Aurora routes)
+        // Mount API routes
         this.app.use(`${this.apiPrefix}`, apiRoutes);
-
-        // Serve Aurora static files
-        const publicPath = path.join(__dirname, '../../../public');
-        this.app.use('/aurora', express.static(path.join(publicPath, 'aurora')));
-        
-        // Aurora UI endpoint
-        this.app.get('/aurora', (req: Request, res: Response) => {
-            res.sendFile(path.join(publicPath, 'aurora', 'index.html'));
-        });
 
         // SSE stream endpoint
         this.app.get(`${this.apiPrefix}/stream`, (req: Request, res: Response) => {

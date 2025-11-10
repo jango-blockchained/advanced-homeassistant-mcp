@@ -6,7 +6,6 @@ import { packageTool } from "./package.tool.js";
 import { automationConfigTool } from "./automation-config.tool.js";
 import { subscribeEventsTool } from "./subscribe-events.tool.js";
 import { getSSEStatsTool } from "./sse-stats.tool.js";
-import { auroraTools } from "../aurora/tool.js";
 
 // Import Tool objects (not classes) from homeassistant directory
 import { lightsControlTool } from "./homeassistant/lights.tool.js";
@@ -23,21 +22,6 @@ import { vacuumControlTool } from "./homeassistant/vacuum.tool.js";
 import { alarmControlTool } from "./homeassistant/alarm.tool.js";
 import { maintenanceTool } from "./homeassistant/maintenance.tool.js";
 import { smartScenariosTool } from "./homeassistant/smart-scenarios.tool.js";
-
-// Aurora tools
-import {
-  auroraTools,
-  auroraAnalyzeAudioTool,
-  auroraScanDevicesTool,
-  auroraProfileDeviceTool,
-  auroraRenderTimelineTool,
-  auroraPlayTimelineTool,
-  auroraControlPlaybackTool,
-  auroraGetStatusTool,
-  auroraListTimelinesTool,
-  auroraExportTimelineTool,
-  auroraImportTimelineTool,
-} from "./aurora/index.js";
 
 // Tool category types
 export enum ToolCategory {
@@ -87,8 +71,6 @@ export const tools: Tool[] = [
   alarmControlTool,
   maintenanceTool,
   smartScenariosTool,
-  // Aurora tools
-  ...auroraTools,
 ];
 
 // Function to get a tool by name
@@ -125,15 +107,4 @@ export {
   alarmControlTool,
   maintenanceTool,
   smartScenariosTool,
-  // Aurora tools
-  auroraAnalyzeAudioTool,
-  auroraScanDevicesTool,
-  auroraProfileDeviceTool,
-  auroraRenderTimelineTool,
-  auroraPlayTimelineTool,
-  auroraControlPlaybackTool,
-  auroraGetStatusTool,
-  auroraListTimelinesTool,
-  auroraExportTimelineTool,
-  auroraImportTimelineTool,
 };
