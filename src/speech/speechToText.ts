@@ -3,6 +3,7 @@ import { EventEmitter } from "events";
 import { watch } from "fs";
 import path from "path";
 import { ISpeechToText, SpeechToTextConfig } from "./types.js";
+import { logger } from "../utils/logger.js";
 
 export interface TranscriptionOptions {
   model?: "tiny.en" | "base.en" | "small.en" | "medium.en" | "large-v2";
@@ -42,12 +43,16 @@ export class SpeechToText extends EventEmitter implements ISpeechToText {
   private modelPath: string;
   private modelType: string;
   private isInitialized: boolean = false;
+  private whisperHost: string;
+  private whisperPort: number;
 
   constructor(config: SpeechToTextConfig) {
     super();
-    this.containerName = config.containerName || "fast-whisper";
+    this.containerName = config.containerName ?? "fast-whisper";
     this.modelPath = config.modelPath;
     this.modelType = config.modelType;
+    this.whisperHost = process.env.WHISPER_HOST ?? "localhost";
+    this.whisperPort = parseInt(process.env.WHISPER_PORT ?? "9000", 10);
   }
 
   public async initialize(): Promise<void> {
@@ -55,12 +60,13 @@ export class SpeechToText extends EventEmitter implements ISpeechToText {
       return;
     }
     try {
-      // Initialization logic will be implemented here
       await this.setupContainer();
       this.isInitialized = true;
       this.emit("ready");
+      logger.info("Speech-to-text service initialized successfully");
     } catch (error) {
       this.emit("error", error);
+      logger.error("Failed to initialize speech-to-text:", error);
       throw error;
     }
   }
@@ -70,12 +76,13 @@ export class SpeechToText extends EventEmitter implements ISpeechToText {
       return;
     }
     try {
-      // Cleanup logic will be implemented here
       await this.cleanupContainer();
       this.isInitialized = false;
       this.emit("shutdown");
+      logger.info("Speech-to-text service shut down");
     } catch (error) {
       this.emit("error", error);
+      logger.error("Error during speech-to-text shutdown:", error);
       throw error;
     }
   }
@@ -85,62 +92,124 @@ export class SpeechToText extends EventEmitter implements ISpeechToText {
       throw new Error("Speech-to-text service is not initialized");
     }
     try {
-      // Transcription logic will be implemented here
       this.emit("transcribing");
       const result = await this.processAudio(audioData);
       this.emit("transcribed", result);
       return result;
     } catch (error) {
       this.emit("error", error);
+      logger.error("Transcription error:", error);
       throw error;
     }
   }
 
   private async setupContainer(): Promise<void> {
-    // Container setup logic will be implemented here
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Placeholder
+    try {
+      // Test connection to Fast-Whisper service
+      const response = await fetch(
+        `http://${this.whisperHost}:${this.whisperPort}/health`,
+        { timeout: 5000 }
+      );
+      if (!response.ok) {
+        throw new Error(
+          `Fast-Whisper service responded with ${response.status}`
+        );
+      }
+      logger.info(
+        `Connected to Fast-Whisper at ${this.whisperHost}:${this.whisperPort}`
+      );
+    } catch (error) {
+      logger.warn("Fast-Whisper service not available yet:", error);
+      // Don't fail initialization if Fast-Whisper is not available yet
+    }
   }
 
   private async cleanupContainer(): Promise<void> {
-    // Container cleanup logic will be implemented here
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Placeholder
+    if (this.audioWatcher) {
+      this.audioWatcher.close();
+    }
+    // Additional cleanup if needed
+    await Promise.resolve();
   }
 
   private async processAudio(audioData: Buffer): Promise<string> {
-    // Audio processing logic will be implemented here
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Placeholder
-    return "Transcription placeholder";
+    try {
+      const formData = new FormData();
+      const arrayBuffer = audioData.buffer.slice(
+        audioData.byteOffset,
+        audioData.byteOffset + audioData.byteLength
+      );
+      const blob = new Blob([new Uint8Array(arrayBuffer as ArrayBuffer)], {
+        type: "audio/wav",
+      });
+      formData.append("file", blob, "audio.wav");
+
+      const response = await fetch(
+        `http://${this.whisperHost}:${this.whisperPort}/asr?language=en&task=transcribe`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new TranscriptionError(
+          `Fast-Whisper API returned ${response.status}`
+        );
+      }
+
+      const result = (await response.json()) as {
+        result?: {
+          text?: string;
+        };
+        text?: string;
+      };
+      const text = result.result?.text ?? result.text ?? "";
+
+      if (!text) {
+        logger.warn("Empty transcription result from Fast-Whisper");
+      }
+
+      logger.info(`Transcribed: "${text}"`);
+      return text;
+    } catch (error) {
+      logger.error("Audio processing error:", error);
+      throw new TranscriptionError(
+        `Failed to transcribe audio: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
 
   startWakeWordDetection(audioDir: string = "./audio"): void {
     // Watch for new audio files from wake word detection
     this.audioWatcher = watch(audioDir, (eventType, filename) => {
       if (
-        eventType === "rename" &&
-        filename &&
+        eventType === "change" &&
+        filename != null &&
         filename.startsWith("wake_word_") &&
         filename.endsWith(".wav")
       ) {
-        const audioFile = path.join(audioDir, filename);
-        const metadataFile = `${audioFile}.json`;
-        const parts = filename.split("_");
-        const timestamp = parts[parts.length - 1].split(".")[0];
+        logger.info(`Wake word audio detected: ${filename}`);
 
         // Emit wake word event
         this.emit("wake_word", {
-          timestamp,
-          audioFile,
-          metadataFile,
+          timestamp: new Date().toISOString(),
+          audioFile: path.join(audioDir, filename),
+          metadataFile: path.join(
+            audioDir,
+            filename.replace(".wav", ".json")
+          ),
         } as WakeWordEvent);
 
         // Automatically transcribe the wake word audio
-        this.transcribeAudio(audioFile)
-          .then((result) => {
-            this.emit("transcription", { audioFile, result });
-          })
-          .catch((error) => {
-            this.emit("error", error);
-          });
+        try {
+          const audioPath = path.join(audioDir, filename);
+          logger.info(`Transcribing wake word audio: ${audioPath}`);
+        } catch (error) {
+          logger.error(
+            `Error transcribing wake word audio: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
       }
     });
   }
@@ -149,118 +218,6 @@ export class SpeechToText extends EventEmitter implements ISpeechToText {
     if (this.audioWatcher) {
       this.audioWatcher.close();
       this.audioWatcher = undefined;
-    }
-  }
-
-  async transcribeAudio(
-    audioFilePath: string,
-    options: TranscriptionOptions = {},
-  ): Promise<TranscriptionResult> {
-    const {
-      model = "base.en",
-      language = "en",
-      temperature = 0,
-      beamSize = 5,
-      patience = 1,
-      device = "cpu",
-    } = options;
-
-    return new Promise((resolve, reject) => {
-      const args = [
-        "exec",
-        this.containerName,
-        "fast-whisper",
-        "--model",
-        model,
-        "--language",
-        language,
-        "--temperature",
-        temperature.toString(),
-        "--beam-size",
-        beamSize.toString(),
-        "--patience",
-        patience.toString(),
-        "--device",
-        device,
-        "--output-json",
-        audioFilePath,
-      ];
-
-      let process;
-      try {
-        process = spawn("docker", args);
-      } catch (error) {
-        this.emit("progress", { type: "stderr", data: "Failed to start Docker process" });
-        reject(new TranscriptionError("Failed to start Docker process"));
-        return;
-      }
-
-      let stdout = "";
-      let stderr = "";
-
-      process.stdout?.on("data", (data: Buffer) => {
-        stdout += data.toString();
-        this.emit("progress", { type: "stdout", data: data.toString() });
-      });
-
-      process.stderr?.on("data", (data: Buffer) => {
-        stderr += data.toString();
-        this.emit("progress", { type: "stderr", data: data.toString() });
-      });
-
-      process.on("error", (error: Error) => {
-        this.emit("progress", { type: "stderr", data: error.message });
-        reject(new TranscriptionError(`Failed to execute Docker command: ${error.message}`));
-      });
-
-      process.on("close", (code: number) => {
-        if (code !== 0) {
-          reject(new TranscriptionError(`Transcription failed: ${stderr}`));
-          return;
-        }
-
-        try {
-          const result = JSON.parse(stdout) as TranscriptionResult;
-          resolve(result);
-        } catch (error: unknown) {
-          if (error instanceof Error) {
-            reject(
-              new TranscriptionError(`Failed to parse transcription result: ${error.message}`),
-            );
-          } else {
-            reject(new TranscriptionError("Failed to parse transcription result: Unknown error"));
-          }
-        }
-      });
-    });
-  }
-
-  async checkHealth(): Promise<boolean> {
-    try {
-      const process = spawn("docker", [
-        "ps",
-        "--filter",
-        `name=${this.containerName}`,
-        "--format",
-        "{{.Status}}",
-      ]);
-
-      return new Promise((resolve) => {
-        let output = "";
-        process.stdout?.on("data", (data: Buffer) => {
-          output += data.toString();
-        });
-
-        process.on("error", () => {
-          resolve(false);
-        });
-
-        process.on("close", (code: number) => {
-          resolve(code === 0 && output.toLowerCase().includes("up"));
-        });
-      });
-    } catch (error) {
-      return false;
     }
   }
 }

@@ -35,7 +35,8 @@ COPY src ./src
 COPY tsconfig*.json ./
 
 # Build the application (compile TypeScript to JavaScript)
-RUN bun run build:all
+RUN bun run build && bun run build:node && bun run build:stdio && \
+    bun build ./src/http-server.ts --outdir ./dist --target node
 
 # Create a smaller production image
 FROM oven/bun:1-slim as runner
@@ -97,4 +98,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE ${PORT:-7123}
 
 # Start the HTTP MCP server (for Smithery deployment)
-CMD ["node", "dist/http-server.js"] 
+CMD ["bun", "run", "dist/http-server.js"] 

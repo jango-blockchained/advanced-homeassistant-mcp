@@ -3,6 +3,13 @@ version: '3.8'
 services:
   homeassistant-mcp:
     image: homeassistant-mcp:latest
+    # Microphone and audio device permissions
+    devices:
+      - /dev/snd:/dev/snd
+    volumes:
+      - /run/user/1000/pulse/native:/run/user/1000/pulse/native
+    group_add:
+      - "${AUDIO_GID:-29}"
     environment:
       # Speech Feature Flags
       - ENABLE_SPEECH_FEATURES=${ENABLE_SPEECH_FEATURES:-true}
@@ -17,6 +24,7 @@ services:
       - CHANNELS=${CHANNELS:-1}
       - CHUNK_SIZE=${CHUNK_SIZE:-1024}
       - PULSE_SERVER=${PULSE_SERVER:-unix:/run/user/1000/pulse/native}
+      - PULSE_COOKIE=/run/user/1000/pulse/cookie
 
   fast-whisper:
     image: onerahmet/openai-whisper-asr-webservice:latest
