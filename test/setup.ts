@@ -22,8 +22,15 @@ const TEST_ENV = {
     JWT_SECRET: 'test_jwt_secret_key_min_32_chars_long_string'
 };
 
+// Set environment variables immediately at module load time
+// This ensures they're available when other modules are imported
+Object.entries(TEST_ENV).forEach(([key, value]) => {
+    process.env[key] = value;
+});
+
 beforeAll(() => {
-    // Store original environment
+    // Environment variables are already set above
+    // Just ensure they're set (redundant but safe)
     process.env = {
         ...process.env,
         ...TEST_ENV
