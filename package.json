@@ -41,6 +41,8 @@
     "build": "bun build ./src/index.ts --outdir ./dist --target bun --external '@valibot/to-json-schema' --external 'effect'",
     "build:node": "bun build ./src/index.ts ./src/stdio-server.ts --outdir ./dist --target node",
     "build:stdio": "bun build ./src/stdio-server.ts --outdir ./dist --target node --external:express --external:swagger-ui-express --external '@valibot/to-json-schema' --external 'effect'",
+    "build:http": "bun build ./src/http-server.ts --outdir ./dist --target node --external:express --external:swagger-ui-express --external '@valibot/to-json-schema' --external 'effect'",
+    "build:all": "bun run build && bun run build:node && bun run build:http",
     "prepare": "test -d .husky && husky install || echo 'Skipping husky' && bun run build:all",
     "stdio": "bun run ./bin/stdio-server.js",
     "smithery:build": "npx @smithery/cli build src/http-server.ts --out dist/smithery.cjs --transport shttp",
