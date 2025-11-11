@@ -19,15 +19,27 @@ export const AppConfigSchema = z.object({
       ENABLED: z.boolean().default(false),
       WAKE_WORD_ENABLED: z.boolean().default(false),
       SPEECH_TO_TEXT_ENABLED: z.boolean().default(false),
+      TEXT_TO_SPEECH_ENABLED: z.boolean().default(false),
       WHISPER_MODEL_PATH: z.string().default("/models"),
       WHISPER_MODEL_TYPE: z.string().default("base"),
+      DEFAULT_LANGUAGE: z.string().default("en"),
+      SUPPORTED_LANGUAGES: z.array(z.string()).default(["en", "de", "es", "fr"]),
+      AUTO_DETECT_LANGUAGE: z.boolean().default(false),
+      TTS_PROVIDER: z.string().default("google_translate"),
+      TTS_CACHE_ENABLED: z.boolean().default(true),
     })
     .default({
       ENABLED: false,
       WAKE_WORD_ENABLED: false,
       SPEECH_TO_TEXT_ENABLED: false,
+      TEXT_TO_SPEECH_ENABLED: false,
       WHISPER_MODEL_PATH: "/models",
       WHISPER_MODEL_TYPE: "base",
+      DEFAULT_LANGUAGE: "en",
+      SUPPORTED_LANGUAGES: ["en", "de", "es", "fr"],
+      AUTO_DETECT_LANGUAGE: false,
+      TTS_PROVIDER: "google_translate",
+      TTS_CACHE_ENABLED: true,
     }),
 
   /** Security Configuration */

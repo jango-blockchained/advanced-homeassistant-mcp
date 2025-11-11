@@ -1,12 +1,15 @@
 import { APP_CONFIG } from "../config/app.config.ts";
 import { logger } from "../utils/logger.js";
 import type { IWakeWordDetector, ISpeechToText } from "./types.js";
+import { voiceSessionManager } from "./voiceSessionManager.js";
+import { EventEmitter } from "events";
 
 class SpeechService {
   private static instance: SpeechService | null = null;
   private isInitialized: boolean = false;
   private wakeWordDetector: IWakeWordDetector | null = null;
   private speechToText: ISpeechToText | null = null;
+  private eventEmitter: EventEmitter = new EventEmitter();
 
   private constructor() {}
 
@@ -35,6 +38,15 @@ class SpeechService {
         const { WakeWordDetector } = await import("./wakeWordDetector.js");
         this.wakeWordDetector = new WakeWordDetector() as IWakeWordDetector;
         await this.wakeWordDetector.initialize();
+
+        // Wire wake word events
+        if (this.wakeWordDetector instanceof EventEmitter) {
+          this.wakeWordDetector.on("wake_word_detected", (event) => {
+            logger.info("Wake word detected, starting new voice session");
+            voiceSessionManager.startSession();
+            this.eventEmitter.emit("wake_word_detected", event);
+          });
+        }
       }
 
       if (APP_CONFIG.SPEECH.SPEECH_TO_TEXT_ENABLED) {
@@ -46,10 +58,37 @@ class SpeechService {
           modelType: APP_CONFIG.SPEECH.WHISPER_MODEL_TYPE,
         }) as ISpeechToText;
         await this.speechToText.initialize();
+
+        // Wire speech-to-text events
+        if (this.speechToText instanceof EventEmitter) {
+          this.speechToText.on("transcribed", (result: { text: string }) => {
+            logger.info("Voice transcription completed", { text: result.text });
+            const session = voiceSessionManager.getCurrentSession();
+            if (session) {
+              voiceSessionManager.updateContext(session.id, {
+                recentEntities: this.extractEntitiesFromTranscription(result.text),
+              });
+            }
+            this.eventEmitter.emit("transcription_complete", {
+              transcription: result.text,
+              sessionId: session?.id,
+            });
+          });
+
+          this.speechToText.on("transcribing", () => {
+            this.eventEmitter.emit("transcription_start");
+          });
+
+          this.speechToText.on("error", (error) => {
+            logger.error("Speech-to-text error:", error);
+            this.eventEmitter.emit("speech_error", error);
+          });
+        }
       }
 
       this.isInitialized = true;
       logger.info("Speech service initialized successfully");
+      this.eventEmitter.emit("service_initialized");
     } catch (error) {
       logger.error("Failed to initialize speech service:", error);
       throw error;
@@ -104,6 +143,50 @@ class SpeechService {
       throw new Error("Speech-to-text is not initialized");
     }
     return this.speechToText;
+  }
+
+  /**
+   * Extract entity names from transcription for session context
+   */
+  private extractEntitiesFromTranscription(text: string): string[] {
+    const commonEntities = [
+      "light",
+      "lights",
+      "lamp",
+      "fan",
+      "ac",
+      "thermostat",
+      "lock",
+      "door",
+      "blind",
+      "blinds",
+      "curtain",
+      "curtains",
+      "bedroom",
+      "living room",
+      "kitchen",
+      "bathroom",
+      "garage",
+      "office",
+    ];
+
+    const entities: Set<string> = new Set();
+    const lowerText = text.toLowerCase();
+
+    for (const entity of commonEntities) {
+      if (lowerText.includes(entity)) {
+        entities.add(entity);
+      }
+    }
+
+    return Array.from(entities);
+  }
+
+  /**
+   * Get event emitter for listening to speech events
+   */
+  public getEventEmitter(): EventEmitter {
+    return this.eventEmitter;
   }
 }
 

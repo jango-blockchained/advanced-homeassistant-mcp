@@ -22,6 +22,10 @@ import { vacuumControlTool } from "./homeassistant/vacuum.tool.js";
 import { alarmControlTool } from "./homeassistant/alarm.tool.js";
 import { maintenanceTool } from "./homeassistant/maintenance.tool.js";
 import { smartScenariosTool } from "./homeassistant/smart-scenarios.tool.js";
+// Import voice tools
+import { voiceCommandParserTool } from "./homeassistant/voice-command-parser.tool.js";
+import { voiceCommandExecutorTool } from "./homeassistant/voice-command-executor.tool.js";
+import { voiceCommandAIParserTool } from "./homeassistant/voice-command-ai-parser.tool.js";
 
 // Tool category types
 export enum ToolCategory {
@@ -37,7 +41,7 @@ export enum ToolPriority {
   LOW = "low",
 }
 
-interface ToolMetadata {
+interface _ToolMetadata {
   category: ToolCategory;
   platform: string;
   version: string;
@@ -71,6 +75,10 @@ export const tools: Tool[] = [
   alarmControlTool,
   maintenanceTool,
   smartScenariosTool,
+  // Voice command tools
+  voiceCommandParserTool,
+  voiceCommandExecutorTool,
+  voiceCommandAIParserTool,
 ];
 
 // Function to get a tool by name
@@ -107,4 +115,8 @@ export {
   alarmControlTool,
   maintenanceTool,
   smartScenariosTool,
+  // Voice command tools
+  voiceCommandParserTool,
+  voiceCommandExecutorTool,
+  voiceCommandAIParserTool,
 };
