@@ -36,12 +36,7 @@ export class IntentClassifier {
       },
       {
         action: "query",
-        patterns: [
-          /what\s+is/i,
-          /get\s+(?:the\s+)?(.+)/i,
-          /show\s+(?:the\s+)?(.+)/i,
-          /tell\s+me/i,
-        ],
+        patterns: [/what\s+is/i, /get\s+(?:the\s+)?(.+)/i, /show\s+(?:the\s+)?(.+)/i, /tell\s+me/i],
       },
     ];
   }
@@ -71,11 +66,7 @@ export class IntentClassifier {
               action: actionPattern.action,
               target: extractedEntities.primary_target,
               confidence,
-              parameters: this.extractActionParameters(
-                actionPattern,
-                match,
-                extractedEntities,
-              ),
+              parameters: this.extractActionParameters(actionPattern, match, extractedEntities),
               raw_input: input,
             };
           }
@@ -107,14 +98,27 @@ export class IntentClassifier {
 
     // Boost for specific keywords and patterns
     const boostKeywords = [
-      "please", "can you", "would you", "kindly",
-      "could you", "might you", "turn on", "switch on",
-      "enable", "activate", "turn off", "switch off",
-      "disable", "deactivate", "set", "change", "adjust"
+      "please",
+      "can you",
+      "would you",
+      "kindly",
+      "could you",
+      "might you",
+      "turn on",
+      "switch on",
+      "enable",
+      "activate",
+      "turn off",
+      "switch off",
+      "disable",
+      "deactivate",
+      "set",
+      "change",
+      "adjust",
     ];
 
-    const matchedKeywords = boostKeywords.filter(keyword =>
-      input.toLowerCase().includes(keyword)
+    const matchedKeywords = boostKeywords.filter((keyword) =>
+      input.toLowerCase().includes(keyword),
     );
 
     // More aggressive keyword boosting
@@ -122,15 +126,23 @@ export class IntentClassifier {
 
     // Boost for action-specific patterns
     const actionPatterns = [
-      /turn\s+on/i, /switch\s+on/i, /enable/i, /activate/i,
-      /turn\s+off/i, /switch\s+off/i, /disable/i, /deactivate/i,
-      /set\s+to/i, /change\s+to/i, /adjust\s+to/i,
-      /what\s+is/i, /get\s+the/i, /show\s+me/i
+      /turn\s+on/i,
+      /switch\s+on/i,
+      /enable/i,
+      /activate/i,
+      /turn\s+off/i,
+      /switch\s+off/i,
+      /disable/i,
+      /deactivate/i,
+      /set\s+to/i,
+      /change\s+to/i,
+      /adjust\s+to/i,
+      /what\s+is/i,
+      /get\s+the/i,
+      /show\s+me/i,
     ];
 
-    const matchedPatterns = actionPatterns.filter(pattern =>
-      pattern.test(input)
-    );
+    const matchedPatterns = actionPatterns.filter((pattern) => pattern.test(input));
 
     confidence += matchedPatterns.length * 0.15;
 
@@ -163,7 +175,7 @@ export class IntentClassifier {
     }
 
     // Only add raw_parameter for non-set actions
-    if (actionPattern.action !== 'set' && match.length > 1 && match[1]) {
+    if (actionPattern.action !== "set" && match.length > 1 && match[1]) {
       parameters.raw_parameter = match[1].trim();
     }
 
@@ -209,4 +221,3 @@ export class IntentClassifier {
     };
   }
 }
-

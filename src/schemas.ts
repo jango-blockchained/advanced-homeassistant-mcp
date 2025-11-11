@@ -69,19 +69,11 @@ export const LightAttributesSchema = z.object({
   min_brightness: z.number().min(0).max(255).optional(),
   max_brightness: z.number().min(0).max(255).optional(),
   // Color support
-  rgb_color: z.tuple([
-    z.number().min(0).max(255),
-    z.number().min(0).max(255),
-    z.number().min(0).max(255)
-  ]).optional(),
-  xy_color: z.tuple([
-    z.number().min(0).max(1),
-    z.number().min(0).max(1)
-  ]).optional(),
-  hs_color: z.tuple([
-    z.number().min(0).max(360),
-    z.number().min(0).max(100)
-  ]).optional(),
+  rgb_color: z
+    .tuple([z.number().min(0).max(255), z.number().min(0).max(255), z.number().min(0).max(255)])
+    .optional(),
+  xy_color: z.tuple([z.number().min(0).max(1), z.number().min(0).max(1)]).optional(),
+  hs_color: z.tuple([z.number().min(0).max(360), z.number().min(0).max(100)]).optional(),
   // Color temperature
   color_temp: z.number().optional(),
   color_temp_kelvin: z.number().optional(),
@@ -106,14 +98,16 @@ export const LightAttributesSchema = z.object({
   icon: z.string().optional(),
   entity_category: z.string().optional(),
   // Device info
-  device_info: z.object({
-    identifiers: z.array(z.array(z.string())).optional(),
-    manufacturer: z.string().optional(),
-    model: z.string().optional(),
-    name: z.string().optional(),
-    sw_version: z.string().optional(),
-    hw_version: z.string().optional(),
-  }).optional(),
+  device_info: z
+    .object({
+      identifiers: z.array(z.array(z.string())).optional(),
+      manufacturer: z.string().optional(),
+      model: z.string().optional(),
+      name: z.string().optional(),
+      sw_version: z.string().optional(),
+      hw_version: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const LightSchema = z.object({

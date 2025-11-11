@@ -35,8 +35,7 @@ router.post("/mcp/execute", middleware.authenticate, async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message:
-        error instanceof Error ? error.message : "Unknown error occurred",
+      message: error instanceof Error ? error.message : "Unknown error occurred",
     });
   }
 });
@@ -69,8 +68,7 @@ router.get("/list_devices", middleware.authenticate, async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message:
-        error instanceof Error ? error.message : "Unknown error occurred",
+      message: error instanceof Error ? error.message : "Unknown error occurred",
     });
   }
 });
@@ -95,8 +93,7 @@ router.post("/control", middleware.authenticate, async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message:
-        error instanceof Error ? error.message : "Unknown error occurred",
+      message: error instanceof Error ? error.message : "Unknown error occurred",
     });
   }
 });
@@ -119,7 +116,7 @@ router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
+      Connection: "keep-alive",
       "Access-Control-Allow-Origin": "*",
     });
 
@@ -146,9 +143,7 @@ router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
       res.write(
         `data: ${JSON.stringify({
           type: "error",
-          message: sseClient
-            ? "Authentication failed"
-            : "Maximum client limit reached",
+          message: sseClient ? "Authentication failed" : "Maximum client limit reached",
           timestamp: new Date().toISOString(),
         })}\n\n`,
       );
@@ -181,8 +176,7 @@ router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message:
-        error instanceof Error ? error.message : "Unknown error occurred",
+      message: error instanceof Error ? error.message : "Unknown error occurred",
     });
   }
 });
@@ -212,8 +206,7 @@ router.get("/get_sse_stats", middleware.authenticate, (_req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message:
-        error instanceof Error ? error.message : "Unknown error occurred",
+      message: error instanceof Error ? error.message : "Unknown error occurred",
       timestamp: new Date().toISOString(),
     });
   }

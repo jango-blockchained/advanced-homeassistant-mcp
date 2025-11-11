@@ -57,9 +57,7 @@ router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
     if (!sseClient || !sseClient.authenticated) {
       const errorMessage = JSON.stringify({
         type: "error",
-        message: sseClient
-          ? "Authentication failed"
-          : "Maximum client limit reached",
+        message: sseClient ? "Authentication failed" : "Maximum client limit reached",
         timestamp: new Date().toISOString(),
       });
       res.write(`data: ${errorMessage}\n\n`);
@@ -69,9 +67,7 @@ router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
     // Handle client disconnect
     req.on("close", () => {
       sseManager.removeClient(clientId);
-      console.log(
-        `Client ${clientId} disconnected at ${new Date().toISOString()}`,
-      );
+      console.log(`Client ${clientId} disconnected at ${new Date().toISOString()}`);
     });
 
     // Handle errors
@@ -91,8 +87,7 @@ router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error:
-        error instanceof Error ? error.message : "An unexpected error occurred",
+      error: error instanceof Error ? error.message : "An unexpected error occurred",
       timestamp: new Date().toISOString(),
     });
   }
@@ -106,8 +101,7 @@ router.get("/stats", async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message:
-        error instanceof Error ? error.message : "Unknown error occurred",
+      message: error instanceof Error ? error.message : "Unknown error occurred",
     });
   }
 });

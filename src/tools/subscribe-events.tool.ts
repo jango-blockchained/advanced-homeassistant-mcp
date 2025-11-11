@@ -5,22 +5,12 @@ import { sseManager } from "../sse/index.js";
 
 export const subscribeEventsTool: Tool = {
   name: "subscribe_events",
-  description:
-    "Subscribe to Home Assistant events via Server-Sent Events (SSE)",
+  description: "Subscribe to Home Assistant events via Server-Sent Events (SSE)",
   parameters: z.object({
     token: z.string().describe("Authentication token (required)"),
-    events: z
-      .array(z.string())
-      .optional()
-      .describe("List of event types to subscribe to"),
-    entity_id: z
-      .string()
-      .optional()
-      .describe("Specific entity ID to monitor for state changes"),
-    domain: z
-      .string()
-      .optional()
-      .describe('Domain to monitor (e.g., "light", "switch", etc.)'),
+    events: z.array(z.string()).optional().describe("List of event types to subscribe to"),
+    entity_id: z.string().optional().describe("Specific entity ID to monitor for state changes"),
+    domain: z.string().optional().describe('Domain to monitor (e.g., "light", "switch", etc.)'),
   }),
   execute: async (params: SSEParams) => {
     const clientId = uuidv4();
@@ -50,9 +40,7 @@ export const subscribeEventsTool: Tool = {
     if (!sseClient || !sseClient.authenticated) {
       return {
         success: false,
-        message: sseClient
-          ? "Authentication failed"
-          : "Maximum client limit reached",
+        message: sseClient ? "Authentication failed" : "Maximum client limit reached",
       };
     }
 
@@ -66,10 +54,7 @@ export const subscribeEventsTool: Tool = {
 
     // Subscribe to specific entity if provided
     if (params.entity_id) {
-      console.log(
-        `Client ${clientId} subscribing to entity:`,
-        params.entity_id,
-      );
+      console.log(`Client ${clientId} subscribing to entity:`, params.entity_id);
       sseManager.subscribeToEntity(clientId, params.entity_id);
     }
 

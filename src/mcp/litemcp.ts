@@ -30,10 +30,7 @@ export class LiteMCP extends EventEmitter {
     timeout: 5000,
   };
 
-  public async execute(
-    command: string,
-    params: Record<string, any> = {},
-  ): Promise<any> {
+  public async execute(command: string, params: Record<string, any> = {}): Promise<any> {
     try {
       // Emit command execution event
       this.emit("command", { command, params });
@@ -52,10 +49,7 @@ export class LiteMCP extends EventEmitter {
     }
   }
 
-  private async processCommand(
-    command: string,
-    params: Record<string, any>,
-  ): Promise<any> {
+  private async processCommand(command: string, params: Record<string, any>): Promise<any> {
     // Command processing logic
     return { command, params, status: "processed" };
   }

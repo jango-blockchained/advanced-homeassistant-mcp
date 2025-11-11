@@ -34,11 +34,7 @@ export const wsRateLimiter = rateLimit({
 });
 
 // Authentication middleware with enhanced security
-export const authenticate = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({
@@ -102,11 +98,7 @@ const helmetMiddleware = helmet({
 });
 
 // Wrapper for helmet middleware to handle mock responses in tests
-export const securityHeaders = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void => {
+export const securityHeaders = (req: Request, res: Response, next: NextFunction): void => {
   // Basic security headers
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -135,10 +127,7 @@ export const securityHeaders = (
 
   // HSTS (only in production)
   if (process.env.NODE_ENV === "production") {
-    res.setHeader(
-      "Strict-Transport-Security",
-      "max-age=31536000; includeSubDomains; preload",
-    );
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   }
 
   next();
@@ -211,43 +200,28 @@ export const validateRequest = (
 /**
  * Sanitizes input data to prevent XSS attacks
  */
-export const sanitizeInput = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void => {
+export const sanitizeInput = (req: Request, res: Response, next: NextFunction): void => {
   if (req.body && typeof req.body === "object" && !Array.isArray(req.body)) {
     const sanitizeValue = (value: unknown): unknown => {
       if (typeof value === "string") {
         let sanitized = value;
         // Remove script tags and their content
-        sanitized = sanitized.replace(
-          /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-          "",
-        );
+        sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
         // Remove style tags and their content
-        sanitized = sanitized.replace(
-          /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi,
-          "",
-        );
+        sanitized = sanitized.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "");
         // Remove remaining HTML tags
         sanitized = sanitized.replace(/<[^>]+>/g, "");
         // Remove javascript: protocol
         sanitized = sanitized.replace(/javascript:/gi, "");
         // Remove event handlers
-        sanitized = sanitized.replace(
-          /on\w+\s*=\s*(?:".*?"|'.*?'|[^"'>\s]+)/gi,
-          "",
-        );
+        sanitized = sanitized.replace(/on\w+\s*=\s*(?:".*?"|'.*?'|[^"'>\s]+)/gi, "");
         // Trim whitespace
         return sanitized.trim();
       } else if (typeof value === "object" && value !== null) {
         const result: Record<string, unknown> = {};
-        Object.entries(value as Record<string, unknown>).forEach(
-          ([key, val]) => {
-            result[key] = sanitizeValue(val);
-          },
-        );
+        Object.entries(value as Record<string, unknown>).forEach(([key, val]) => {
+          result[key] = sanitizeValue(val);
+        });
         return result;
       }
       return value;

@@ -1,13 +1,7 @@
 import express from "express";
 import { z } from "zod";
 import { NLPProcessor } from "../nlp/processor.js";
-import {
-  AIRateLimit,
-  AIContext,
-  AIResponse,
-  AIError,
-  AIModel,
-} from "../types/index.js";
+import { AIRateLimit, AIContext, AIResponse, AIError, AIModel } from "../types/index.js";
 import rateLimit from "express-rate-limit";
 
 const router = express.Router();
@@ -58,8 +52,8 @@ const modelSpecificLimiter = (model: string) =>
   rateLimit({
     windowMs: 60 * 1000,
     max:
-      rateLimitConfig.model_specific_limits[model as AIModel]
-        ?.requests_per_minute || rateLimitConfig.requests_per_minute,
+      rateLimitConfig.model_specific_limits[model as AIModel]?.requests_per_minute ||
+      rateLimitConfig.requests_per_minute,
   });
 
 // Error handler middleware
@@ -88,24 +82,13 @@ const errorHandler = (
 router.post(
   "/interpret",
   globalLimiter,
-  async (
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction,
-  ) => {
+  async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
-      const {
-        input,
-        context,
-        model = "claude",
-      } = interpretRequestSchema.parse(req.body);
+      const { input, context, model = "claude" } = interpretRequestSchema.parse(req.body);
 
       // Apply model-specific rate limiting
       modelSpecificLimiter(model)(req, res, async () => {
-        const { intent, confidence, error } = await nlpProcessor.processCommand(
-          input,
-          context,
-        );
+        const { intent, confidence, error } = await nlpProcessor.processCommand(input, context);
 
         if (error) {
           return res.status(400).json({ error });
@@ -161,11 +144,7 @@ router.post(
 router.post(
   "/execute",
   globalLimiter,
-  async (
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction,
-  ) => {
+  async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
       const { intent, context, model = "claude" } = req.body;
 
@@ -202,11 +181,7 @@ router.post(
 router.get(
   "/suggestions",
   globalLimiter,
-  async (
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction,
-  ) => {
+  async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
       const { context, model = "claude" } = req.body;
 

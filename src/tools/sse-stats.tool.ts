@@ -26,8 +26,7 @@ export const getSSEStatsTool: Tool = {
     } catch (error) {
       return {
         success: false,
-        message:
-          error instanceof Error ? error.message : "Unknown error occurred",
+        message: error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   },

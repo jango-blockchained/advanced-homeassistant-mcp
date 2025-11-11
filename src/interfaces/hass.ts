@@ -29,10 +29,7 @@ export interface HassInstance {
   states: HassStates;
   services: HassServices;
   connection: HassConnection;
-  subscribeEvents: (
-    callback: (event: HassEvent) => void,
-    eventType?: string,
-  ) => Promise<number>;
+  subscribeEvents: (callback: (event: HassEvent) => void, eventType?: string) => Promise<number>;
   unsubscribeEvents: (subscription: number) => void;
 }
 
@@ -44,19 +41,12 @@ export interface HassStates {
 
 export interface HassServices {
   get: () => Promise<Record<string, Record<string, HassService>>>;
-  call: (
-    domain: string,
-    service: string,
-    serviceData?: Record<string, any>,
-  ) => Promise<void>;
+  call: (domain: string, service: string, serviceData?: Record<string, any>) => Promise<void>;
 }
 
 export interface HassConnection {
   socket: WebSocket;
-  subscribeEvents: (
-    callback: (event: HassEvent) => void,
-    eventType?: string,
-  ) => Promise<number>;
+  subscribeEvents: (callback: (event: HassEvent) => void, eventType?: string) => Promise<number>;
   unsubscribeEvents: (subscription: number) => void;
 }
 

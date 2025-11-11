@@ -7,28 +7,28 @@ import { z } from "zod";
 export const AppConfigSchema = z.object({
   /** Server Configuration */
   PORT: z.coerce.number().default(4000),
-  NODE_ENV: z
-    .enum(["development", "production", "test"])
-    .default("development"),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 
   /** Home Assistant Configuration */
   HASS_HOST: z.string().default("http://homeassistant.local:8123"),
   HASS_TOKEN: z.string().optional(),
 
   /** Speech Features Configuration */
-  SPEECH: z.object({
-    ENABLED: z.boolean().default(false),
-    WAKE_WORD_ENABLED: z.boolean().default(false),
-    SPEECH_TO_TEXT_ENABLED: z.boolean().default(false),
-    WHISPER_MODEL_PATH: z.string().default("/models"),
-    WHISPER_MODEL_TYPE: z.string().default("base"),
-  }).default({
-    ENABLED: false,
-    WAKE_WORD_ENABLED: false,
-    SPEECH_TO_TEXT_ENABLED: false,
-    WHISPER_MODEL_PATH: "/models",
-    WHISPER_MODEL_TYPE: "base",
-  }),
+  SPEECH: z
+    .object({
+      ENABLED: z.boolean().default(false),
+      WAKE_WORD_ENABLED: z.boolean().default(false),
+      SPEECH_TO_TEXT_ENABLED: z.boolean().default(false),
+      WHISPER_MODEL_PATH: z.string().default("/models"),
+      WHISPER_MODEL_TYPE: z.string().default("base"),
+    })
+    .default({
+      ENABLED: false,
+      WAKE_WORD_ENABLED: false,
+      SPEECH_TO_TEXT_ENABLED: false,
+      WHISPER_MODEL_PATH: "/models",
+      WHISPER_MODEL_TYPE: "base",
+    }),
 
   /** Security Configuration */
   JWT_SECRET: z.string().default("your-secret-key-must-be-32-char-min"),

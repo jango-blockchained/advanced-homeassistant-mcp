@@ -90,16 +90,9 @@ export class ContextManager extends EventEmitter {
     this.emit("relationship_added", relationship);
   }
 
-  public removeRelationship(
-    sourceId: string,
-    targetId: string,
-    type: RelationType,
-  ): void {
+  public removeRelationship(sourceId: string, targetId: string, type: RelationType): void {
     const index = this.relationships.findIndex(
-      (rel) =>
-        rel.sourceId === sourceId &&
-        rel.targetId === targetId &&
-        rel.type === type,
+      (rel) => rel.sourceId === sourceId && rel.targetId === targetId && rel.type === type,
     );
     if (index !== -1) {
       const removed = this.relationships.splice(index, 1)[0];
@@ -127,16 +120,10 @@ export class ContextManager extends EventEmitter {
   }
 
   public getResourcesByType(type: ResourceType): ResourceState[] {
-    return Array.from(this.resources.values()).filter(
-      (resource) => resource.type === type,
-    );
+    return Array.from(this.resources.values()).filter((resource) => resource.type === type);
   }
 
-  public getRelatedResources(
-    id: string,
-    type?: RelationType,
-    depth: number = 1,
-  ): ResourceState[] {
+  public getRelatedResources(id: string, type?: RelationType, depth: number = 1): ResourceState[] {
     const related = new Set<ResourceState>();
     const visited = new Set<string>();
 
@@ -151,8 +138,7 @@ export class ContextManager extends EventEmitter {
             (!type || rel.type === type),
         )
         .forEach((rel) => {
-          const relatedId =
-            rel.sourceId === currentId ? rel.targetId : rel.sourceId;
+          const relatedId = rel.sourceId === currentId ? rel.targetId : rel.sourceId;
           const relatedResource = this.resources.get(relatedId);
           if (relatedResource) {
             related.add(relatedResource);
@@ -177,15 +163,11 @@ export class ContextManager extends EventEmitter {
     };
   } {
     const dependencies = this.relationships
-      .filter(
-        (rel) => rel.sourceId === id && rel.type === RelationType.DEPENDS_ON,
-      )
+      .filter((rel) => rel.sourceId === id && rel.type === RelationType.DEPENDS_ON)
       .map((rel) => rel.targetId);
 
     const dependents = this.relationships
-      .filter(
-        (rel) => rel.targetId === id && rel.type === RelationType.DEPENDS_ON,
-      )
+      .filter((rel) => rel.targetId === id && rel.type === RelationType.DEPENDS_ON)
       .map((rel) => rel.sourceId);
 
     const groups = this.relationships
@@ -206,10 +188,7 @@ export class ContextManager extends EventEmitter {
   }
 
   // Event subscriptions
-  public subscribeToResource(
-    id: string,
-    callback: (state: ResourceState) => void,
-  ): () => void {
+  public subscribeToResource(id: string, callback: (state: ResourceState) => void): () => void {
     const handler = (resource: ResourceState) => {
       if (resource.id === id) {
         callback(resource);
@@ -220,10 +199,7 @@ export class ContextManager extends EventEmitter {
     return () => this.off("resource_updated", handler);
   }
 
-  public subscribeToType(
-    type: ResourceType,
-    callback: (state: ResourceState) => void,
-  ): () => void {
+  public subscribeToType(type: ResourceType, callback: (state: ResourceState) => void): () => void {
     const handler = (resource: ResourceState) => {
       if (resource.type === type) {
         callback(resource);

@@ -119,10 +119,7 @@ Current context: {context}`,
     return this.templates[model].examples;
   }
 
-  addExample(
-    model: AIModel,
-    example: { user: string; assistant: string },
-  ): void {
+  addExample(model: AIModel, example: { user: string; assistant: string }): void {
     this.templates[model].examples.push(example);
   }
 

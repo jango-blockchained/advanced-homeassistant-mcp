@@ -1,6 +1,6 @@
 import { loadEnvironmentVariables } from "./loadEnv";
 
-// Load environment variables from the appropriate files  
+// Load environment variables from the appropriate files
 // Execute synchronously at module import time to ensure all env vars are available
 loadEnvironmentVariables();
 
@@ -11,9 +11,7 @@ export const __envLoaded = true;
 export const HASS_CONFIG = {
   HOST: process.env.HASS_HOST || "http://homeassistant.local:8123",
   TOKEN: process.env.HASS_TOKEN,
-  SOCKET_URL:
-    process.env.HASS_SOCKET_URL ||
-    "ws://homeassistant.local:8123/api/websocket",
+  SOCKET_URL: process.env.HASS_SOCKET_URL || "ws://homeassistant.local:8123/api/websocket",
   BASE_URL: process.env.HASS_HOST || "http://homeassistant.local:8123",
   SOCKET_TOKEN: process.env.HASS_TOKEN,
 };
@@ -40,11 +38,8 @@ export const RATE_LIMIT_CONFIG = {
 
 // Security Configuration
 export const SECURITY_CONFIG = {
-  JWT_SECRET:
-    process.env.JWT_SECRET || "default_secret_key_change_in_production",
-  CORS_ORIGINS: (
-    process.env.CORS_ORIGINS || "http://localhost:3000,http://localhost:8123"
-  )
+  JWT_SECRET: process.env.JWT_SECRET || "default_secret_key_change_in_production",
+  CORS_ORIGINS: (process.env.CORS_ORIGINS || "http://localhost:3000,http://localhost:8123")
     .split(",")
     .map((origin) => origin.trim()),
 };
@@ -53,8 +48,7 @@ export const SECURITY_CONFIG = {
 export const TEST_CONFIG = {
   HASS_HOST: process.env.TEST_HASS_HOST || "http://localhost:8123",
   HASS_TOKEN: process.env.TEST_HASS_TOKEN || "test_token",
-  HASS_SOCKET_URL:
-    process.env.TEST_HASS_SOCKET_URL || "ws://localhost:8123/api/websocket",
+  HASS_SOCKET_URL: process.env.TEST_HASS_SOCKET_URL || "ws://localhost:8123/api/websocket",
   PORT: parseInt(process.env.TEST_PORT || "3001", 10),
 };
 
@@ -72,9 +66,7 @@ function validateConfig() {
   if (!SECURITY_CONFIG.JWT_SECRET) missingVars.push("JWT_SECRET");
 
   if (missingVars.length > 0) {
-    throw new Error(
-      `Missing required environment variables: ${missingVars.join(", ")}`,
-    );
+    throw new Error(`Missing required environment variables: ${missingVars.join(", ")}`);
   }
 }
 

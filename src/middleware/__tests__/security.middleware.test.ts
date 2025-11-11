@@ -44,24 +44,14 @@ describe("Security Middleware", () => {
         authorization: "Bearer valid-token",
         "content-type": "application/json",
       };
-      jest
-        .spyOn(TokenManager, "validateToken")
-        .mockReturnValue({ valid: true });
+      jest.spyOn(TokenManager, "validateToken").mockReturnValue({ valid: true });
 
-      validateRequest(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction,
-      );
+      validateRequest(mockRequest as Request, mockResponse as Response, nextFunction);
       expect(nextFunction).toHaveBeenCalled();
     });
 
     it("should reject requests without authorization header", () => {
-      validateRequest(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction,
-      );
+      validateRequest(mockRequest as Request, mockResponse as Response, nextFunction);
       expect(mockResponse.status).toHaveBeenCalledWith(401);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
@@ -76,11 +66,7 @@ describe("Security Middleware", () => {
         authorization: "invalid-format",
         "content-type": "application/json",
       };
-      validateRequest(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction,
-      );
+      validateRequest(mockRequest as Request, mockResponse as Response, nextFunction);
       expect(mockResponse.status).toHaveBeenCalledWith(401);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
@@ -96,11 +82,7 @@ describe("Security Middleware", () => {
         "content-type": "application/json",
         "content-length": "1048577", // 1MB + 1 byte
       };
-      validateRequest(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction,
-      );
+      validateRequest(mockRequest as Request, mockResponse as Response, nextFunction);
       expect(mockResponse.status).toHaveBeenCalledWith(413);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
@@ -119,11 +101,7 @@ describe("Security Middleware", () => {
           html: '<img src="x" onerror="alert(1)">World',
         },
       };
-      sanitizeInput(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction,
-      );
+      sanitizeInput(mockRequest as Request, mockResponse as Response, nextFunction);
       expect(mockRequest.body.text).toBe("Test ");
       expect(mockRequest.body.nested.html).toBe("World");
       expect(nextFunction).toHaveBeenCalled();
@@ -131,11 +109,7 @@ describe("Security Middleware", () => {
 
     it("should handle non-object bodies", () => {
       mockRequest.body = "<p>text</p>";
-      sanitizeInput(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction,
-      );
+      sanitizeInput(mockRequest as Request, mockResponse as Response, nextFunction);
       expect(mockRequest.body).toBe("text");
       expect(nextFunction).toHaveBeenCalled();
     });
@@ -147,11 +121,7 @@ describe("Security Middleware", () => {
         array: [1, 2, 3],
         nested: { value: 456 },
       };
-      sanitizeInput(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction,
-      );
+      sanitizeInput(mockRequest as Request, mockResponse as Response, nextFunction);
       expect(mockRequest.body).toEqual({
         number: 123,
         boolean: true,
@@ -166,12 +136,7 @@ describe("Security Middleware", () => {
     it("should handle errors in production mode", () => {
       process.env.NODE_ENV = "production";
       const error = new Error("Test error");
-      errorHandler(
-        error,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction,
-      );
+      errorHandler(error, mockRequest as Request, mockResponse as Response, nextFunction);
       expect(mockResponse.status).toHaveBeenCalledWith(500);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
@@ -184,12 +149,7 @@ describe("Security Middleware", () => {
     it("should include error details in development mode", () => {
       process.env.NODE_ENV = "development";
       const error = new Error("Test error");
-      errorHandler(
-        error,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction,
-      );
+      errorHandler(error, mockRequest as Request, mockResponse as Response, nextFunction);
       expect(mockResponse.status).toHaveBeenCalledWith(500);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,

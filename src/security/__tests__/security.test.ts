@@ -18,7 +18,7 @@ describe("Security Module", () => {
       ...(TokenManager as any).SECURITY_CONFIG,
       LOCKOUT_DURATION: MOCK_RATE_LIMIT_WINDOW,
       MAX_FAILED_ATTEMPTS: 5,
-      MAX_TOKEN_AGE: 30 * 24 * 60 * 60 * 1000 // 30 days
+      MAX_TOKEN_AGE: 30 * 24 * 60 * 60 * 1000, // 30 days
     };
   });
 
@@ -59,7 +59,7 @@ describe("Security Module", () => {
         userId: "123",
         role: "user",
         iat: now - 3600, // issued 1 hour ago
-        exp: now - 1800  // expired 30 minutes ago
+        exp: now - 1800, // expired 30 minutes ago
       };
       const token = jwt.sign(payload, validSecret);
       const result = TokenManager.validateToken(token, testIp);
@@ -98,8 +98,9 @@ describe("Security Module", () => {
     });
 
     it("should fail gracefully with invalid encrypted data", () => {
-      expect(() => TokenManager.decryptToken("invalid-encrypted-data", validSecret))
-        .toThrow("Invalid encrypted token");
+      expect(() => TokenManager.decryptToken("invalid-encrypted-data", validSecret)).toThrow(
+        "Invalid encrypted token",
+      );
     });
   });
 
@@ -148,7 +149,7 @@ describe("Security Module", () => {
       expect(result.error).toBe("Too many failed attempts. Please try again later.");
 
       // Wait for rate limit window to expire
-      await new Promise(resolve => setTimeout(resolve, MOCK_RATE_LIMIT_WINDOW + 50));
+      await new Promise((resolve) => setTimeout(resolve, MOCK_RATE_LIMIT_WINDOW + 50));
 
       // After window expires, should get normal error again
       const finalResult = TokenManager.validateToken(invalidToken, uniqueIp);
@@ -168,7 +169,7 @@ describe("Security Module", () => {
       }
 
       // Wait for rate limit window to expire
-      await new Promise(resolve => setTimeout(resolve, MOCK_RATE_LIMIT_WINDOW + 50));
+      await new Promise((resolve) => setTimeout(resolve, MOCK_RATE_LIMIT_WINDOW + 50));
 
       // After window expires, should get normal error
       const result = TokenManager.validateToken(invalidToken, uniqueIp);

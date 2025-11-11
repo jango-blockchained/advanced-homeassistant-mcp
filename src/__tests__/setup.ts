@@ -1,15 +1,6 @@
 import { config } from "dotenv";
 import path from "path";
-import {
-  beforeAll,
-  afterAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  test,
-} from "bun:test";
+import { beforeAll, afterAll, beforeEach, describe, expect, it, mock, test } from "bun:test";
 
 // Type definitions for mocks
 type MockFn = ReturnType<typeof mock>;
@@ -42,9 +33,9 @@ beforeAll(() => {
 
   // Configure console output for tests
   if (!process.env.DEBUG) {
-    console.error = mock(() => { });
-    console.warn = mock(() => { });
-    console.log = mock(() => { });
+    console.error = mock(() => {});
+    console.warn = mock(() => {});
+    console.log = mock(() => {});
   }
 });
 
@@ -68,12 +59,12 @@ beforeEach(() => {
 const testUtils = {
   // Mock WebSocket for SSE tests
   mockWebSocket: () => ({
-    on: mock(() => { }),
-    send: mock(() => { }),
-    close: mock(() => { }),
+    on: mock(() => {}),
+    send: mock(() => {}),
+    close: mock(() => {}),
     readyState: 1,
     OPEN: 1,
-    removeAllListeners: mock(() => { }),
+    removeAllListeners: mock(() => {}),
   }),
 
   // Mock HTTP response for API tests
@@ -109,7 +100,7 @@ const testUtils = {
     id,
     ip: TEST_CONFIG.TEST_CLIENT_IP,
     connectedAt: new Date(),
-    send: mock(() => { }),
+    send: mock(() => {}),
     rateLimit: {
       count: 0,
       lastReset: Date.now(),

@@ -62,27 +62,27 @@ export class HassWebSocketClient extends EventEmitter {
         this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
-          this.emit('connect');
+          this.emit("connect");
           this.authenticate();
           resolve();
         };
 
         this.ws.onclose = () => {
           this.authenticated = false;
-          this.emit('disconnect');
+          this.emit("disconnect");
           this.handleReconnect();
         };
 
         this.ws.onerror = (event: WebSocket.ErrorEvent) => {
-          const error = event.error || new Error(event.message || 'WebSocket error');
-          this.emit('error', error);
+          const error = event.error || new Error(event.message || "WebSocket error");
+          this.emit("error", error);
           if (!this.authenticated) {
             reject(error);
           }
         };
 
         this.ws.onmessage = (event: WebSocket.MessageEvent) => {
-          if (typeof event.data === 'string') {
+          if (typeof event.data === "string") {
             this.handleMessage(event.data);
           }
         };
@@ -111,7 +111,7 @@ export class HassWebSocketClient extends EventEmitter {
   private authenticate(): void {
     const authMessage: HassAuthMessage = {
       type: "auth",
-      access_token: this.token
+      access_token: this.token,
     };
     this.send(authMessage);
   }
@@ -123,12 +123,12 @@ export class HassWebSocketClient extends EventEmitter {
       switch (message.type) {
         case "auth_ok":
           this.authenticated = true;
-          this.emit('authenticated', message);
+          this.emit("authenticated", message);
           break;
 
         case "auth_invalid":
           this.authenticated = false;
-          this.emit('auth_failed', message);
+          this.emit("auth_failed", message);
           this.disconnect();
           break;
 
@@ -139,64 +139,67 @@ export class HassWebSocketClient extends EventEmitter {
         case "result": {
           const resultMessage = message as HassResultMessage;
           if (resultMessage.success) {
-            this.emit('result', resultMessage);
+            this.emit("result", resultMessage);
           } else {
-            this.emit('error', new Error(resultMessage.error || 'Unknown error'));
+            this.emit("error", new Error(resultMessage.error || "Unknown error"));
           }
           break;
         }
 
         default:
-          this.emit('error', new Error(`Unknown message type: ${message.type}`));
+          this.emit("error", new Error(`Unknown message type: ${message.type}`));
       }
     } catch (error) {
-      this.emit('error', error);
+      this.emit("error", error);
     }
   }
 
   private handleEvent(message: HassEventMessage): void {
-    this.emit('event', message.event);
+    this.emit("event", message.event);
     const callback = this.subscriptions.get(message.id || 0);
     if (callback) {
       callback(message.event.data);
     }
   }
 
-  public async subscribeEvents(eventType: string | undefined, callback: (data: any) => void): Promise<number> {
+  public async subscribeEvents(
+    eventType: string | undefined,
+    callback: (data: any) => void,
+  ): Promise<number> {
     if (!this.authenticated) {
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
 
     const id = this.messageId++;
     const message: HassSubscribeMessage = {
       id,
       type: "subscribe_events",
-      event_type: eventType
+      event_type: eventType,
     };
 
     return new Promise((resolve, reject) => {
       const handleResult = (result: HassResultMessage) => {
         if (result.id === id) {
-          this.removeListener('result', handleResult);
-          this.removeListener('error', handleError);
+          this.removeListener("result", handleResult);
+          this.removeListener("error", handleError);
 
           if (result.success) {
             this.subscriptions.set(id, callback);
             resolve(id);
           } else {
-            reject(new Error(result.error || 'Failed to subscribe'));
+            reject(new Error(result.error || "Failed to subscribe"));
           }
         }
       };
 
       const handleError = (error: Error) => {
-        this.removeListener('result', handleResult);
-        this.removeListener('error', handleError);
+        this.removeListener("result", handleResult);
+        this.removeListener("error", handleError);
         reject(error);
       };
 
-      this.on('result', handleResult);
-      this.on('error', handleError);
+      this.on("result", handleResult);
+      this.on("error", handleError);
 
       this.send(message);
     });
@@ -204,38 +207,38 @@ export class HassWebSocketClient extends EventEmitter {
 
   public async unsubscribeEvents(subscription: number): Promise<boolean> {
     if (!this.authenticated) {
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
 
     const message: HassUnsubscribeMessage = {
       id: this.messageId++,
       type: "unsubscribe_events",
-      subscription
+      subscription,
     };
 
     return new Promise((resolve, reject) => {
       const handleResult = (result: HassResultMessage) => {
         if (result.id === message.id) {
-          this.removeListener('result', handleResult);
-          this.removeListener('error', handleError);
+          this.removeListener("result", handleResult);
+          this.removeListener("error", handleError);
 
           if (result.success) {
             this.subscriptions.delete(subscription);
             resolve(true);
           } else {
-            reject(new Error(result.error || 'Failed to unsubscribe'));
+            reject(new Error(result.error || "Failed to unsubscribe"));
           }
         }
       };
 
       const handleError = (error: Error) => {
-        this.removeListener('result', handleResult);
-        this.removeListener('error', handleError);
+        this.removeListener("result", handleResult);
+        this.removeListener("error", handleError);
         reject(error);
       };
 
-      this.on('result', handleResult);
-      this.on('error', handleError);
+      this.on("result", handleResult);
+      this.on("error", handleError);
 
       this.send(message);
     });
@@ -243,7 +246,7 @@ export class HassWebSocketClient extends EventEmitter {
 
   private send(message: HassMessage): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      throw new Error('WebSocket is not connected');
+      throw new Error("WebSocket is not connected");
     }
     this.ws.send(JSON.stringify(message));
   }
@@ -251,9 +254,12 @@ export class HassWebSocketClient extends EventEmitter {
   private handleReconnect(): void {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      setTimeout(() => {
-        this.connect().catch(() => { });
-      }, 1000 * Math.pow(2, this.reconnectAttempts));
+      setTimeout(
+        () => {
+          this.connect().catch(() => {});
+        },
+        1000 * Math.pow(2, this.reconnectAttempts),
+      );
     }
   }
 }

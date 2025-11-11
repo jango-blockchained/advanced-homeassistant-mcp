@@ -41,9 +41,7 @@ class MacOSIntegration extends EventEmitter {
       const { stdout: notifPerms } = await execAsync(
         "osascript -e 'tell application \"System Events\" to get properties'",
       );
-      this.permissions.notifications = notifPerms.includes(
-        "notifications enabled:true",
-      );
+      this.permissions.notifications = notifPerms.includes("notifications enabled:true");
 
       // Check automation permissions
       const { stdout: autoPerms } = await execAsync(
@@ -72,9 +70,7 @@ class MacOSIntegration extends EventEmitter {
     const script = `
       display notification "${notification.message}"${
         notification.subtitle ? ` with subtitle "${notification.subtitle}"` : ""
-      } with title "${notification.title}"${
-        notification.sound ? ' sound name "default"' : ""
-      }
+      } with title "${notification.title}"${notification.sound ? ' sound name "default"' : ""}
     `;
 
     try {
@@ -147,9 +143,7 @@ class MacOSIntegration extends EventEmitter {
       info.os_version = version.trim();
 
       // Get hardware info
-      const { stdout: hardware } = await execAsync(
-        "system_profiler SPHardwareDataType",
-      );
+      const { stdout: hardware } = await execAsync("system_profiler SPHardwareDataType");
       info.hardware = this.parseSystemProfile(hardware);
 
       // Get power info
@@ -157,9 +151,7 @@ class MacOSIntegration extends EventEmitter {
       info.power = this.parsePowerInfo(power);
 
       // Get network info
-      const { stdout: network } = await execAsync(
-        "networksetup -listallhardwareports",
-      );
+      const { stdout: network } = await execAsync("networksetup -listallhardwareports");
       info.network = this.parseNetworkInfo(network);
 
       return info;

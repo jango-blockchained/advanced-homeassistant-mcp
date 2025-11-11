@@ -19,10 +19,7 @@ export class ContextAnalyzer {
       // Location-based context
       {
         condition: (context, intent) =>
-          Boolean(
-            context.location &&
-              intent.target.includes(context.location.toLowerCase()),
-          ),
+          Boolean(context.location && intent.target.includes(context.location.toLowerCase())),
         relevance: 0.8,
         params: (context) => ({ location: context.location }),
       },
@@ -44,15 +41,12 @@ export class ContextAnalyzer {
         condition: (context, intent) => {
           const recentActions = context.previous_actions.slice(-3);
           return recentActions.some(
-            (action) =>
-              action.target === intent.target ||
-              action.action === intent.action,
+            (action) => action.target === intent.target || action.action === intent.action,
           );
         },
         relevance: 0.7,
         params: (context) => ({
-          recent_action:
-            context.previous_actions[context.previous_actions.length - 1],
+          recent_action: context.previous_actions[context.previous_actions.length - 1],
         }),
       },
 
@@ -60,9 +54,7 @@ export class ContextAnalyzer {
       {
         condition: (context, intent) => {
           return Object.keys(context.environment_state).some(
-            (key) =>
-              intent.target.includes(key) ||
-              intent.parameters[key] !== undefined,
+            (key) => intent.target.includes(key) || intent.parameters[key] !== undefined,
           );
         },
         relevance: 0.9,
@@ -71,10 +63,7 @@ export class ContextAnalyzer {
     ];
   }
 
-  async analyze(
-    intent: AIIntent,
-    context: AIContext,
-  ): Promise<ContextAnalysis> {
+  async analyze(intent: AIIntent, context: AIContext): Promise<ContextAnalysis> {
     let totalConfidence = 0;
     let relevantParams: Record<string, any> = {};
     let applicableRules = 0;
@@ -94,8 +83,7 @@ export class ContextAnalyzer {
     }
 
     // Calculate normalized confidence
-    const confidence =
-      applicableRules > 0 ? totalConfidence / applicableRules : 0.5; // Default confidence if no rules apply
+    const confidence = applicableRules > 0 ? totalConfidence / applicableRules : 0.5; // Default confidence if no rules apply
 
     return {
       confidence,
@@ -134,10 +122,7 @@ export class ContextAnalyzer {
     }
 
     // Validate environment state
-    if (
-      typeof context.environment_state !== "object" ||
-      context.environment_state === null
-    ) {
+    if (typeof context.environment_state !== "object" || context.environment_state === null) {
       return false;
     }
 

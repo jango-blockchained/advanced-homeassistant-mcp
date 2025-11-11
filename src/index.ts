@@ -3,47 +3,47 @@
  * A standardized protocol for AI tools to interact with Home Assistant
  */
 
-import express, { Request, Response } from 'express';
-import cors from 'cors';
-import swaggerUi from 'swagger-ui-express';
-import { MCPServer } from './mcp/MCPServer.js';
-import { loggingMiddleware, timeoutMiddleware } from './mcp/middleware/index.js';
-import { StdioTransport } from './mcp/transports/stdio.transport.js';
-import { HttpTransport } from './mcp/transports/http.transport.js';
-import { APP_CONFIG } from './config.js';
+import express, { Request, Response } from "express";
+import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import { MCPServer } from "./mcp/MCPServer.js";
+import { loggingMiddleware, timeoutMiddleware } from "./mcp/middleware/index.js";
+import { StdioTransport } from "./mcp/transports/stdio.transport.js";
+import { HttpTransport } from "./mcp/transports/http.transport.js";
+import { APP_CONFIG } from "./config.js";
 import { logger } from "./utils/logger.js";
-import { openApiConfig } from './openapi.js';
+import { openApiConfig } from "./openapi.js";
 import {
   securityHeadersMiddleware,
   rateLimiterMiddleware,
   validateRequestMiddleware,
   sanitizeInputMiddleware,
-  errorHandlerMiddleware
-} from './security/index.js';
+  errorHandlerMiddleware,
+} from "./security/index.js";
 
 // Home Assistant tools
-import { LightsControlTool } from './tools/homeassistant/lights.tool.js';
-import { ClimateControlTool } from './tools/homeassistant/climate.tool.js';
-import { ListDevicesTool } from './tools/homeassistant/list-devices.tool.js';
-import { AutomationTool } from './tools/homeassistant/automation.tool.js';
-import { SceneTool } from './tools/homeassistant/scene.tool.js';
-import { NotifyTool } from './tools/homeassistant/notify.tool.js';
+import { LightsControlTool } from "./tools/homeassistant/lights.tool.js";
+import { ClimateControlTool } from "./tools/homeassistant/climate.tool.js";
+import { ListDevicesTool } from "./tools/homeassistant/list-devices.tool.js";
+import { AutomationTool } from "./tools/homeassistant/automation.tool.js";
+import { SceneTool } from "./tools/homeassistant/scene.tool.js";
+import { NotifyTool } from "./tools/homeassistant/notify.tool.js";
 
 // Import additional tools from tools/index.ts
-import { tools } from './tools/index.js';
+import { tools } from "./tools/index.js";
 
 /**
  * Check if running in stdio mode via command line args
  */
 function isStdioMode(): boolean {
-  return process.argv.includes('--stdio');
+  return process.argv.includes("--stdio");
 }
 
 /**
  * Main function to start the MCP server
  */
 async function main(): Promise<void> {
-  logger.info('Starting Home Assistant MCP Server...');
+  logger.info("Starting Home Assistant MCP Server...");
 
   // Check if we're in stdio mode from command line
   const useStdio = isStdioMode() || APP_CONFIG.useStdioTransport;
@@ -64,8 +64,15 @@ async function main(): Promise<void> {
   server.registerTool(new NotifyTool());
 
   // Register additional tools from tools/index.ts (excluding homeassistant tools which are already registered above)
-  const homeAssistantToolNames = ['lights_control', 'climate_control', 'list_devices', 'automation', 'scene', 'notify'];
-  tools.forEach(tool => {
+  const homeAssistantToolNames = [
+    "lights_control",
+    "climate_control",
+    "list_devices",
+    "automation",
+    "scene",
+    "notify",
+  ];
+  tools.forEach((tool) => {
     if (!homeAssistantToolNames.includes(tool.name)) {
       server.registerTool(tool);
     }
@@ -77,12 +84,12 @@ async function main(): Promise<void> {
 
   // Initialize transports
   if (useStdio) {
-    logger.info('Using Standard I/O transport');
+    logger.info("Using Standard I/O transport");
 
     // Create and configure the stdio transport with debug enabled for stdio mode
     const stdioTransport = new StdioTransport({
       debug: true, // Always enable debug in stdio mode for better visibility
-      silent: false // Never be silent in stdio mode
+      silent: false, // Never be silent in stdio mode
     });
 
     // Explicitly set the server reference to ensure access to tools
@@ -93,27 +100,31 @@ async function main(): Promise<void> {
 
     // Special handling for stdio mode - don't start other transports
     if (isStdioMode()) {
-      logger.info('Running in pure stdio mode (from CLI)');
+      logger.info("Running in pure stdio mode (from CLI)");
       // Start the server
       await server.start();
-      logger.info('MCP Server started successfully');
+      logger.info("MCP Server started successfully");
 
       // Handle shutdown
       const shutdown = async (): Promise<void> => {
-        logger.info('Shutting down MCP Server...');
+        logger.info("Shutting down MCP Server...");
         try {
           await server.shutdown();
-          logger.info('MCP Server shutdown complete');
+          logger.info("MCP Server shutdown complete");
           process.exit(0);
         } catch (error) {
-          logger.error('Error during shutdown:', error);
+          logger.error("Error during shutdown:", error);
           process.exit(1);
         }
       };
 
       // Register shutdown handlers
-      process.on('SIGINT', () => { shutdown().catch((err) => logger.error('Shutdown error:', err)); });
-      process.on('SIGTERM', () => { shutdown().catch((err) => logger.error('Shutdown error:', err)); });
+      process.on("SIGINT", () => {
+        shutdown().catch((err) => logger.error("Shutdown error:", err));
+      });
+      process.on("SIGTERM", () => {
+        shutdown().catch((err) => logger.error("Shutdown error:", err));
+      });
 
       // Exit the function early as we're in stdio-only mode
       return;
@@ -122,11 +133,11 @@ async function main(): Promise<void> {
 
   // HTTP transport (only if not in pure stdio mode)
   if (APP_CONFIG.useHttpTransport) {
-    logger.info('Using HTTP transport on port ' + APP_CONFIG.port);
+    logger.info("Using HTTP transport on port " + APP_CONFIG.port);
     const app = express();
 
     // Body parser middleware with size limit
-    app.use(express.json({ limit: '50kb' }));
+    app.use(express.json({ limit: "50kb" }));
 
     // Apply security middleware in order
     app.use(securityHeadersMiddleware);
@@ -135,22 +146,28 @@ async function main(): Promise<void> {
     app.use(sanitizeInputMiddleware);
 
     // CORS configuration
-    app.use(cors({
-      origin: APP_CONFIG.corsOrigin,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-      maxAge: 86400 // 24 hours
-    }));
+    app.use(
+      cors({
+        origin: APP_CONFIG.corsOrigin,
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+        maxAge: 86400, // 24 hours
+      }),
+    );
 
     // Swagger UI setup
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiConfig, {
-      explorer: true,
-      customCss: '.swagger-ui .topbar { display: none }',
-      customSiteTitle: 'Home Assistant MCP API Documentation'
-    }));
+    app.use(
+      "/api-docs",
+      swaggerUi.serve,
+      swaggerUi.setup(openApiConfig, {
+        explorer: true,
+        customCss: ".swagger-ui .topbar { display: none }",
+        customSiteTitle: "Home Assistant MCP API Documentation",
+      }),
+    );
 
     // MCP Discovery endpoint for Smithery
-    app.get('/.well-known/mcp-config', (_req: Request, res: Response) => {
+    app.get("/.well-known/mcp-config", (_req: Request, res: Response) => {
       res.json({
         schemaVersion: "1.0",
         name: "Home Assistant MCP Server",
@@ -158,17 +175,17 @@ async function main(): Promise<void> {
         description: "An advanced MCP server for Home Assistant. 🔋 Batteries included.",
         vendor: {
           name: "jango-blockchained",
-          url: "https://github.com/jango-blockchained"
+          url: "https://github.com/jango-blockchained",
         },
         repository: {
           type: "git",
-          url: "https://github.com/jango-blockchained/homeassistant-mcp"
+          url: "https://github.com/jango-blockchained/homeassistant-mcp",
         },
         runtime: "container",
         transport: {
           type: "http",
           protocol: "json-rpc",
-          version: "2.0"
+          version: "2.0",
         },
         configuration: {
           type: "object",
@@ -177,64 +194,60 @@ async function main(): Promise<void> {
             hassToken: {
               type: "string",
               title: "Home Assistant Token",
-              description: "Long-lived access token for connecting to Home Assistant API. Generate this from your Home Assistant profile.",
-              sensitive: true
+              description:
+                "Long-lived access token for connecting to Home Assistant API. Generate this from your Home Assistant profile.",
+              sensitive: true,
             },
             hassHost: {
               type: "string",
               default: "http://homeassistant.local:8123",
               title: "Home Assistant Host",
-              description: "The URL of your Home Assistant instance"
+              description: "The URL of your Home Assistant instance",
             },
             hassSocketUrl: {
               type: "string",
               default: "ws://homeassistant.local:8123",
               title: "Home Assistant WebSocket URL",
-              description: "The WebSocket URL for real-time Home Assistant events"
+              description: "The WebSocket URL for real-time Home Assistant events",
             },
             port: {
               type: "number",
               default: 7123,
               title: "MCP Server Port",
-              description: "The port on which the MCP server will listen for connections."
+              description: "The port on which the MCP server will listen for connections.",
             },
             debug: {
               type: "boolean",
               default: false,
               title: "Debug Mode",
-              description: "Enable detailed debug logging for troubleshooting."
-            }
-          }
+              description: "Enable detailed debug logging for troubleshooting.",
+            },
+          },
         },
         capabilities: {
           tools: true,
           resources: true,
           prompts: true,
-          streaming: false
+          streaming: false,
         },
-        categories: [
-          "smart-home",
-          "automation",
-          "iot",
-          "home-assistant"
-        ],
+        categories: ["smart-home", "automation", "iot", "home-assistant"],
         endpoints: {
           health: "/health",
           api: "/api/mcp",
-          docs: "/api-docs"
+          docs: "/api-docs",
         },
         authentication: {
           type: "environment",
-          variables: ["HASS_TOKEN", "HASS_HOST", "HASS_SOCKET_URL"]
-        }
+          variables: ["HASS_TOKEN", "HASS_HOST", "HASS_SOCKET_URL"],
+        },
       });
     });
 
     // Health check endpoint
-    app.get('/health', (_req: Request, res: Response) => {
+    app.get("/health", (_req: Request, res: Response) => {
       res.json({
-        status: 'ok',
-        version: process.env.npm_package_version ?? '1.0.0'
+        status: "ok",
+        version: process.env.npm_package_version ?? "1.0.0",
       });
     });
 
@@ -245,35 +258,39 @@ async function main(): Promise<void> {
       port: APP_CONFIG.port,
       corsOrigin: APP_CONFIG.corsOrigin,
       apiPrefix: "/api/mcp",
-      debug: APP_CONFIG.debugHttp
+      debug: APP_CONFIG.debugHttp,
     });
     server.registerTransport(httpTransport);
   }
 
   // Start the server
   await server.start();
-  logger.info('MCP Server started successfully');
+  logger.info("MCP Server started successfully");
 
   // Handle shutdown
   const shutdown = async (): Promise<void> => {
-    logger.info('Shutting down MCP Server...');
+    logger.info("Shutting down MCP Server...");
     try {
       await server.shutdown();
-      logger.info('MCP Server shutdown complete');
+      logger.info("MCP Server shutdown complete");
       process.exit(0);
     } catch (error) {
-      logger.error('Error during shutdown:', error);
+      logger.error("Error during shutdown:", error);
       process.exit(1);
     }
   };
 
   // Register shutdown handlers
-  process.on('SIGINT', () => { shutdown().catch((err) => logger.error('Shutdown error:', err)); });
-  process.on('SIGTERM', () => { shutdown().catch((err) => logger.error('Shutdown error:', err)); });
+  process.on("SIGINT", () => {
+    shutdown().catch((err) => logger.error("Shutdown error:", err));
+  });
+  process.on("SIGTERM", () => {
+    shutdown().catch((err) => logger.error("Shutdown error:", err));
+  });
 }
 
 // Run the main function
-main().catch(error => {
-  logger.error('Error starting MCP Server:', error);
+main().catch((error) => {
+  logger.error("Error starting MCP Server:", error);
   process.exit(1);
 });

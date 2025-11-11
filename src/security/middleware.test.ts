@@ -25,9 +25,7 @@ describe("Security Middleware", () => {
     mockRequest = {
       headers: {},
       body: {},
-      is: jest
-        .fn<string | false | null, [string | string[]]>()
-        .mockReturnValue("json"),
+      is: jest.fn<string | false | null, [string | string[]]>().mockReturnValue("json"),
     };
 
     mockResponse = {

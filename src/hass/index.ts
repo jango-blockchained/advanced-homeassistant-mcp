@@ -45,7 +45,7 @@ class HomeAssistantAPI {
   private async fetchApi(endpoint: string, options: RequestInit = {}) {
     const url = `${this.baseUrl}/api/${endpoint}`;
     logger.debug(`Making request to: ${url}`);
-    
+
     try {
       const response = await fetch(url, {
         ...options,
@@ -58,19 +58,21 @@ class HomeAssistantAPI {
 
       if (!response.ok) {
         const errorText = await response.text();
-        logger.error('Home Assistant API error:', {
+        logger.error("Home Assistant API error:", {
           status: response.status,
           statusText: response.statusText,
-          error: errorText
+          error: errorText,
         });
-        throw new Error(`Home Assistant API error: ${response.status} ${response.statusText} - ${errorText}`);
+        throw new Error(
+          `Home Assistant API error: ${response.status} ${response.statusText} - ${errorText}`,
+        );
       }
 
       const data = await response.json();
-      logger.debug('Response received successfully');
+      logger.debug("Response received successfully");
       return data;
     } catch (error) {
-      logger.error('Failed to make request:', error);
+      logger.error("Failed to make request:", error);
       throw error;
     }
   }
@@ -106,10 +108,10 @@ class HomeAssistantAPI {
       method: "POST",
       body: JSON.stringify(data),
     });
-    
+
     // Smart cache invalidation: only clear affected entities
     // Full state cache is only cleared if it's a domain-wide operation
-    if (service === 'reload' || service === 'turn_on' || service === 'turn_off') {
+    if (service === "reload" || service === "turn_on" || service === "turn_off") {
       // For individual device changes, only invalidate specific domain caches
       this.invalidateDomainCache(domain);
     } else {
@@ -125,7 +127,7 @@ class HomeAssistantAPI {
   private invalidateDomainCache(domain: string): void {
     // Remove full states cache
     this.cache.delete("states");
-    
+
     // Remove only domain-specific entity caches
     const keysToDelete: string[] = [];
     for (const key of this.cache.keys()) {
@@ -133,11 +135,11 @@ class HomeAssistantAPI {
         keysToDelete.push(key);
       }
     }
-    
+
     for (const key of keysToDelete) {
       this.cache.delete(key);
     }
-    
+
     logger.debug(`Invalidated cache for domain: ${domain} (${keysToDelete.length} entries)`);
   }
 
@@ -147,18 +149,18 @@ class HomeAssistantAPI {
    */
   private invalidateAllStateCache(): void {
     this.cache.delete("states");
-    
+
     const keysToDelete: string[] = [];
     for (const key of this.cache.keys()) {
       if (key.startsWith("state_")) {
         keysToDelete.push(key);
       }
     }
-    
+
     for (const key of keysToDelete) {
       this.cache.delete(key);
     }
-    
+
     logger.debug(`Cleared all state cache (${keysToDelete.length} entries)`);
   }
 }
@@ -171,9 +173,9 @@ export async function get_hass(): Promise<HomeAssistantAPI> {
       instance = new HomeAssistantAPI();
       // Verify connection by trying to get states
       await instance.getStates();
-      logger.info('Successfully connected to Home Assistant');
+      logger.info("Successfully connected to Home Assistant");
     } catch (error) {
-      logger.error('Failed to initialize Home Assistant connection:', error);
+      logger.error("Failed to initialize Home Assistant connection:", error);
       instance = null;
       throw error;
     }
@@ -192,13 +194,15 @@ export async function call_service(
 }
 
 // Helper function to list devices
-export async function list_devices(): Promise<Array<{ entity_id: string; state: string; attributes: unknown }>> {
+export async function list_devices(): Promise<
+  Array<{ entity_id: string; state: string; attributes: unknown }>
+> {
   const hass = await get_hass();
   const states = await hass.getStates();
   return states.map((state: HassEntity) => ({
     entity_id: state.entity_id,
     state: state.state,
-    attributes: state.attributes
+    attributes: state.attributes,
   }));
 }
 

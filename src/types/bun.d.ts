@@ -14,9 +14,7 @@ declare module "bun:test" {
     mockReset(): void;
   }
 
-  export function mock<T extends (...args: any[]) => any>(
-    implementation?: T,
-  ): Mock<T>;
+  export function mock<T extends (...args: any[]) => any>(implementation?: T): Mock<T>;
 
   export function describe(name: string, fn: () => void): void;
   export function it(name: string, fn: () => void | Promise<void>): void;

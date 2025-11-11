@@ -67,8 +67,7 @@ export class SSEManager extends EventEmitter {
     this.maxClients = options.maxClients || DEFAULT_MAX_CLIENTS;
     this.pingInterval = options.pingInterval || DEFAULT_PING_INTERVAL;
     this.cleanupInterval = options.cleanupInterval || DEFAULT_CLEANUP_INTERVAL;
-    this.maxConnectionAge =
-      options.maxConnectionAge || DEFAULT_MAX_CONNECTION_AGE;
+    this.maxConnectionAge = options.maxConnectionAge || DEFAULT_MAX_CONNECTION_AGE;
     this.rateLimit = { ...DEFAULT_RATE_LIMIT, ...options.rateLimit };
 
     logger.info("Initializing SSE Manager...");
@@ -101,14 +100,9 @@ export class SSEManager extends EventEmitter {
       const now = Date.now();
       this.clients.forEach((client, clientId) => {
         const connectionAge = now - client.connectedAt.getTime();
-        const lastPingAge = client.lastPingAt
-          ? now - client.lastPingAt.getTime()
-          : 0;
+        const lastPingAge = client.lastPingAt ? now - client.lastPingAt.getTime() : 0;
 
-        if (
-          connectionAge > this.maxConnectionAge ||
-          lastPingAge > this.pingInterval * 2
-        ) {
+        if (connectionAge > this.maxConnectionAge || lastPingAge > this.pingInterval * 2) {
           logger.info(`Removing inactive client ${clientId}`);
           this.removeClient(clientId);
         }
@@ -243,9 +237,7 @@ export class SSEManager extends EventEmitter {
   subscribeToDomain(clientId: string, domain: string): void {
     const client = this.clients.get(clientId);
     if (!client?.authenticated) {
-      logger.warn(
-        `Unauthenticated client ${clientId} attempted to subscribe to domain: ${domain}`,
-      );
+      logger.warn(`Unauthenticated client ${clientId} attempted to subscribe to domain: ${domain}`);
       return;
     }
 
@@ -352,7 +344,7 @@ export class SSEManager extends EventEmitter {
   }
 
   updateEntityState(entityId: string, state: HassEntity): void {
-    if (!state || typeof state.state === 'undefined') {
+    if (!state || typeof state.state === "undefined") {
       logger.warn(`Invalid state update for entity ${entityId}`);
       return;
     }
@@ -366,7 +358,7 @@ export class SSEManager extends EventEmitter {
         return;
       }
 
-      const [domain] = entityId.split('.');
+      const [domain] = entityId.split(".");
       if (
         client.subscriptions.has(`entity:${entityId}`) ||
         client.subscriptions.has(`domain:${domain}`)

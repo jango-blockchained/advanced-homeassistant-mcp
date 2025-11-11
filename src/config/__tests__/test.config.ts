@@ -8,9 +8,7 @@ const testConfigSchema = z.object({
   TEST_WEBSOCKET_PORT: z.number().default(3002),
 
   // Mock Authentication
-  TEST_JWT_SECRET: z
-    .string()
-    .default("test_jwt_secret_key_that_is_at_least_32_chars"),
+  TEST_JWT_SECRET: z.string().default("test_jwt_secret_key_that_is_at_least_32_chars"),
   TEST_TOKEN: z.string().default("test_token_that_is_at_least_32_chars_long"),
   TEST_INVALID_TOKEN: z.string().default("invalid_token"),
 
@@ -29,12 +27,7 @@ const testConfigSchema = z.object({
   // Mock Events
   TEST_EVENT_TYPES: z
     .array(z.string())
-    .default([
-      "state_changed",
-      "automation_triggered",
-      "script_executed",
-      "service_called",
-    ]),
+    .default(["state_changed", "automation_triggered", "script_executed", "service_called"]),
 
   // Mock Entities
   TEST_ENTITIES: z
@@ -128,28 +121,17 @@ const parseTestConfig = () => {
     TEST_PORT: parseInt(process.env.TEST_PORT || "3001"),
     TEST_HOST: process.env.TEST_HOST || "http://localhost",
     TEST_WEBSOCKET_PORT: parseInt(process.env.TEST_WEBSOCKET_PORT || "3002"),
-    TEST_JWT_SECRET:
-      process.env.TEST_JWT_SECRET ||
-      "test_jwt_secret_key_that_is_at_least_32_chars",
-    TEST_TOKEN:
-      process.env.TEST_TOKEN || "test_token_that_is_at_least_32_chars_long",
+    TEST_JWT_SECRET: process.env.TEST_JWT_SECRET || "test_jwt_secret_key_that_is_at_least_32_chars",
+    TEST_TOKEN: process.env.TEST_TOKEN || "test_token_that_is_at_least_32_chars_long",
     TEST_INVALID_TOKEN: process.env.TEST_INVALID_TOKEN || "invalid_token",
     TEST_CLIENT_IP: process.env.TEST_CLIENT_IP || "127.0.0.1",
     TEST_MAX_CLIENTS: parseInt(process.env.TEST_MAX_CLIENTS || "10"),
     TEST_PING_INTERVAL: parseInt(process.env.TEST_PING_INTERVAL || "100"),
     TEST_CLEANUP_INTERVAL: parseInt(process.env.TEST_CLEANUP_INTERVAL || "200"),
-    TEST_MAX_CONNECTION_AGE: parseInt(
-      process.env.TEST_MAX_CONNECTION_AGE || "1000",
-    ),
-    TEST_RATE_LIMIT_WINDOW: parseInt(
-      process.env.TEST_RATE_LIMIT_WINDOW || "60000",
-    ),
-    TEST_RATE_LIMIT_MAX_REQUESTS: parseInt(
-      process.env.TEST_RATE_LIMIT_MAX_REQUESTS || "100",
-    ),
-    TEST_RATE_LIMIT_WEBSOCKET: parseInt(
-      process.env.TEST_RATE_LIMIT_WEBSOCKET || "1000",
-    ),
+    TEST_MAX_CONNECTION_AGE: parseInt(process.env.TEST_MAX_CONNECTION_AGE || "1000"),
+    TEST_RATE_LIMIT_WINDOW: parseInt(process.env.TEST_RATE_LIMIT_WINDOW || "60000"),
+    TEST_RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.TEST_RATE_LIMIT_MAX_REQUESTS || "100"),
+    TEST_RATE_LIMIT_WEBSOCKET: parseInt(process.env.TEST_RATE_LIMIT_WEBSOCKET || "1000"),
   };
 
   return testConfigSchema.parse(config);

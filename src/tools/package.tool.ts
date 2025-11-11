@@ -10,19 +10,9 @@ export const packageTool: Tool = {
       .enum(["list", "install", "uninstall", "update"])
       .describe("Action to perform with package"),
     category: z
-      .enum([
-        "integration",
-        "plugin",
-        "theme",
-        "python_script",
-        "appdaemon",
-        "netdaemon",
-      ])
+      .enum(["integration", "plugin", "theme", "python_script", "appdaemon", "netdaemon"])
       .describe("Package category"),
-    repository: z
-      .string()
-      .optional()
-      .describe("Repository URL or name (required for install)"),
+    repository: z.string().optional().describe("Repository URL or name (required for install)"),
     version: z.string().optional().describe("Version to install"),
   }),
   execute: async (params: PackageParams) => {
@@ -30,15 +20,12 @@ export const packageTool: Tool = {
       const hacsBase = `${APP_CONFIG.HASS_HOST}/api/hacs`;
 
       if (params.action === "list") {
-        const response = await fetch(
-          `${hacsBase}/repositories?category=${params.category}`,
-          {
-            headers: {
-              Authorization: `Bearer ${APP_CONFIG.HASS_TOKEN}`,
-              "Content-Type": "application/json",
-            },
+        const response = await fetch(`${hacsBase}/repositories?category=${params.category}`, {
+          headers: {
+            Authorization: `Bearer ${APP_CONFIG.HASS_TOKEN}`,
+            "Content-Type": "application/json",
           },
-        );
+        });
 
         if (!response.ok) {
           throw new Error(`Failed to fetch packages: ${response.statusText}`);
@@ -85,9 +72,7 @@ export const packageTool: Tool = {
         });
 
         if (!response.ok) {
-          throw new Error(
-            `Failed to ${params.action} package: ${response.statusText}`,
-          );
+          throw new Error(`Failed to ${params.action} package: ${response.statusText}`);
         }
 
         return {
@@ -98,8 +83,7 @@ export const packageTool: Tool = {
     } catch (error) {
       return {
         success: false,
-        message:
-          error instanceof Error ? error.message : "Unknown error occurred",
+        message: error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   },

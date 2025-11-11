@@ -433,14 +433,7 @@ export interface AutomationParams {
  */
 export interface AddonParams {
   /** Action to perform */
-  action:
-    | "list"
-    | "info"
-    | "install"
-    | "uninstall"
-    | "start"
-    | "stop"
-    | "restart";
+  action: "list" | "info" | "install" | "uninstall" | "start" | "stop" | "restart";
   /** Add-on slug */
   slug?: string;
   /** Version to install */
@@ -455,13 +448,7 @@ export interface PackageParams {
   /** Action to perform */
   action: "list" | "install" | "uninstall" | "update";
   /** Package category */
-  category:
-    | "integration"
-    | "plugin"
-    | "theme"
-    | "python_script"
-    | "appdaemon"
-    | "netdaemon";
+  category: "integration" | "plugin" | "theme" | "python_script" | "appdaemon" | "netdaemon";
   /** Repository URL or name */
   repository?: string;
   /** Version to install */

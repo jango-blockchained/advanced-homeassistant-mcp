@@ -5,20 +5,30 @@ import { DomainSchema } from "../schemas.js";
 
 // Create a unique array of all commands
 const allCommands = [
-  "turn_on", "turn_off", "toggle", "open", "close", "stop", 
-  "set_position", "set_tilt_position", "set_temperature", 
-  "set_hvac_mode", "set_fan_mode", "set_humidity"
+  "turn_on",
+  "turn_off",
+  "toggle",
+  "open",
+  "close",
+  "stop",
+  "set_position",
+  "set_tilt_position",
+  "set_temperature",
+  "set_hvac_mode",
+  "set_fan_mode",
+  "set_humidity",
 ] as const;
 
 export const controlTool: Tool = {
   name: "control",
   description: "Control Home Assistant devices and services",
   parameters: z.object({
-    command: z
-      .enum(allCommands)
-      .describe("The command to execute"),
+    command: z.enum(allCommands).describe("The command to execute"),
     entity_id: z.string().optional().describe("The entity ID to control"),
-    area_id: z.string().optional().describe("The area ID to control all devices of the domain type"),
+    area_id: z
+      .string()
+      .optional()
+      .describe("The area ID to control all devices of the domain type"),
     // Common parameters
     state: z.string().optional().describe("The desired state for the entity"),
     // Light parameters
@@ -34,12 +44,7 @@ export const controlTool: Tool = {
       .optional()
       .describe("RGB color values"),
     // Cover parameters
-    position: z
-      .number()
-      .min(0)
-      .max(100)
-      .optional()
-      .describe("Position for covers (0-100)"),
+    position: z.number().min(0).max(100).optional().describe("Position for covers (0-100)"),
     tilt_position: z
       .number()
       .min(0)
@@ -47,18 +52,9 @@ export const controlTool: Tool = {
       .optional()
       .describe("Tilt position for covers (0-100)"),
     // Climate parameters
-    temperature: z
-      .number()
-      .optional()
-      .describe("Target temperature for climate devices"),
-    target_temp_high: z
-      .number()
-      .optional()
-      .describe("Target high temperature for climate devices"),
-    target_temp_low: z
-      .number()
-      .optional()
-      .describe("Target low temperature for climate devices"),
+    temperature: z.number().optional().describe("Target temperature for climate devices"),
+    target_temp_high: z.number().optional().describe("Target high temperature for climate devices"),
+    target_temp_low: z.number().optional().describe("Target low temperature for climate devices"),
     hvac_mode: z
       .enum(["off", "heat", "cool", "heat_cool", "auto", "dry", "fan_only"])
       .optional()
@@ -67,12 +63,7 @@ export const controlTool: Tool = {
       .enum(["auto", "low", "medium", "high"])
       .optional()
       .describe("Fan mode for climate devices"),
-    humidity: z
-      .number()
-      .min(0)
-      .max(100)
-      .optional()
-      .describe("Target humidity for climate devices"),
+    humidity: z.number().min(0).max(100).optional().describe("Target humidity for climate devices"),
   }),
   execute: async (params: CommandParams) => {
     try {
@@ -80,7 +71,7 @@ export const controlTool: Tool = {
       if (!params.entity_id && !params.area_id) {
         return JSON.stringify({
           success: false,
-          error: "Either entity_id or area_id must be provided"
+          error: "Either entity_id or area_id must be provided",
         });
       }
 
@@ -91,21 +82,21 @@ export const controlTool: Tool = {
       } else {
         // For area control, domain is implied by the command type
         // For lights, we support turn_on/turn_off
-        if (['turn_on', 'turn_off', 'toggle'].includes(params.command)) {
-          domain = 'light';
+        if (["turn_on", "turn_off", "toggle"].includes(params.command)) {
+          domain = "light";
         } else {
           return JSON.stringify({
             success: false,
-            error: `Command ${params.command} not supported for area control`
+            error: `Command ${params.command} not supported for area control`,
           });
         }
       }
 
       // Explicitly handle unsupported domains
-      if (!['light', 'climate', 'switch', 'cover', 'contact'].includes(domain)) {
+      if (!["light", "climate", "switch", "cover", "contact"].includes(domain)) {
         return JSON.stringify({
           success: false,
-          error: `Unsupported domain: ${domain}`
+          error: `Unsupported domain: ${domain}`,
         });
       }
 
@@ -137,10 +128,7 @@ export const controlTool: Tool = {
           if (service === "set_position" && params.position !== undefined) {
             serviceData.position = params.position;
           }
-          if (
-            service === "set_tilt_position" &&
-            params.tilt_position !== undefined
-          ) {
+          if (service === "set_tilt_position" && params.tilt_position !== undefined) {
             serviceData.tilt_position = params.tilt_position;
           }
           break;
@@ -178,33 +166,30 @@ export const controlTool: Tool = {
       }
 
       // Call Home Assistant service
-      const response = await fetch(
-        `${APP_CONFIG.HASS_HOST}/api/services/${domain}/${service}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${APP_CONFIG.HASS_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(serviceData),
+      const response = await fetch(`${APP_CONFIG.HASS_HOST}/api/services/${domain}/${service}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${APP_CONFIG.HASS_TOKEN}`,
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify(serviceData),
+      });
 
       if (!response.ok) {
         return JSON.stringify({
           success: false,
-          error: `Failed to execute ${service} for ${params.entity_id || params.area_id}`
+          error: `Failed to execute ${service} for ${params.entity_id || params.area_id}`,
         });
       }
 
       // Specific message formats for different domains and services
       const target = params.entity_id || `area ${params.area_id}`;
       const successMessage =
-        domain === 'light' && service === 'turn_on'
-          ? `Successfully executed turn_on for ${target}` :
-          domain === 'climate' && service === 'set_temperature'
-            ? `Successfully executed set_temperature for ${target}` :
-            `Command ${service} executed successfully on ${target}`;
+        domain === "light" && service === "turn_on"
+          ? `Successfully executed turn_on for ${target}`
+          : domain === "climate" && service === "set_temperature"
+            ? `Successfully executed set_temperature for ${target}`
+            : `Command ${service} executed successfully on ${target}`;
 
       return JSON.stringify({
         success: true,

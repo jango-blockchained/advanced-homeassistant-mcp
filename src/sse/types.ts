@@ -45,10 +45,7 @@ export interface SSEManagerConfig {
 export type MockSendFn = (data: string) => void;
 export type MockSend = Mock<MockSendFn>;
 
-export type ValidateTokenFn = (
-  token: string,
-  ip?: string,
-) => { valid: boolean; error?: string };
+export type ValidateTokenFn = (token: string, ip?: string) => { valid: boolean; error?: string };
 export type MockValidateToken = Mock<ValidateTokenFn>;
 
 // Type guard for mock functions
@@ -57,9 +54,7 @@ export function isMockFunction(value: unknown): value is Mock<unknown> {
 }
 
 // Safe type assertion for mock objects
-export function asMockFunction<T extends (...args: any[]) => any>(
-  value: unknown,
-): Mock<T> {
+export function asMockFunction<T extends (...args: any[]) => any>(value: unknown): Mock<T> {
   if (!isMockFunction(value)) {
     throw new Error("Value is not a mock function");
   }

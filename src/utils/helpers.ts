@@ -5,8 +5,8 @@
  * @returns Formatted response object
  */
 export const formatToolCall = (obj: any, isError: boolean = false) => {
-    const text = obj === undefined ? 'undefined' : JSON.stringify(obj, null, 2);
-    return {
-        content: [{ type: "text", text, isError }],
-    };
-}; 
+  const text = obj === undefined ? "undefined" : JSON.stringify(obj, null, 2);
+  return {
+    content: [{ type: "text", text, isError }],
+  };
+};

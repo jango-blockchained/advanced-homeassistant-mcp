@@ -11,10 +11,7 @@ export const historyTool: Tool = {
       .string()
       .optional()
       .describe("Start time in ISO format. Defaults to 24 hours ago"),
-    end_time: z
-      .string()
-      .optional()
-      .describe("End time in ISO format. Defaults to now"),
+    end_time: z.string().optional().describe("End time in ISO format. Defaults to now"),
     minimal_response: z
       .boolean()
       .optional()

@@ -24,10 +24,7 @@ export class EntityExtractor {
     this.deviceNameMap.set("bedroom light", "light.bedroom");
 
     // Parameter patterns
-    this.parameterPatterns.set(
-      "brightness",
-      /(\d+)\s*(%|percent)|bright(ness)?\s+(\d+)/i,
-    );
+    this.parameterPatterns.set("brightness", /(\d+)\s*(%|percent)|bright(ness)?\s+(\d+)/i);
     this.parameterPatterns.set("temperature", /(\d+)\s*(degrees?|°)[CF]?/i);
     this.parameterPatterns.set("color", /(red|green|blue|white|warm|cool)/i);
   }
@@ -52,10 +49,7 @@ export class EntityExtractor {
       for (const [param, pattern] of this.parameterPatterns) {
         const match = input.match(pattern);
         if (match) {
-          entities.parameters[param] = this.normalizeParameterValue(
-            param,
-            match[1],
-          );
+          entities.parameters[param] = this.normalizeParameterValue(param, match[1]);
         }
       }
 
@@ -73,10 +67,7 @@ export class EntityExtractor {
     }
   }
 
-  private normalizeParameterValue(
-    parameter: string,
-    value: string,
-  ): number | string {
+  private normalizeParameterValue(parameter: string, value: string): number | string {
     switch (parameter) {
       case "brightness":
         return Math.min(100, Math.max(0, parseInt(value)));
@@ -89,10 +80,7 @@ export class EntityExtractor {
     }
   }
 
-  private calculateConfidence(
-    entities: ExtractedEntities,
-    input: string,
-  ): number {
+  private calculateConfidence(entities: ExtractedEntities, input: string): number {
     let confidence = 0;
 
     // Device confidence

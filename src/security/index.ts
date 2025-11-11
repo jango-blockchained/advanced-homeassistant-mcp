@@ -3,7 +3,7 @@ import helmet from "helmet";
 import { HelmetOptions } from "helmet";
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction, RequestHandler } from "express";
-import sanitizeHtml from 'sanitize-html';
+import sanitizeHtml from "sanitize-html";
 import { logger } from "../utils/logger.js";
 
 // Security configuration
@@ -29,7 +29,11 @@ function cleanupRateLimitStore(): void {
 setInterval(cleanupRateLimitStore, 5 * 60 * 1000); // Every 5 minutes
 
 // Extracted rate limiting logic
-export function checkRateLimit(ip: string, maxRequests: number = RATE_LIMIT_MAX, windowMs: number = RATE_LIMIT_WINDOW): boolean {
+export function checkRateLimit(
+  ip: string,
+  maxRequests: number = RATE_LIMIT_MAX,
+  windowMs: number = RATE_LIMIT_WINDOW,
+): boolean {
   const now = Date.now();
 
   // Prevent memory leaks by limiting store size
@@ -65,7 +69,11 @@ export function checkRateLimit(ip: string, maxRequests: number = RATE_LIMIT_MAX,
 }
 
 // Rate limiting middleware for Express
-export const rateLimiterMiddleware: RequestHandler = (req: Request, _res: Response, next: NextFunction) => {
+export const rateLimiterMiddleware: RequestHandler = (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
   try {
     const ip = (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
     checkRateLimit(ip);
@@ -73,7 +81,7 @@ export const rateLimiterMiddleware: RequestHandler = (req: Request, _res: Respon
   } catch (error) {
     _res.status(429).json({
       error: true,
-      message: error instanceof Error ? error.message : "Too many requests"
+      message: error instanceof Error ? error.message : "Too many requests",
     });
   }
 };
@@ -109,7 +117,10 @@ export function getSecurityHeaders(): HelmetOptions {
 export const securityHeadersMiddleware = helmet(getSecurityHeaders());
 
 // Extracted request validation logic
-export function validateRequestHeaders(request: Request, requiredContentType = 'application/json'): boolean {
+export function validateRequestHeaders(
+  request: Request,
+  requiredContentType = "application/json",
+): boolean {
   // Validate content type for POST/PUT/PATCH requests
   if (["POST", "PUT", "PATCH"].includes(request.method)) {
     const contentType = request.headers["content-type"] as string | undefined;
@@ -143,14 +154,18 @@ export function validateRequestHeaders(request: Request, requiredContentType = '
 }
 
 // Request validation middleware for Express
-export const validateRequestMiddleware: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
+export const validateRequestMiddleware: RequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     validateRequestHeaders(req);
     next();
   } catch (error) {
     res.status(400).json({
       error: true,
-      message: error instanceof Error ? error.message : "Invalid request"
+      message: error instanceof Error ? error.message : "Invalid request",
     });
   }
 };
@@ -162,12 +177,12 @@ export function sanitizeValue(value: unknown): unknown {
     return sanitizeHtml(value, {
       allowedTags: [], // No HTML tags allowed
       allowedAttributes: {}, // No attributes allowed
-      disallowedTagsMode: 'escape', // Escape rather than strip
+      disallowedTagsMode: "escape", // Escape rather than strip
       // Additional security options
       parseStyleAttributes: false,
       transformTags: {
-        '*': () => ({ tagName: '', attribs: {} }) // Remove all tags
-      }
+        "*": () => ({ tagName: "", attribs: {} }), // Remove all tags
+      },
     });
   }
 
@@ -176,18 +191,20 @@ export function sanitizeValue(value: unknown): unknown {
   }
 
   if (typeof value === "object" && value !== null) {
-    return Object.fromEntries(
-      Object.entries(value).map(([k, v]) => [k, sanitizeValue(v)])
-    );
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sanitizeValue(v)]));
   }
 
   return value;
 }
 
 // Input sanitization middleware for Express
-export const sanitizeInputMiddleware: RequestHandler = (req: Request, _res: Response, next: NextFunction) => {
+export const sanitizeInputMiddleware: RequestHandler = (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
   if (["POST", "PUT", "PATCH"].includes(req.method)) {
-    if (req.body && typeof req.body === 'object') {
+    if (req.body && typeof req.body === "object") {
       req.body = sanitizeValue(req.body);
     }
   }
@@ -198,14 +215,14 @@ export const sanitizeInputMiddleware: RequestHandler = (req: Request, _res: Resp
 export function handleError(error: Error, env?: string): Record<string, unknown> {
   logger.error("Error:", error);
 
-  const nodeEnv = env || process.env.NODE_ENV || 'production';
+  const nodeEnv = env || process.env.NODE_ENV || "production";
   const baseResponse = {
     error: true,
     message: "Internal server error",
     timestamp: new Date().toISOString(),
   };
 
-  if (nodeEnv === 'development') {
+  if (nodeEnv === "development") {
     return {
       ...baseResponse,
       error: error.message,
@@ -217,7 +234,12 @@ export function handleError(error: Error, env?: string): Record<string, unknown>
 }
 
 // Error handling middleware for Express
-export const errorHandlerMiddleware = (error: Error, _req: Request, res: Response, _next: NextFunction): void => {
+export const errorHandlerMiddleware = (
+  error: Error,
+  _req: Request,
+  res: Response,
+  _next: NextFunction,
+): void => {
   if (error instanceof jwt.JsonWebTokenError) {
     res.status(401).json(handleError(error));
     return;
@@ -238,10 +260,7 @@ const SECURITY_CONFIG = {
 };
 
 // Track failed authentication attempts
-const failedAttempts = new Map<
-  string,
-  { count: number; lastAttempt: number }
->();
+const failedAttempts = new Map<string, { count: number; lastAttempt: number }>();
 
 export class TokenManager {
   /**
@@ -259,10 +278,7 @@ export class TokenManager {
       const iv = crypto.randomBytes(IV_LENGTH);
       const cipher = crypto.createCipheriv(ALGORITHM, key.slice(0, 32), iv);
 
-      const encrypted = Buffer.concat([
-        cipher.update(token, "utf8"),
-        cipher.final(),
-      ]);
+      const encrypted = Buffer.concat([cipher.update(token, "utf8"), cipher.final()]);
       const tag = cipher.getAuthTag();
 
       // Format: algorithm:iv:tag:encrypted
@@ -284,15 +300,9 @@ export class TokenManager {
     }
 
     try {
-      const [algorithm, ivBase64, tagBase64, encryptedBase64] =
-        encryptedToken.split(":");
+      const [algorithm, ivBase64, tagBase64, encryptedBase64] = encryptedToken.split(":");
 
-      if (
-        algorithm !== ALGORITHM ||
-        !ivBase64 ||
-        !tagBase64 ||
-        !encryptedBase64
-      ) {
+      if (algorithm !== ALGORITHM || !ivBase64 || !tagBase64 || !encryptedBase64) {
         throw new Error("Invalid encrypted token format");
       }
 
@@ -303,15 +313,9 @@ export class TokenManager {
       const decipher = crypto.createDecipheriv(ALGORITHM, key.slice(0, 32), iv);
       decipher.setAuthTag(tag);
 
-      return Buffer.concat([
-        decipher.update(encrypted),
-        decipher.final(),
-      ]).toString("utf8");
+      return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString("utf8");
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === "Invalid encrypted token format"
-      ) {
+      if (error instanceof Error && error.message === "Invalid encrypted token format") {
         throw error;
       }
       throw new Error("Invalid encrypted token");

@@ -59,11 +59,7 @@ const formatRequestLog = (req: TimedRequest): string => {
  * @param time - Response time in milliseconds
  * @returns Formatted log message
  */
-const formatResponseLog = (
-  req: TimedRequest,
-  res: Response,
-  time: number,
-): string => {
+const formatResponseLog = (req: TimedRequest, res: Response, time: number): string => {
   return `${req.method} ${req.originalUrl} - ${res.statusCode} - ${time.toFixed(2)}ms`;
 };
 
@@ -71,11 +67,7 @@ const formatResponseLog = (
  * Request logging middleware
  * Logs information about incoming requests and their responses
  */
-export const requestLogger = (
-  req: TimedRequest,
-  res: Response,
-  next: NextFunction,
-): void => {
+export const requestLogger = (req: TimedRequest, res: Response, next: NextFunction): void => {
   if (!APP_CONFIG.LOGGING.LOG_REQUESTS) {
     next();
     return;
@@ -101,22 +93,14 @@ export const requestLogger = (
  * Error logging middleware
  * Logs errors that occur during request processing
  */
-export const errorLogger = (
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void => {
-  logger.error(
-    `Error processing ${req.method} ${req.originalUrl}: ${err.message}`,
-    {
-      error: err.stack,
-      method: req.method,
-      url: req.originalUrl,
-      body: req.body,
-      query: req.query,
-      ip: getClientIp(req),
-    },
-  );
+export const errorLogger = (err: Error, req: Request, res: Response, next: NextFunction): void => {
+  logger.error(`Error processing ${req.method} ${req.originalUrl}: ${err.message}`, {
+    error: err.stack,
+    method: req.method,
+    url: req.originalUrl,
+    body: req.body,
+    query: req.query,
+    ip: getClientIp(req),
+  });
   next(err);
 };

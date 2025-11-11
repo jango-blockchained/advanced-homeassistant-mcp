@@ -30,18 +30,11 @@ export class NLPProcessor {
       const intent = await this.intentClassifier.classify(input, entities);
 
       // Analyze context relevance
-      const contextRelevance = await this.contextAnalyzer.analyze(
-        intent,
-        context,
-      );
+      const contextRelevance = await this.contextAnalyzer.analyze(intent, context);
 
       // Calculate confidence scores
       const confidence: AIConfidence = {
-        overall:
-          (intent.confidence +
-            entities.confidence +
-            contextRelevance.confidence) /
-          3,
+        overall: (intent.confidence + entities.confidence + contextRelevance.confidence) / 3,
         intent: intent.confidence,
         entities: entities.confidence,
         context: contextRelevance.confidence,
@@ -64,8 +57,7 @@ export class NLPProcessor {
         confidence,
       };
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       return {
         intent: {
           action: "error",

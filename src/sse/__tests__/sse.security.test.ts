@@ -1,23 +1,13 @@
 import { SSEManager } from "../index";
 import { TokenManager } from "../../security/index";
 import type { SSEClient } from "../types";
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  mock,
-  Mock,
-} from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, mock, Mock } from "bun:test";
 
 describe("SSE Security Features", () => {
   const TEST_IP = "127.0.0.1";
   const validToken = "valid_token";
   let sseManager: SSEManager;
-  let validateTokenMock: Mock<
-    (token: string, ip: string) => { valid: boolean; error?: string }
-  >;
+  let validateTokenMock: Mock<(token: string, ip: string) => { valid: boolean; error?: string }>;
 
   beforeEach(() => {
     sseManager = new SSEManager({

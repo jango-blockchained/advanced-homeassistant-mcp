@@ -141,15 +141,7 @@ export const MCP_SCHEMA = {
         properties: {
           action: {
             type: "string",
-            enum: [
-              "list",
-              "info",
-              "install",
-              "uninstall",
-              "start",
-              "stop",
-              "restart",
-            ],
+            enum: ["list", "info", "install", "uninstall", "start", "stop", "restart"],
           },
           slug: { type: "string" },
           version: { type: "string" },
@@ -169,14 +161,7 @@ export const MCP_SCHEMA = {
           },
           category: {
             type: "string",
-            enum: [
-              "integration",
-              "plugin",
-              "theme",
-              "python_script",
-              "appdaemon",
-              "netdaemon",
-            ],
+            enum: ["integration", "plugin", "theme", "python_script", "appdaemon", "netdaemon"],
           },
           repository: { type: "string" },
           version: { type: "string" },
@@ -235,8 +220,7 @@ export const MCP_SCHEMA = {
   prompts: [
     {
       name: "claude",
-      description:
-        "Claude-specific prompt template for home automation control",
+      description: "Claude-specific prompt template for home automation control",
       template: {
         system:
           "You are Claude, an AI assistant specialized in home automation control through natural language. Your role is to interpret user commands and translate them into specific device control actions. Always maintain context awareness and consider user preferences and patterns. Provide clear, concise responses and suggest relevant follow-up actions.",
@@ -282,8 +266,7 @@ export const MCP_SCHEMA = {
     },
     {
       name: "gpt4",
-      description:
-        "GPT-4 specific prompt template for precise home automation control",
+      description: "GPT-4 specific prompt template for precise home automation control",
       template: {
         system:
           "You are a home automation assistant powered by GPT-4. Focus on precise command interpretation and execution. Maintain high accuracy in device control and parameter settings. Provide feedback on action success and system state changes.",

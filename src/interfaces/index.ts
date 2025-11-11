@@ -144,27 +144,14 @@ export interface AutomationParams {
 }
 
 export interface AddonParams {
-  action:
-    | "list"
-    | "info"
-    | "install"
-    | "uninstall"
-    | "start"
-    | "stop"
-    | "restart";
+  action: "list" | "info" | "install" | "uninstall" | "start" | "stop" | "restart";
   slug?: string;
   version?: string;
 }
 
 export interface PackageParams {
   action: "list" | "install" | "uninstall" | "update";
-  category:
-    | "integration"
-    | "plugin"
-    | "theme"
-    | "python_script"
-    | "appdaemon"
-    | "netdaemon";
+  category: "integration" | "plugin" | "theme" | "python_script" | "appdaemon" | "netdaemon";
   repository?: string;
   version?: string;
 }
