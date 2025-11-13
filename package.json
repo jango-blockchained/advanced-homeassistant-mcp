@@ -28,22 +28,22 @@
   },
   "license": "MIT",
   "main": "dist/index.js",
-  "module": "src/http-server.ts",
+  "module": "src/stdio-server.ts",
   "type": "module",
   "bin": {
     "homeassistant-mcp": "bin/npx-entry.cjs"
   },
   "scripts": {
-    "start": "bun --smol run dist/index.js",
+    "start": "node dist/index.js",
     "start:stdio": "node dist/stdio-server.js",
     "start:http": "node dist/http-server.js",
-    "dev": "bun --hot --watch src/index.ts",
-    "build": "bun build ./src/index.ts --outdir ./dist --target bun --external '@valibot/to-json-schema' --external 'effect'",
-    "build:node": "bun build ./src/index.ts ./src/stdio-server.ts --outdir ./dist --target node",
-    "build:stdio": "bun build ./src/stdio-server.ts --outdir ./dist --target node --external:express --external:swagger-ui-express --external '@valibot/to-json-schema' --external 'effect'",
-    "build:http": "bun build ./src/http-server.ts --outdir ./dist --target node --external:express --external:swagger-ui-express --external '@valibot/to-json-schema' --external 'effect'",
-    "build:all": "bun run build:node && bun run build:http",
-    "prepare": "test -d .husky && husky install || echo 'Skipping husky' && bun run build:all",
+    "dev": "tsx --watch src/index.ts",
+    "build": "esbuild ./src/index.ts --bundle --outdir=./dist --target=node18 --external:@valibot/to-json-schema --external:effect",
+    "build:node": "esbuild ./src/index.ts ./src/stdio-server.ts --bundle --outdir=./dist --target=node18",
+    "build:stdio": "esbuild ./src/stdio-server.ts --bundle --outdir=./dist --target=node18 --external:express --external:swagger-ui-express --external:@valibot/to-json-schema --external:effect",
+    "build:http": "esbuild ./src/http-server.ts --bundle --outdir=./dist --target=node18 --external:express --external:swagger-ui-express --external:@valibot/to-json-schema --external:effect",
+    "build:all": "npm run build:node && npm run build:http",
+    "prepare": "echo 'Skipping prepare' || true",
     "stdio": "bun run ./bin/stdio-server.js",
     "smithery:build": "npx @smithery/cli build src/http-server.ts --out dist/smithery.cjs --transport shttp",
     "smithery:dev": "npx @smithery/cli dev src/http-server.ts --port 7123",
@@ -115,6 +115,7 @@
     "@typescript-eslint/parser": "^7.1.0",
     "ajv": "^8.17.1",
     "bun-types": "^1.2.2",
+    "esbuild": "^0.20.2",
     "effect": "^3.19.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
@@ -122,10 +123,10 @@
     "husky": "^9.0.11",
     "prettier": "^3.2.5",
     "supertest": "^7.1.0",
+    "tsx": "^4.7.0",
     "uuid": "^11.1.0"
   },
   "engines": {
-    "bun": ">=1.0.0",
     "node": ">=18.0.0"
   },
   "publishConfig": {
