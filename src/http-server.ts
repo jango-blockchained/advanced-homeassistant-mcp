@@ -17,6 +17,8 @@ import { FastMCP } from "fastmcp";
 import { tools } from "./tools/index";
 import { listResources, getResource } from "./mcp/resources";
 import { getAllPrompts, renderPrompt } from "./mcp/prompts";
+import express, { type Request, type Response } from "express";
+import http from "http";
 
 const port = (process.env.PORT ?? "7123") ? parseInt(process.env.PORT ?? "7123", 10) : 7123;
 const isScanning = process.env.SMITHERY_SCAN === "true";
@@ -132,16 +134,35 @@ async function main(): Promise<void> {
     // Start the server with HTTP stream transport (FastMCP 3.x)
     logger.info(`Starting FastMCP with HTTP stream transport on port ${port}...`);
 
-    // Note: FastMCP httpStream will create its own HTTP server
-    // The Express app is just used for middleware but the actual HTTP
-    // server is created and managed by FastMCP itself
-
     try {
+      // Start FastMCP with custom HTTP handler that includes health/config endpoints
       await server.start({
         transportType: "httpStream",
         httpStream: {
           port: port,
           endpoint: "/mcp",
+          middleware: (app: express.Application) => {
+            // Health check endpoint
+            app.get("/health", (_req, res) => {
+              res.json({
+                status: "ok",
+                version: "1.2.1",
+                timestamp: new Date().toISOString(),
+              });
+            });
+
+            // MCP config endpoint for Smithery discovery
+            app.get("/.well-known/mcp-config", (_req, res) => {
+              res.json({
+                mcpServers: {
+                  "homeassistant-mcp": {
+                    url: "/mcp",
+                    transport: "http",
+                  },
+                },
+              });
+            });
+          },
         },
       });
     } catch (startError) {
