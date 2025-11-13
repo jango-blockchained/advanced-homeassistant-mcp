@@ -130,19 +130,24 @@ async function main(): Promise<void> {
     }
 
     // Start the server with HTTP stream transport (FastMCP 3.x)
-    logger.info("Starting FastMCP with HTTP stream transport...");
+    logger.info(`Starting FastMCP with HTTP stream transport on port ${port}...`);
 
     // Note: FastMCP httpStream will create its own HTTP server
     // The Express app is just used for middleware but the actual HTTP
     // server is created and managed by FastMCP itself
 
-    await server.start({
-      transportType: "httpStream",
-      httpStream: {
-        port: port,
-        endpoint: "/mcp",
-      },
-    });
+    try {
+      await server.start({
+        transportType: "httpStream",
+        httpStream: {
+          port: port,
+          endpoint: "/mcp",
+        },
+      });
+    } catch (startError) {
+      logger.error(`Failed to start HTTP server: ${startError instanceof Error ? startError.message : String(startError)}`);
+      throw startError;
+    }
 
     logger.info(`✓ FastMCP HTTP server listening on port ${port}`);
     logger.info(`✓ Health check available at http://localhost:${port}/health`);
