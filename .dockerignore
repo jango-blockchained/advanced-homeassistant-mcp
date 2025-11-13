@@ -4,9 +4,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-package-lock.json
+# package-lock.json is needed for Docker builds
 yarn.lock
 pnpm-lock.yaml
+bun.lock
 
 # Build output
 dist/
