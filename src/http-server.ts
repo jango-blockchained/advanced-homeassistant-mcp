@@ -23,7 +23,8 @@ const isScanning = process.env.SMITHERY_SCAN === "true";
 
 async function main(): Promise<void> {
   try {
-    logger.info(`Initializing FastMCP server with HTTP transport${isScanning ? " (scan mode)" : "..."}...`);
+    logger.info(`Starting server initialization on port ${port}`);
+    logger.info(`Initializing FastMCP server with HTTP transport${isScanning ? " (scan mode)" : ""}...`);
 
     // Create the FastMCP server instance following v3.x best practices
     const server = new FastMCP({
@@ -43,7 +44,9 @@ async function main(): Promise<void> {
           parameters: tool.parameters as never,
           execute: async (args: unknown, context) => {
             try {
-              if (!process.env.HASS_TOKEN && !isScanning) {
+              const token = process.env.HASS_TOKEN ?? "";
+              const hasToken = token.length > 0;
+              if (!hasToken && !isScanning) {
                 throw new Error("Home Assistant token not configured");
               }
               context.log.debug(`Executing tool ${tool.name}`);
