@@ -2,6 +2,10 @@
 runtime: "typescript"
 entrypoint: "src/index.ts"
 
+env:
+  USE_HTTP_TRANSPORT: "true"
+  PORT: "7123"
+
 configSchema:
   type: object
   required:
