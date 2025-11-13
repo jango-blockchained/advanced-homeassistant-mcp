@@ -4,7 +4,7 @@
  * Expose Home Assistant device states and configurations as MCP resources
  */
 
-import { get_hass } from "../hass/index.js";
+import { get_hass, get_hass_safe } from "../hass/index.js";
 import { logger } from "../utils/logger.js";
 import type { HassEntity } from "../interfaces/hass.js";
 
@@ -111,8 +111,9 @@ type ResourceContent =
  */
 export async function listResources(): Promise<MCPResource[]> {
   try {
-    const hass = await get_hass();
-    const states = await hass.getStates();
+    // Use safe version during initialization - don't fail if no token
+    // Just return static list of resources - we don't need to fetch states for this
+    logger.debug("Listing available MCP resources");
 
     const resources: MCPResource[] = [
       {

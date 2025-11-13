@@ -54,12 +54,13 @@ startCommand:
       command: 'node', 
       args: ['dist/http-server.js'], 
       env: { 
-        HASS_TOKEN: config.hassToken,
+        HASS_TOKEN: config.hassToken || '',
         HASS_HOST: config.hassHost || 'http://homeassistant.local:8123',
         HASS_SOCKET_URL: config.hassSocketUrl || 'ws://homeassistant.local:8123',
         PORT: (config.port || 7123).toString(),
         DEBUG: config.debug !== undefined ? config.debug.toString() : 'false',
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        SMITHERY_SCAN: process.env.SMITHERY_SCAN || 'false'
       }
     })
 

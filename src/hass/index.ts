@@ -7,16 +7,22 @@ class HomeAssistantAPI {
   private cache = new Map<string, { data: unknown; timestamp: number }>();
   private readonly CACHE_MAX_SIZE = 100; // Prevent memory leaks
 
-  constructor() {
-    this.baseUrl = process.env.HASS_HOST || "http://localhost:8123";
-    this.token = process.env.HASS_TOKEN || "";
+  constructor(throwOnMissingToken = true) {
+    this.baseUrl = process.env.HASS_HOST ?? "http://localhost:8123";
+    this.token = process.env.HASS_TOKEN ?? "";
 
-    if (!this.token || this.token === "your_hass_token_here") {
+    if (throwOnMissingToken && (!this.token || this.token === "your_hass_token_here")) {
       throw new Error("HASS_TOKEN is required but not set in environment variables");
     }
 
-    logger.info(`Initializing Home Assistant API with base URL: ${this.baseUrl}`);
-    logger.info(`Token loaded: ${this.token ? `yes (${this.token.length} chars)` : "no"}`);
+    if (this.token) {
+      logger.info(`Initializing Home Assistant API with base URL: ${this.baseUrl}`);
+      logger.info(`Token loaded: yes (${this.token.length} chars)`);
+    } else if (throwOnMissingToken) {
+      logger.warn("Home Assistant API initialized without token - limited functionality");
+    } else {
+      logger.debug("Home Assistant API in mock mode (no credentials)");
+    }
   }
 
   private getCache<T>(key: string, ttlMs: number = 30000): T | null {
@@ -170,7 +176,7 @@ let instance: HomeAssistantAPI | null = null;
 export async function get_hass(): Promise<HomeAssistantAPI> {
   if (!instance) {
     try {
-      instance = new HomeAssistantAPI();
+      instance = new HomeAssistantAPI(true); // throwOnMissingToken = true for normal operation
       // Verify connection by trying to get states
       await instance.getStates();
       logger.info("Successfully connected to Home Assistant");
@@ -178,6 +184,32 @@ export async function get_hass(): Promise<HomeAssistantAPI> {
       logger.error("Failed to initialize Home Assistant connection:", error);
       instance = null;
       throw error;
+    }
+  }
+  return instance;
+}
+
+/**
+ * Safe version of get_hass that doesn't throw if no token is configured
+ */
+export async function get_hass_safe(): Promise<HomeAssistantAPI | null> {
+  if (!instance) {
+    try {
+      // Check if token is available first
+      const hasToken = process.env.HASS_TOKEN && process.env.HASS_TOKEN !== "";
+      if (!hasToken) {
+        logger.debug("Home Assistant not configured (no token) - skipping initialization");
+        return null;
+      }
+      
+      instance = new HomeAssistantAPI(false); // throwOnMissingToken = false
+      // Try to verify connection
+      await instance.getStates();
+      logger.info("Successfully connected to Home Assistant");
+    } catch (error) {
+      logger.debug("Failed to initialize Home Assistant connection - continuing without connection:", error);
+      // Don't throw - allow server to continue
+      return null;
     }
   }
   return instance;

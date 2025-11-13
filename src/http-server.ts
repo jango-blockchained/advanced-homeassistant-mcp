@@ -17,34 +17,13 @@ import { FastMCP } from "fastmcp";
 import { tools } from "./tools/index.js";
 import { listResources, getResource } from "./mcp/resources.js";
 import { getAllPrompts, renderPrompt } from "./mcp/prompts.js";
-import express from "express";
 
 const port = (process.env.PORT ?? "7123") ? parseInt(process.env.PORT ?? "7123", 10) : 7123;
+const isScanning = process.env.SMITHERY_SCAN === "true";
 
 async function main(): Promise<void> {
   try {
-    logger.info("Initializing FastMCP server with HTTP transport...");
-
-    // Create Express app for health checks and utility endpoints
-    const app = express();
-    app.use(express.json());
-
-    // Health check endpoint
-    app.get("/health", (req, res) => {
-      res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
-    });
-
-    // .well-known/mcp-config endpoint for Smithery discovery
-    app.get("/.well-known/mcp-config", (req, res) => {
-      res.status(200).json({
-        name: "Home Assistant MCP Server",
-        version: "1.0.0",
-        transport: "httpStream",
-        mcp: {
-          version: "2025-06-18",
-        },
-      });
-    });
+    logger.info(`Initializing FastMCP server with HTTP transport${isScanning ? " (scan mode)" : "..."}...`);
 
     // Create the FastMCP server instance following v3.x best practices
     const server = new FastMCP({
@@ -64,6 +43,9 @@ async function main(): Promise<void> {
           parameters: tool.parameters as never,
           execute: async (args: unknown, context) => {
             try {
+              if (!process.env.HASS_TOKEN && !isScanning) {
+                throw new Error("Home Assistant token not configured");
+              }
               context.log.debug(`Executing tool ${tool.name}`);
               const result = await tool.execute(args as never);
               return result as never;
@@ -144,8 +126,12 @@ async function main(): Promise<void> {
       logger.error("Error adding prompts:", error);
     }
 
-    // Start the server with HTTP stream transport (FastMCP 3.x) and Express app
+    // Start the server with HTTP stream transport (FastMCP 3.x)
     logger.info("Starting FastMCP with HTTP stream transport...");
+
+    // Note: FastMCP httpStream will create its own HTTP server
+    // The Express app is just used for middleware but the actual HTTP
+    // server is created and managed by FastMCP itself
 
     await server.start({
       transportType: "httpStream",
@@ -153,7 +139,6 @@ async function main(): Promise<void> {
         port: port,
         endpoint: "/mcp",
       },
-      expressApp: app,
     });
 
     logger.info(`✓ FastMCP HTTP server listening on port ${port}`);
