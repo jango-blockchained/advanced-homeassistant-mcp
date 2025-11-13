@@ -138,7 +138,7 @@ export class TextToSpeech extends EventEmitter {
    * Play audio via media player
    */
   async playAudio(ttsResponse: TTSResponse, mediaPlayerId?: string): Promise<void> {
-    if (!isInitialized) {
+    if (!this.isInitialized) {
       throw new Error("TextToSpeech service not initialized");
     }
 
