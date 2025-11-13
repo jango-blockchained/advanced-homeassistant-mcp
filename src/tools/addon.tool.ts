@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { Tool, AddonParams, HassAddonResponse, HassAddonInfoResponse } from "../types/index.js";
-import { APP_CONFIG } from "../config/app.config.ts";
+import { Tool, AddonParams, HassAddonResponse, HassAddonInfoResponse } from "../types/index";
+import { APP_CONFIG } from "../config/app.config";
 
 export const addonTool: Tool = {
   name: "addon",

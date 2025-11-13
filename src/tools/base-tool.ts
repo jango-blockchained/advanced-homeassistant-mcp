@@ -14,7 +14,7 @@ import {
   MCPContext,
   MCPStreamPart,
   MCPErrorCode,
-} from "../mcp/types.js";
+} from "../mcp/types";
 
 /**
  * Abstract base class for all tools
@@ -22,8 +22,8 @@ import {
 export abstract class BaseTool implements ToolDefinition {
   public name: string;
   public description: string;
-  public parameters?: z.ZodType<any>;
-  public returnType?: z.ZodType<any>;
+  public parameters?: z.ZodType<unknown>;
+  public returnType?: z.ZodType<unknown>;
   public metadata?: ToolMetadata;
 
   /**
@@ -32,8 +32,8 @@ export abstract class BaseTool implements ToolDefinition {
   constructor(props: {
     name: string;
     description: string;
-    parameters?: z.ZodType<any>;
-    returnType?: z.ZodType<any>;
+    parameters?: z.ZodType<unknown>;
+    returnType?: z.ZodType<unknown>;
     metadata?: Partial<ToolMetadata>;
   }) {
     this.name = props.name;
@@ -52,12 +52,12 @@ export abstract class BaseTool implements ToolDefinition {
   /**
    * Main execute method to be implemented by subclasses
    */
-  public abstract execute(params: any, context: MCPContext): Promise<any>;
+  public abstract execute(params: unknown, context: MCPContext): Promise<unknown>;
 
   /**
    * Validate parameters against schema
    */
-  protected validateParams(params: any): any {
+  protected validateParams(params: unknown): unknown {
     if (!this.parameters) {
       return params;
     }
@@ -76,7 +76,7 @@ export abstract class BaseTool implements ToolDefinition {
   /**
    * Validate result against schema
    */
-  protected validateResult(result: any): any {
+  protected validateResult(result: unknown): unknown {
     if (!this.returnType) {
       return result;
     }
@@ -95,7 +95,7 @@ export abstract class BaseTool implements ToolDefinition {
   /**
    * Send a streaming response part
    */
-  protected sendStreamPart(data: any, context: MCPContext, isFinal: boolean = false): void {
+  protected sendStreamPart(data: unknown, context: MCPContext, isFinal: boolean = false): void {
     // Get requestId from context
     const { requestId, server } = context;
 
@@ -129,10 +129,10 @@ export abstract class BaseTool implements ToolDefinition {
    * Create a streaming executor wrapper
    */
   protected createStreamingExecutor<T>(
-    generator: (params: any, context: MCPContext) => AsyncGenerator<T, T, void>,
+    generator: (params: unknown, context: MCPContext) => AsyncGenerator<T, T, void>,
     context: MCPContext,
-  ): (params: any) => Promise<T> {
-    return async (params: any): Promise<T> => {
+  ): (params: unknown) => Promise<T> {
+    return async (params: unknown): Promise<T> => {
       const validParams = this.validateParams(params);
       let finalResult: T | undefined = undefined;
 
@@ -149,7 +149,7 @@ export abstract class BaseTool implements ToolDefinition {
           // Validate and send final result
           const validResult = this.validateResult(finalResult);
           this.sendStreamPart(validResult, context, true);
-          return validResult;
+          return validResult as T;
         }
 
         throw new Error("Streaming generator did not produce a final result");
@@ -163,7 +163,7 @@ export abstract class BaseTool implements ToolDefinition {
   /**
    * Convert tool to SchemaObject format (for Claude and OpenAI)
    */
-  public toSchemaObject(): any {
+  public toSchemaObject(): Record<string, unknown> {
     // Convert Zod schema to JSON Schema for parameters
     const parametersSchema = this.parameters
       ? this.zodToJsonSchema(this.parameters)
@@ -183,14 +183,14 @@ export abstract class BaseTool implements ToolDefinition {
   /**
    * Convert Zod schema to JSON Schema (simplified)
    */
-  private zodToJsonSchema(schema: z.ZodType<any>): any {
+  private zodToJsonSchema(schema: z.ZodType<unknown>): Record<string, unknown> {
     // This is a simplified conversion - in production you'd want a full implementation
     // or use a library like zod-to-json-schema
 
     // Basic implementation just to support our needs
     if (schema instanceof z.ZodObject) {
       const shape = (schema as any)._def.shape();
-      const properties: Record<string, any> = {};
+      const properties: Record<string, unknown> = {};
       const required: string[] = [];
 
       for (const [key, value] of Object.entries(shape)) {
@@ -200,7 +200,7 @@ export abstract class BaseTool implements ToolDefinition {
         }
 
         // Convert property - explicitly cast value to ZodType to fix linter error
-        properties[key] = this.zodTypeToJsonType(value as z.ZodType<any>);
+        properties[key] = this.zodTypeToJsonType(value as z.ZodType<unknown>);
       }
 
       return {
@@ -217,7 +217,7 @@ export abstract class BaseTool implements ToolDefinition {
   /**
    * Convert Zod type to JSON Schema type (simplified)
    */
-  private zodTypeToJsonType(zodType: z.ZodType<any>): any {
+  private zodTypeToJsonType(zodType: z.ZodType<unknown>): Record<string, unknown> {
     if (zodType instanceof z.ZodString) {
       return { type: "string" };
     } else if (zodType instanceof z.ZodNumber) {
@@ -227,15 +227,15 @@ export abstract class BaseTool implements ToolDefinition {
     } else if (zodType instanceof z.ZodArray) {
       return {
         type: "array",
-        items: this.zodTypeToJsonType((zodType as any)._def.type),
+        items: this.zodTypeToJsonType(zodType.element as z.ZodType<unknown>),
       };
     } else if (zodType instanceof z.ZodEnum) {
       return {
         type: "string",
-        enum: (zodType as any)._def.values,
+        enum: zodType.options,
       };
     } else if (zodType instanceof z.ZodOptional) {
-      return this.zodTypeToJsonType((zodType as any)._def.innerType);
+      return this.zodTypeToJsonType(zodType.unwrap() as z.ZodType<unknown>);
     } else if (zodType instanceof z.ZodObject) {
       return this.zodToJsonSchema(zodType);
     }

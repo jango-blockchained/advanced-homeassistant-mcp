@@ -1,4 +1,4 @@
-import { logger } from "./utils/logger.js";
+import { logger } from "./utils/logger";
 
 const check = async (): Promise<void> => {
   try {
@@ -16,4 +16,4 @@ const check = async (): Promise<void> => {
 };
 
 // Execute check - no need for outer catch since check handles all errors
-check();
+void check();

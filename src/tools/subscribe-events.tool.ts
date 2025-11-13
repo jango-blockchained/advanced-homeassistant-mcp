@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
-import { Tool, SSEParams } from "../types/index.js";
-import { sseManager } from "../sse/index.js";
+import { Tool, SSEParams } from "../types/index";
+import { sseManager } from "../sse/index";
 
 export const subscribeEventsTool: Tool = {
   name: "subscribe_events",

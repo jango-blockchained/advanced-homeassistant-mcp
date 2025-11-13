@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { Tool } from "../types/index.js";
-import { APP_CONFIG } from "../config/app.config.ts";
-import { sseManager } from "../sse/index.js";
+import { Tool } from "../types/index";
+import { APP_CONFIG } from "../config/app.config";
+import { sseManager } from "../sse/index";
 
 export const getSSEStatsTool: Tool = {
   name: "get_sse_stats",

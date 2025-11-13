@@ -6,31 +6,31 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
-import { MCPServer } from "./mcp/MCPServer.js";
-import { loggingMiddleware, timeoutMiddleware } from "./mcp/middleware/index.js";
-import { StdioTransport } from "./mcp/transports/stdio.transport.js";
-import { HttpTransport } from "./mcp/transports/http.transport.js";
-import { APP_CONFIG } from "./config.js";
-import { logger } from "./utils/logger.js";
-import { openApiConfig } from "./openapi.js";
+import { MCPServer } from "./mcp/MCPServer";
+import { loggingMiddleware, timeoutMiddleware } from "./mcp/middleware/index";
+import { StdioTransport } from "./mcp/transports/stdio.transport";
+import { HttpTransport } from "./mcp/transports/http.transport";
+import { APP_CONFIG } from "./config";
+import { logger } from "./utils/logger";
+import { openApiConfig } from "./openapi";
 import {
   securityHeadersMiddleware,
   rateLimiterMiddleware,
   validateRequestMiddleware,
   sanitizeInputMiddleware,
   errorHandlerMiddleware,
-} from "./security/index.js";
+} from "./security/index";
 
 // Home Assistant tools
-import { LightsControlTool } from "./tools/homeassistant/lights.tool.js";
-import { ClimateControlTool } from "./tools/homeassistant/climate.tool.js";
-import { ListDevicesTool } from "./tools/homeassistant/list-devices.tool.js";
-import { AutomationTool } from "./tools/homeassistant/automation.tool.js";
-import { SceneTool } from "./tools/homeassistant/scene.tool.js";
-import { NotifyTool } from "./tools/homeassistant/notify.tool.js";
+import { LightsControlTool } from "./tools/homeassistant/lights.tool";
+import { ClimateControlTool } from "./tools/homeassistant/climate.tool";
+import { ListDevicesTool } from "./tools/homeassistant/list-devices.tool";
+import { AutomationTool } from "./tools/homeassistant/automation.tool";
+import { SceneTool } from "./tools/homeassistant/scene.tool";
+import { NotifyTool } from "./tools/homeassistant/notify.tool";
 
 // Import additional tools from tools/index.ts
-import { tools } from "./tools/index.js";
+import { tools } from "./tools/index";
 
 /**
  * Check if running in stdio mode via command line args
@@ -255,15 +255,20 @@ async function main(): Promise<void> {
     app.use(errorHandlerMiddleware);
 
     const httpTransport = new HttpTransport({
-      port: APP_CONFIG.port,
-      corsOrigin: APP_CONFIG.corsOrigin,
-      apiPrefix: "/api/mcp",
+      expressApp: app,
+      apiPrefix: "/api",
       debug: APP_CONFIG.debugHttp,
     });
     server.registerTransport(httpTransport);
+
+    // Start listening on the port
+    const port = APP_CONFIG.port;
+    app.listen(port, () => {
+      logger.info(`HTTP server listening on port ${port}`);
+    });
   }
 
-  // Start the server
+  // Start the server (will start transports)
   await server.start();
   logger.info("MCP Server started successfully");
 

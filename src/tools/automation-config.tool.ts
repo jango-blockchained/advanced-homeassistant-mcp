@@ -4,8 +4,8 @@ import type {
   AutomationConfigParams,
   AutomationConfig,
   AutomationResponse,
-} from "../types/index.js";
-import { APP_CONFIG } from "../config/app.config.ts";
+} from "../types/index";
+import { APP_CONFIG } from "../config/app.config";
 
 const hassDictionarySchema = z
   .record(z.string(), z.unknown())

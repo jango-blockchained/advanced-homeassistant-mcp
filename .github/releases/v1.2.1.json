@@ -1,0 +1,8 @@
+{
+  "tag_name": "v1.2.1",
+  "target_commitish": "main",
+  "name": "Release v1.2.1",
+  "body": "## 🚀 Release v1.2.1\n\n### Key Improvements\n- ✅ fix(stdio): build stdio-server as ESM to resolve dependency issues\n\n### Downloads\n- Docker: `docker pull jangoblockchained/homeassistant-mcp:1.2.1`\n- NPM: See https://www.npmjs.com/package/@jango-blockchained/homeassistant-mcp\n\nSee RELEASE_v1.2.1.md for complete details.",
+  "draft": false,
+  "prerelease": false
+}

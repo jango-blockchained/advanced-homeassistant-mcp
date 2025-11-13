@@ -6,8 +6,8 @@
  */
 
 import { z } from "zod";
-import { BaseTool } from "../mcp/index.js";
-import { MCPContext } from "../mcp/types.js";
+import { BaseTool } from "../mcp/index";
+import { MCPContext } from "../mcp/types";
 
 /**
  * Example streaming tool that generates a series of responses

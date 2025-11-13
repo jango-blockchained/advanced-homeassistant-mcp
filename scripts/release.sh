@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Release & Deploy Script for v1.2.0
+# Release & Deploy Script for v1.2.1
 # Handles: Git tagging, Docker build, GitHub Pages, and documentation
 
 set -e
 
-VERSION="1.2.0"
+VERSION="1.2.1"
 REPO_NAME="homeassistant-mcp"
-DOCKER_IMAGE="jango-blockchained/homeassistant-mcp"
+DOCKER_IMAGE="jangoblockchained/homeassistant-mcp"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 echo "🚀 Starting Release v${VERSION}"
@@ -16,7 +16,7 @@ echo "════════════════════════�
 # Step 1: Verify build
 echo ""
 echo "Step 1: Verifying build..."
-if [ ! -f "dist/index.js" ] || [ ! -f "dist/http-server.js" ] || [ ! -f "dist/stdio-server.js" ]; then
+if [ ! -f "dist/index.js" ] || [ ! -f "dist/http-server.js" ] || [ ! -f "dist/stdio-server.mjs" ]; then
   echo "❌ Build artifacts missing. Run: bun run build:all"
   exit 1
 fi
@@ -49,9 +49,9 @@ mkdir -p .github/releases
 cat > .github/releases/v${VERSION}.json << EOF
 {
   "tag_name": "v${VERSION}",
-  "target_commitish": "aurora",
+  "target_commitish": "main",
   "name": "Release v${VERSION}",
-  "body": "## 🚀 Release v${VERSION}\n\n### Key Improvements\n- ✅ 3 Critical Bug Fixes (WebSocket, SSE, Aurora Memory)\n- ⚡ 3 P1 Performance Optimizations (84.2% - 335x faster)\n- 📊 Comprehensive Testing (42+ unit tests, 4 integration tests)\n- 📈 Performance Targets Exceeded (6.3x FFT, 335x SSE, 93% Memory)\n\n### Downloads\n- Docker: \`docker pull ${DOCKER_IMAGE}:${VERSION}\`\n- NPM: See https://www.npmjs.com/package/@jango-blockchained/homeassistant-mcp\n\nSee RELEASE_v${VERSION}.md for complete details.",
+  "body": "## 🚀 Release v${VERSION}\n\n### Key Improvements\n- ✅ fix(stdio): build stdio-server as ESM to resolve dependency issues\n\n### Downloads\n- Docker: \`docker pull ${DOCKER_IMAGE}:${VERSION}\`\n- NPM: See https://www.npmjs.com/package/@jango-blockchained/homeassistant-mcp\n\nSee RELEASE_v${VERSION}.md for complete details.",
   "draft": false,
   "prerelease": false
 }
@@ -84,7 +84,6 @@ echo "Step 6: Generating GitHub Pages documentation..."
 mkdir -p site/_releases
 
 cp RELEASE_v${VERSION}.md site/_releases/v${VERSION}.md
-cp PERFORMANCE_BENCHMARK_REPORT.md site/_releases/performance-${VERSION}.md
 cp CHANGELOG.md site/_releases/changelog.md
 
 cat > site/_releases/index.md << 'PAGES_EOF'
@@ -95,22 +94,19 @@ layout: page
 
 # Release History
 
-## [v1.2.0](v1.2.0.md) - November 7, 2025
+## [v1.2.1](v1.2.1.md) - November 13, 2025
 
 **Status**: ✅ Production Ready
 
 ### Key Highlights
-- **3 Critical Bug Fixes**: WebSocket memory leaks, SSE cleanup, Aurora memory
-- **3 P1 Optimizations**: 84.2% - 335x performance improvements
-- **42+ Unit Tests**: Comprehensive test coverage
-- **4 Integration Tests**: All passing (stability, load, animations, resilience)
+- **fix(stdio)**: build stdio-server as ESM to resolve dependency issues
 
-[Full Release Notes](v1.2.0.md) | [Performance Report](performance-1.2.0.md) | [Changelog](changelog.md)
+[Full Release Notes](v1.2.1.md) | [Changelog](changelog.md)
 
 ---
 
-**Latest Version**: 1.2.0  
-**Latest Update**: November 7, 2025
+**Latest Version**: 1.2.1
+**Latest Update**: November 13, 2025
 
 PAGES_EOF
 
@@ -122,7 +118,7 @@ echo "Step 7: Git operations..."
 if git rev-parse v${VERSION} >/dev/null 2>&1; then
   echo "⚠️  Tag v${VERSION} already exists"
 else
-  git tag -a v${VERSION} -m "Release v${VERSION}: Performance optimizations and critical bug fixes" || true
+  git tag -a v${VERSION} -m "Release v${VERSION}: fix(stdio): build stdio-server as ESM to resolve dependency issues" || true
   echo "✅ Git tag created: v${VERSION}"
 fi
 
@@ -134,7 +130,7 @@ echo "════════════════════════�
 
 echo ""
 echo "📦 Build Artifacts:"
-ls -lh dist/ | grep -E '\.(js|cjs)$' | awk '{print "   " $9 " (" $5 ")"}'
+ls -lh dist/ | grep -E '\.(js|mjs|cjs)$' | awk '{print "   " $9 " (" $5 ")"}'
 
 echo ""
 echo "🐳 Docker:"
@@ -150,7 +146,6 @@ echo ""
 echo "📄 Documentation:"
 echo "   Release: RELEASE_v${VERSION}.md"
 echo "   Changelog: CHANGELOG.md"
-echo "   Performance: PERFORMANCE_BENCHMARK_REPORT.md"
 echo "   GitHub Pages: site/_releases/"
 
 echo ""

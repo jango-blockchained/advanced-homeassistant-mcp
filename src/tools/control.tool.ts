@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { Tool, CommandParams } from "../types/index.js";
-import { APP_CONFIG } from "../config/app.config.ts";
-import { DomainSchema } from "../schemas.js";
+import { Tool, CommandParams } from "../types/index";
+import { APP_CONFIG } from "../config/app.config";
+import { DomainSchema } from "../schemas";
 
 // Create a unique array of all commands
 const allCommands = [

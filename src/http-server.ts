@@ -12,11 +12,11 @@
  * - Resource cleanup on shutdown
  */
 
-import { logger } from "./utils/logger.js";
+import { logger } from "./utils/logger";
 import { FastMCP } from "fastmcp";
-import { tools } from "./tools/index.js";
-import { listResources, getResource } from "./mcp/resources.js";
-import { getAllPrompts, renderPrompt } from "./mcp/prompts.js";
+import { tools } from "./tools/index";
+import { listResources, getResource } from "./mcp/resources";
+import { getAllPrompts, renderPrompt } from "./mcp/prompts";
 
 const port = (process.env.PORT ?? "7123") ? parseInt(process.env.PORT ?? "7123", 10) : 7123;
 const isScanning = process.env.SMITHERY_SCAN === "true";

@@ -10,8 +10,8 @@ import { EventEmitter } from "events";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { v4 as uuidv4 } from "uuid";
-import { logger } from "../utils/logger.js";
-import type { Tool } from "../types/index.js";
+import { logger } from "../utils/logger";
+import type { Tool } from "../types/index";
 
 // Error code enum to break circular dependency
 export enum MCPErrorCode {
@@ -59,7 +59,7 @@ import type {
   TransportLayer,
   MCPConfig,
   ResourceManager,
-} from "./types.js";
+} from "./types";
 
 /**
  * Main Model Context Protocol server class
@@ -71,7 +71,7 @@ export class MCPServer extends EventEmitter {
   private transports: TransportLayer[] = [];
   private resourceManager: ResourceManager;
   private config: MCPConfig;
-  private resources: Map<string, Map<string, any>> = new Map();
+  private resources: Map<string, Map<string, unknown>> = new Map();
 
   /**
    * Private constructor for singleton pattern
@@ -127,37 +127,14 @@ export class MCPServer extends EventEmitter {
   /**
    * Register a new tool with the server
    */
-  public registerTool(tool: ToolDefinition | Tool): void {
+  public registerTool(tool: ToolDefinition<any, any> | Tool): void {
     if (this.tools.has(tool.name)) {
       logger.warn(`Tool '${tool.name}' is already registered. Overwriting.`);
     }
 
-    // Convert plain Tool to ToolDefinition if needed
-    let toolDef: ToolDefinition;
-    if ("execute" in tool && typeof tool.execute === "function") {
-      // Check if it's already a ToolDefinition (has context parameter)
-      const executeStr = tool.execute.toString();
-      if (executeStr.includes("context") || executeStr.includes("MCPContext")) {
-        toolDef = tool as ToolDefinition;
-      } else {
-        // It's a plain Tool, wrap it to provide context
-        const plainTool = tool as Tool;
-        toolDef = {
-          name: plainTool.name,
-          description: plainTool.description,
-          parameters: plainTool.parameters,
-          execute: async (params: unknown, context: MCPContext): Promise<unknown> => {
-            return plainTool.execute(params);
-          },
-        };
-      }
-    } else {
-      toolDef = tool as ToolDefinition;
-    }
-
-    this.tools.set(tool.name, toolDef);
+    this.tools.set(tool.name, tool as ToolDefinition);
     logger.debug(`Tool '${tool.name}' registered`);
-    this.emit(MCPServerEvents.TOOL_REGISTERED, toolDef);
+    this.emit(MCPServerEvents.TOOL_REGISTERED, tool);
   }
 
   /**
@@ -233,7 +210,7 @@ export class MCPServer extends EventEmitter {
       return response;
     } catch (error) {
       const errorResponse: MCPResponse = {
-        id: request.id,
+        id: request.id ?? undefined,
         error: {
           code: MCPErrorCode.INTERNAL_ERROR,
           message: error instanceof Error ? error.message : String(error),
@@ -253,7 +230,7 @@ export class MCPServer extends EventEmitter {
     // Handle MCP initialize request
     if (method === "initialize") {
       return {
-        id: request.id,
+        id: request.id ?? undefined,
         result: {
           protocolVersion: "2024-11-05",
           capabilities: {
@@ -275,7 +252,7 @@ export class MCPServer extends EventEmitter {
     // Handle MCP tools/list request
     if (method === "tools/list") {
       return {
-        id: request.id,
+        id: request.id ?? undefined,
         result: {
           tools: Array.from(this.tools.values()).map((tool) => {
             interface JSONSchema {
@@ -318,7 +295,7 @@ export class MCPServer extends EventEmitter {
     // Special case for internal context retrieval (used by transports for initialization)
     if (method === "_internal_getContext") {
       return {
-        id: request.id,
+        id: request.id ?? undefined,
         result: {
           context: context,
           tools: Array.from(this.tools.values()).map((tool) => ({
@@ -333,12 +310,12 @@ export class MCPServer extends EventEmitter {
     // Handle tools/call method (MCP protocol)
     if (method === "tools/call") {
       const toolName = params.name as string;
-      const toolParams = params.arguments || {};
+      const toolParams = (params.arguments ?? {}) as Record<string, unknown>;
 
       const tool = this.tools.get(toolName);
       if (!tool) {
         return {
-          id: request.id,
+          id: request.id ?? undefined,
           error: {
             code: MCPErrorCode.METHOD_NOT_FOUND,
             message: `Tool not found: ${toolName}`,
@@ -351,13 +328,13 @@ export class MCPServer extends EventEmitter {
         // Return result directly - MCP clients expect raw object/array responses
         // Do NOT wrap in content format for tools/call responses
         return {
-          id: request.id,
+          id: request.id ?? undefined,
           result: result,
         };
       } catch (error) {
         logger.error(`Error executing tool ${toolName}:`, error);
         return {
-          id: request.id,
+          id: request.id ?? undefined,
           error: {
             code: MCPErrorCode.TOOL_EXECUTION_ERROR,
             message: error instanceof Error ? error.message : String(error),
@@ -370,7 +347,7 @@ export class MCPServer extends EventEmitter {
     const tool = this.tools.get(method);
     if (!tool) {
       return {
-        id: request.id,
+        id: request.id ?? undefined,
         error: {
           code: MCPErrorCode.METHOD_NOT_FOUND,
           message: `Method not found: ${method}`,
@@ -382,13 +359,13 @@ export class MCPServer extends EventEmitter {
       const result = await tool.execute(params, context);
       // Return result directly without content wrapping
       return {
-        id: request.id,
+        id: request.id ?? undefined,
         result: result,
       };
     } catch (error) {
       logger.error(`Error executing tool ${method}:`, error);
       return {
-        id: request.id,
+        id: request.id ?? undefined,
         error: {
           code: MCPErrorCode.TOOL_EXECUTION_ERROR,
           message: error instanceof Error ? error.message : String(error),
@@ -402,7 +379,7 @@ export class MCPServer extends EventEmitter {
    */
   private async validationMiddleware(
     request: MCPRequest,
-    context: MCPContext,
+    _context: MCPContext,
     next: () => Promise<MCPResponse>,
   ): Promise<MCPResponse> {
     const { method, params = {} } = request;
@@ -425,7 +402,7 @@ export class MCPServer extends EventEmitter {
     const tool = this.tools.get(method);
     if (!tool) {
       return {
-        id: request.id,
+        id: request.id ?? undefined,
         error: {
           code: MCPErrorCode.METHOD_NOT_FOUND,
           message: `Method not found: ${method}`,
@@ -433,15 +410,15 @@ export class MCPServer extends EventEmitter {
       };
     }
 
-    if (tool.parameters && params) {
+    if (tool.parameters && typeof params === "object" && params !== null) {
       try {
         // Validate parameters with the schema
         const validParams = tool.parameters.parse(params);
         // Update with validated params (which may include defaults)
-        request.params = validParams;
+        request.params = validParams as Record<string, unknown>;
       } catch (validationError) {
         return {
-          id: request.id,
+          id: request.id ?? undefined,
           error: {
             code: MCPErrorCode.INVALID_PARAMS,
             message: "Invalid parameters",
@@ -460,7 +437,7 @@ export class MCPServer extends EventEmitter {
    */
   private async errorHandlingMiddleware(
     request: MCPRequest,
-    context: MCPContext,
+    _context: MCPContext,
     next: () => Promise<MCPResponse>,
   ): Promise<MCPResponse> {
     try {
@@ -468,7 +445,7 @@ export class MCPServer extends EventEmitter {
     } catch (error) {
       logger.error(`Uncaught error in request pipeline:`, error);
       return {
-        id: request.id,
+        id: request.id ?? undefined,
         error: {
           code: MCPErrorCode.INTERNAL_ERROR,
           message: error instanceof Error ? error.message : "An unknown error occurred",
@@ -484,8 +461,8 @@ export class MCPServer extends EventEmitter {
   private async acquireResource(
     resourceType: string,
     resourceId: string,
-    context: MCPContext,
-  ): Promise<any> {
+    _context: MCPContext,
+  ): Promise<unknown> {
     logger.debug(`Acquiring resource: ${resourceType}/${resourceId}`);
 
     // Initialize resource type map if not exists
@@ -494,6 +471,11 @@ export class MCPServer extends EventEmitter {
     }
 
     const typeResources = this.resources.get(resourceType);
+
+    if (!typeResources) {
+      // This should not happen based on the logic above, but it satisfies the linter
+      return;
+    }
 
     // Create resource if it doesn't exist
     if (!typeResources.has(resourceId)) {
@@ -525,7 +507,7 @@ export class MCPServer extends EventEmitter {
   private async releaseResource(
     resourceType: string,
     resourceId: string,
-    context: MCPContext,
+    _context: MCPContext,
   ): Promise<void> {
     logger.debug(`Releasing resource: ${resourceType}/${resourceId}`);
 
@@ -535,6 +517,10 @@ export class MCPServer extends EventEmitter {
     }
 
     const typeResources = this.resources.get(resourceType);
+
+    if (!typeResources) {
+      return;
+    }
 
     // Remove resource if it exists
     if (typeResources.has(resourceId)) {
@@ -547,16 +533,20 @@ export class MCPServer extends EventEmitter {
   /**
    * List available resources
    */
-  private async listResources(context: MCPContext, resourceType?: string): Promise<string[]> {
-    if (resourceType) {
+  private async listResources(
+    _context: MCPContext,
+    resourceType?: string | undefined,
+  ): Promise<string[]> {
+    if (typeof resourceType === "string") {
       logger.debug(`Listing resources of type ${resourceType}`);
 
-      if (!this.resources.has(resourceType)) {
+      const typeResources = this.resources.get(resourceType);
+      if (!typeResources) {
         return [];
       }
 
       await Promise.resolve(); // Add await to satisfy linter
-      return Array.from(this.resources.get(resourceType).keys());
+      return Array.from(typeResources.keys());
     } else {
       logger.debug("Listing all resource types");
       await Promise.resolve(); // Add await to satisfy linter

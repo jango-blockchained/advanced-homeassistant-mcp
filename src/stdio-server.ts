@@ -22,19 +22,21 @@ if (fs.existsSync(envPath)) {
 
 // Also load config module to ensure any additional env setup happens
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AppConfig } from "./config/index.js";
+import { AppConfig } from "./config/index";
 
-import { logger } from "./utils/logger.js";
-import { FastMCP } from "fastmcp";
-import { tools } from "./tools/index.js";
-import { listResources, getResource } from "./mcp/resources.js";
-import { getAllPrompts, renderPrompt } from "./mcp/prompts.js";
+import { logger } from "./utils/logger";
+import { tools } from "./tools/index";
+import { listResources, getResource } from "./mcp/resources";
+import { getAllPrompts, renderPrompt } from "./mcp/prompts";
 
 // Get version from package.json via environment variable
 const VERSION = (process.env.npm_package_version ?? "1.0.7") as `${number}.${number}.${number}`;
 
 async function main(): Promise<void> {
   try {
+    // Dynamically import FastMCP (ESM module)
+    const { FastMCP } = await import("fastmcp");
+    
     // Create the FastMCP server instance with proper metadata
     const server = new FastMCP({
       name: "Home Assistant MCP Server",

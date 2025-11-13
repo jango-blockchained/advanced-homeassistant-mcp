@@ -1,9 +1,8 @@
 # Smithery configuration file for Home Assistant MCP Server
-runtime: "typescript"
-entrypoint: "src/index.ts"
+runtime: "node"
+entrypoint: "dist/stdio-server.mjs"
 
 env:
-  USE_HTTP_TRANSPORT: "true"
   PORT: "7123"
 
 configSchema:
