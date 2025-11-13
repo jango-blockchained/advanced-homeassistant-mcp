@@ -54,8 +54,8 @@ Get up and running in minutes:
 
 ```bash
 # Clone and install
-git clone https://github.com/jango-blockchained/homeassistant-mcp.git
-cd homeassistant-mcp
+git clone https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
+cd advanced-homeassistant-mcp
 bun install
 
 # Configure environment
@@ -114,13 +114,13 @@ If you can't login to npm, use Bunx to run directly from GitHub:
 curl -fsSL https://bun.sh/install | bash
 
 # Then run from GitHub
-bunx github:jango-blockchained/homeassistant-mcp
+bunx github:jango-blockchained/advanced-homeassistant-mcp
 ```
 
 Alternatively, install directly from Git:
 
 ```bash
-bun add git+https://github.com/jango-blockchained/homeassistant-mcp.git
+bun add git+https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
 homeassistant-mcp
 ```
 
@@ -164,8 +164,8 @@ homeassistant-mcp
 ### Option 6: From Source (Most Flexible)
 
 ```bash
-git clone https://github.com/jango-blockchained/homeassistant-mcp.git
-cd homeassistant-mcp
+git clone https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
+cd advanced-homeassistant-mcp
 bun install
 bun run build
 bun run start:stdio
@@ -186,7 +186,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "homeassistant-mcp": {
       "command": "bunx",
-      "args": ["github:jango-blockchained/homeassistant-mcp"]
+      "args": ["github:jango-blockchained/advanced-homeassistant-mcp"]
     }
   }
 }
@@ -218,7 +218,7 @@ Add to `.cursor/config/config.json`:
   "mcpServers": {
     "homeassistant-mcp": {
       "command": "bunx",
-      "args": ["github:jango-blockchained/homeassistant-mcp"]
+      "args": ["github:jango-blockchained/advanced-homeassistant-mcp"]
     }
   }
 }

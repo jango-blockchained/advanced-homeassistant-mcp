@@ -14,13 +14,13 @@
     "cursor",
     "smithery"
   ],
-  "homepage": "https://github.com/jango-blockchained/homeassistant-mcp#readme",
+  "homepage": "https://github.com/jango-blockchained/advanced-homeassistant-mcp#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jango-blockchained/homeassistant-mcp.git"
+    "url": "git+https://github.com/jango-blockchained/advanced-homeassistant-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/jango-blockchained/homeassistant-mcp/issues"
+    "url": "https://github.com/jango-blockchained/advanced-homeassistant-mcp/issues"
   },
   "author": {
     "name": "jango-blockchained",
