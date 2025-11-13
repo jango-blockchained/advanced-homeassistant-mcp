@@ -185,21 +185,21 @@ Add to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "homeassistant-mcp": {
-      "command": "npx",
-      "args": ["@jango-blockchained/homeassistant-mcp@latest"]
+      "command": "bunx",
+      "args": ["github:jango-blockchained/homeassistant-mcp"]
     }
   }
 }
 ```
 
-Or if you can't login to npm, use bunx:
+Or use npx:
 
 ```json
 {
   "mcpServers": {
     "homeassistant-mcp": {
-      "command": "bunx",
-      "args": ["github:jango-blockchained/homeassistant-mcp"]
+      "command": "npx",
+      "args": ["@jango-blockchained/homeassistant-mcp@latest"]
     }
   }
 }
@@ -217,21 +217,22 @@ Add to `.cursor/config/config.json`:
 {
   "mcpServers": {
     "homeassistant-mcp": {
-      "command": "npx",
-      "args": ["@jango-blockchained/homeassistant-mcp@latest"]
+      "command": "bunx",
+      "args": ["github:jango-blockchained/homeassistant-mcp"]
     }
   }
 }
 ```
 
-Or with bunx:
+Or with npx:
 
 ```json
+
 {
   "mcpServers": {
     "homeassistant-mcp": {
-      "command": "bunx",
-      "args": ["github:jango-blockchained/homeassistant-mcp"]
+      "command": "npx",
+      "args": ["@jango-blockchained/homeassistant-mcp@latest"]
     }
   }
 }

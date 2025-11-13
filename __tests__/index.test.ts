@@ -111,7 +111,10 @@ describe('Home Assistant MCP Server', () => {
                 brightness: 255
             });
 
-            expect(result).toHaveProperty('success', true);
+            // The control tool returns a JSON string
+            expect(typeof result).toBe('string');
+            const parsed = JSON.parse(result as string);
+            expect(parsed).toHaveProperty('success', true);
             expect(mockFetch.mock.calls.length).toBeGreaterThan(0);
         });
     });

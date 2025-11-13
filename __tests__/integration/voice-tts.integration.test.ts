@@ -190,9 +190,9 @@ describe("TTS Integration Tests", () => {
       );
 
       expect(urls).toHaveLength(10);
-      urls.forEach((url) => {
+      urls.forEach((url, idx) => {
         expect(url).toBeTruthy();
-        expect(url).toContain(text.substring(0, 4).toLowerCase() || "test");
+        expect(url).toContain(languages[idx]); // Check that the language is in the URL
       });
     });
 
