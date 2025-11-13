@@ -20,7 +20,7 @@ export const configSchema = z.object({
   debug: z.boolean().default(false).describe("Enable debug logging"),
 });
 
-export default async function createServer({ config }: { config: z.infer<typeof configSchema> }) {
+export default async function createServer({ config }: { config: z.infer<typeof configSchema> }): Promise<FastMCP> {
   // Set environment variables from config
   if (config.hassToken) process.env.HASS_TOKEN = config.hassToken;
   if (config.hassHost) process.env.HASS_HOST = config.hassHost;
@@ -109,7 +109,7 @@ export default async function createServer({ config }: { config: z.infer<typeof 
             required: arg.required || false,
           })) || [],
         load: async (args) => {
-          const rendered = renderPrompt(prompt.name, args as Record<string, string>);
+          const rendered = await Promise.resolve(renderPrompt(prompt.name, args as Record<string, string>));
           return rendered;
         },
       });
