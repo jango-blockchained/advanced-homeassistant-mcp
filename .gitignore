@@ -61,10 +61,6 @@ DEVICE_MEASUREMENT_*.md
 FIXES_*.md
 
 # Docker
-docker-compose.yml
-docker-compose.yaml
-docker-compose.override.yml
-docker-compose.override.yaml
 
 # IDEs and editors
 .idea/
@@ -85,7 +81,7 @@ home-assistant_v2.db
 home-assistant_v2.db-*
 .
 
-package-lock.json
+#package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
@@ -101,7 +97,7 @@ coverage/
 
 .bun/
 .cursorconfig
-bun.lockb
+#bun.lockb
 # MkDocs
 site/
 .site/

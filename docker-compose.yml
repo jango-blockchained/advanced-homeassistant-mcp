@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  # MCP Server - Model Context Protocol HTTP transport for Smithery deployment
+  homeassistant-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: homeassistant-mcp
+    restart: unless-stopped
+    environment:
+      - PORT=${PORT:-7123}
+      - NODE_ENV=production
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - HASS_HOST=${HASS_HOST:-http://192.168.178.63:8123}
+      - HASS_TOKEN=${HASS_TOKEN}
+    ports:
+      - "${PORT:-7123}:${PORT:-7123}"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - homeassistant-mcp-network
+    env_file:
+      - .env
+      - .env.${NODE_ENV:-production}
+
+volumes:
+  logs:
+  audio-data:
+
+networks:
+  homeassistant-mcp-network:
+    driver: bridge
