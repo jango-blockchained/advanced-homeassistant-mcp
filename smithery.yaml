@@ -1,5 +1,6 @@
 # Smithery configuration file for Home Assistant MCP Server
 runtime: "container"
+icon: "🏠"
 startCommand:
   type: "http"
   configSchema:

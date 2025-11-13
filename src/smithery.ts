@@ -15,9 +15,9 @@ import { z } from "zod";
 // Configuration schema for Smithery
 export const configSchema = z.object({
   hassToken: z.string().describe("Long-lived access token for Home Assistant"),
-  hassHost: z.string().default("http://homeassistant.local:8123").describe("Home Assistant host URL"),
-  hassSocketUrl: z.string().default("ws://homeassistant.local:8123").describe("Home Assistant WebSocket URL"),
-  debug: z.boolean().default(false).describe("Enable debug logging"),
+  hassHost: z.string().optional().default("http://homeassistant.local:8123").describe("Home Assistant host URL"),
+  hassSocketUrl: z.string().optional().default("ws://homeassistant.local:8123").describe("Home Assistant WebSocket URL"),
+  debug: z.boolean().optional().default(false).describe("Enable debug logging"),
 });
 
 export default async function createServer({ config }: { config: z.infer<typeof configSchema> }): Promise<FastMCP> {
