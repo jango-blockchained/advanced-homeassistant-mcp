@@ -1,11 +1,11 @@
 # 🏠 Home Assistant MCP
 
+[![smithery badge](https://smithery.ai/badge/@jango-blockchained/advanced-homeassistant-mcp)](https://smithery.ai/server/@jango-blockchained/advanced-homeassistant-mcp)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![npm version](https://img.shields.io/npm/v/@jango-blockchained/homeassistant-mcp.svg)](https://www.npmjs.com/package/@jango-blockchained/homeassistant-mcp)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/pkgs/container/advanced-homeassistant-mcp)
 [![Bun](https://img.shields.io/badge/bun-%3E%3D1.0.26-black)](https://bun.sh)
 [![TypeScript](https://img.shields.io/badge/typescript-%5E5.0.0-blue.svg)](https://www.typescriptlang.org)
-[![smithery badge](https://smithery.ai/badge/@jango-blockchained/homeassitant-mcp)](https://smithery.ai/server/@jango-blockchained/homeassitant-mcp)
 
 > **Bridge the gap between AI assistants and your smart home** 🚀
 

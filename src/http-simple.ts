@@ -14,6 +14,14 @@ const port = parseInt(process.env.PORT ?? "7123", 10);
 const app = express();
 app.use(express.json());
 
+// Enable CORS for Smithery
+app.use((_req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  next();
+});
+
 // Health check endpoint
 app.get("/health", (_req, res) => {
   res.json({
@@ -23,16 +31,23 @@ app.get("/health", (_req, res) => {
   });
 });
 
-// MCP config endpoint for Smithery discovery
-app.get("/.well-known/mcp-config", (_req, res) => {
-  res.json({
-    mcpServers: {
-      "homeassistant-mcp": {
-        url: "/mcp",
-        transport: "http",
-      },
+// MCP config endpoint for Smithery discovery (with multiple path formats)
+const mcpConfigResponse = {
+  mcpServers: {
+    "homeassistant-mcp": {
+      url: "/mcp",
+      transport: "http",
     },
-  });
+  },
+};
+
+app.get("/.well-known/mcp-config", (_req, res) => {
+  res.json(mcpConfigResponse);
+});
+
+// Alternative path without dot
+app.get("/well-known/mcp-config", (_req, res) => {
+  res.json(mcpConfigResponse);
 });
 
 // MCP endpoint - proper JSON-RPC 2.0 implementation
@@ -225,4 +240,6 @@ app.listen(port, () => {
   logger.info(`✓ Health: http://localhost:${port}/health`);
   logger.info(`✓ MCP config: http://localhost:${port}/.well-known/mcp-config`);
   logger.info(`✓ MCP endpoint: http://localhost:${port}/mcp`);
+  logger.info(`✓ Environment: PORT=${port}, NODE_ENV=${process.env.NODE_ENV ?? 'development'}`);
+  logger.info(`✓ Home Assistant: ${process.env.HASS_HOST ?? 'not configured'}`);
 });
