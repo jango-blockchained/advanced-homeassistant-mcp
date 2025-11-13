@@ -1,198 +1,35 @@
 # Smithery configuration file for Home Assistant MCP Server
-runtime: "node"
-entrypoint: "dist/stdio-server.mjs"
-
+runtime: "container"
+startCommand:
+  type: "http"
+  configSchema:
+    type: object
+    required:
+      - hassToken
+    properties:
+      hassToken:
+        type: string
+        title: "Home Assistant Token"
+        description: "Long-lived access token for connecting to Home Assistant"
+      hassHost:
+        type: string
+        default: "http://homeassistant.local:8123"
+        title: "Home Assistant Host"
+      hassSocketUrl:
+        type: string
+        default: "ws://homeassistant.local:8123"
+        title: "Home Assistant WebSocket URL"
+      debug:
+        type: boolean
+        default: false
+        title: "Debug Mode"
+  exampleConfig:
+    hassToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    hassHost: "http://homeassistant.local:8123"
+    hassSocketUrl: "ws://homeassistant.local:8123"
+    debug: false
+build:
+  dockerfile: "Dockerfile.smithery"
+  dockerBuildPath: "."
 env:
-  PORT: "7123"
-
-configSchema:
-  type: object
-  required:
-    - hassToken
-  properties:
-    hassToken:
-      type: string
-      title: "Home Assistant Token"
-      description: "Long-lived access token for connecting to Home Assistant"
-    hassHost:
-      type: string
-      default: "http://homeassistant.local:8123"
-      title: "Home Assistant Host"
-    hassSocketUrl:
-      type: string
-      default: "ws://homeassistant.local:8123"
-      title: "Home Assistant WebSocket URL"
-    debug:
-      type: boolean
-      default: false
-      title: "Debug Mode"
-
-exampleConfig:
-  hassToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  hassHost: "http://homeassistant.local:8123"
-  hassSocketUrl: "ws://homeassistant.local:8123"
-  debug: false
-
-tools:
-  - name: list_devices
-    description: List all devices connected to Home Assistant
-    parameters:
-      type: object
-      properties:
-        domain:
-          type: string
-          enum: [light, climate, alarm_control_panel, cover, switch, contact, media_player, fan, lock, vacuum, scene, script, camera]
-        area:
-          type: string
-        floor:
-          type: string
-      required: []
-
-  - name: control
-    description: Control Home Assistant entities (lights, climate, etc.)
-    parameters:
-      type: object
-      properties:
-        command:
-          type: string
-          enum: [turn_on, turn_off, toggle, open, close, stop, set_position, set_tilt_position, set_temperature, set_hvac_mode, set_fan_mode, set_humidity]
-        entity_id:
-          type: string
-        state:
-          type: string
-        brightness:
-          type: number
-        color_temp:
-          type: number
-        rgb_color:
-          type: array
-          items:
-            type: number
-        position:
-          type: number
-        tilt_position:
-          type: number
-        temperature:
-          type: number
-        target_temp_high:
-          type: number
-        target_temp_low:
-          type: number
-        hvac_mode:
-          type: string
-        fan_mode:
-          type: string
-        humidity:
-          type: number
-      required: [command, entity_id]
-
-  - name: history
-    description: Retrieve historical data for Home Assistant entities
-    parameters:
-      type: object
-      properties:
-        entity_id:
-          type: string
-        start_time:
-          type: string
-        end_time:
-          type: string
-        limit:
-          type: number
-      required: [entity_id]
-
-  - name: scene
-    description: Activate scenes in Home Assistant
-    parameters:
-      type: object
-      properties:
-        scene_id:
-          type: string
-      required: [scene_id]
-
-  - name: notify
-    description: Send notifications through Home Assistant
-    parameters:
-      type: object
-      properties:
-        message:
-          type: string
-        title:
-          type: string
-        target:
-          type: string
-      required: [message]
-
-  - name: automation
-    description: Manage Home Assistant automations
-    parameters:
-      type: object
-      properties:
-        action:
-          type: string
-          enum: [trigger, enable, disable, toggle, list]
-        automation_id:
-          type: string
-      required: [action]
-
-  - name: addon
-    description: Manage Home Assistant add-ons
-    parameters:
-      type: object
-      properties:
-        action:
-          type: string
-          enum: [list, info, start, stop, restart, update]
-        addon_slug:
-          type: string
-      required: [action]
-
-  - name: package
-    description: Manage Home Assistant HACS packages
-    parameters:
-      type: object
-      properties:
-        action:
-          type: string
-          enum: [list, info, install, uninstall, update]
-        package_id:
-          type: string
-      required: [action]
-
-  - name: automation_config
-    description: Get or update Home Assistant automation configurations
-    parameters:
-      type: object
-      properties:
-        action:
-          type: string
-          enum: [get, update, create, delete]
-        automation_id:
-          type: string
-        config:
-          type: object
-      required: [action]
-
-  - name: subscribe_events
-    description: Subscribe to Home Assistant events via SSE
-    parameters:
-      type: object
-      properties:
-        events:
-          type: array
-          items:
-            type: string
-        entity_id:
-          type: string
-        domain:
-          type: string
-      required: []
-
-  - name: get_sse_stats
-    description: Get statistics about SSE connections
-    parameters:
-      type: object
-      properties:
-        detailed:
-          type: boolean
-      required: []
+  NODE_ENV: "production"
