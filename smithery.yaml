@@ -1,70 +1,34 @@
-# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+# Smithery configuration file for Home Assistant MCP Server
+runtime: "typescript"
 
-# Runtime configuration - using container for maximum compatibility
-runtime: "container"
+configSchema:
+  type: object
+  required:
+    - hassToken
+  properties:
+    hassToken:
+      type: string
+      title: "Home Assistant Token"
+      description: "Long-lived access token for connecting to Home Assistant"
+    hassHost:
+      type: string
+      default: "http://homeassistant.local:8123"
+      title: "Home Assistant Host"
+    hassSocketUrl:
+      type: string
+      default: "ws://homeassistant.local:8123"
+      title: "Home Assistant WebSocket URL"
+    debug:
+      type: boolean
+      default: false
+      title: "Debug Mode"
 
-# Build configuration for Docker deployment
-build:
-  dockerfile: "Dockerfile"
-  dockerBuildPath: "."
+exampleConfig:
+  hassToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  hassHost: "http://homeassistant.local:8123"
+  hassSocketUrl: "ws://homeassistant.local:8123"
+  debug: false
 
-# Start command configuration for HTTP transport
-startCommand:
-  type: http
-  configSchema:
-    # JSON Schema defining the configuration options for the MCP.
-    type: object
-    required:
-      - hassToken
-    properties:
-      hassToken:
-        type: string
-        title: "Home Assistant Token"
-        description: "Long-lived access token for connecting to Home Assistant API. Generate this from your Home Assistant profile."
-      hassHost:
-        type: string
-        default: http://homeassistant.local:8123
-        title: "Home Assistant Host"
-        description: "The URL of your Home Assistant instance (e.g., http://homeassistant.local:8123 or https://your-domain.com)"
-      hassSocketUrl:
-        type: string
-        default: ws://homeassistant.local:8123
-        title: "Home Assistant WebSocket URL"
-        description: "The WebSocket URL for real-time Home Assistant events (e.g., ws://homeassistant.local:8123)"
-      port:
-        type: number
-        default: 7123
-        title: "MCP Server Port"
-        description: "The port on which the MCP server will listen for connections."
-      debug:
-        type: boolean
-        default: false
-        title: "Debug Mode"
-        description: "Enable detailed debug logging for troubleshooting."
-  exampleConfig:
-    hassToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-    hassHost: "http://homeassistant.local:8123"
-    hassSocketUrl: "ws://homeassistant.local:8123"
-    port: 7123
-    debug: false
-  commandFunction:
-    # A function that produces the CLI command to start the MCP on HTTP.
-    |-
-    config => ({
-      command: 'node', 
-      args: ['dist/http-server.js'], 
-      env: { 
-        HASS_TOKEN: config.hassToken || '',
-        HASS_HOST: config.hassHost || 'http://homeassistant.local:8123',
-        HASS_SOCKET_URL: config.hassSocketUrl || 'ws://homeassistant.local:8123',
-        PORT: (config.port || 7123).toString(),
-        DEBUG: config.debug !== undefined ? config.debug.toString() : 'false',
-        NODE_ENV: 'production',
-        SMITHERY_SCAN: process.env.SMITHERY_SCAN || 'false'
-      }
-    })
-
-# Define the tools that this MCP server provides
 tools:
   - name: list_devices
     description: List all devices connected to Home Assistant
@@ -73,20 +37,7 @@ tools:
       properties:
         domain:
           type: string
-          enum:
-            - light
-            - climate
-            - alarm_control_panel
-            - cover
-            - switch
-            - contact
-            - media_player
-            - fan
-            - lock
-            - vacuum
-            - scene
-            - script
-            - camera
+          enum: [light, climate, alarm_control_panel, cover, switch, contact, media_player, fan, lock, vacuum, scene, script, camera]
         area:
           type: string
         floor:
@@ -100,19 +51,7 @@ tools:
       properties:
         command:
           type: string
-          enum:
-            - turn_on
-            - turn_off
-            - toggle
-            - open
-            - close
-            - stop
-            - set_position
-            - set_tilt_position
-            - set_temperature
-            - set_hvac_mode
-            - set_fan_mode
-            - set_humidity
+          enum: [turn_on, turn_off, toggle, open, close, stop, set_position, set_tilt_position, set_temperature, set_hvac_mode, set_fan_mode, set_humidity]
         entity_id:
           type: string
         state:
@@ -141,9 +80,7 @@ tools:
           type: string
         humidity:
           type: number
-      required:
-        - command
-        - entity_id
+      required: [command, entity_id]
 
   - name: history
     description: Retrieve historical data for Home Assistant entities
@@ -158,8 +95,7 @@ tools:
           type: string
         limit:
           type: number
-      required:
-        - entity_id
+      required: [entity_id]
 
   - name: scene
     description: Activate scenes in Home Assistant
@@ -168,8 +104,7 @@ tools:
       properties:
         scene_id:
           type: string
-      required:
-        - scene_id
+      required: [scene_id]
 
   - name: notify
     description: Send notifications through Home Assistant
@@ -182,8 +117,7 @@ tools:
           type: string
         target:
           type: string
-      required:
-        - message
+      required: [message]
 
   - name: automation
     description: Manage Home Assistant automations
@@ -192,16 +126,10 @@ tools:
       properties:
         action:
           type: string
-          enum:
-            - trigger
-            - enable
-            - disable
-            - toggle
-            - list
+          enum: [trigger, enable, disable, toggle, list]
         automation_id:
           type: string
-      required:
-        - action
+      required: [action]
 
   - name: addon
     description: Manage Home Assistant add-ons
@@ -210,17 +138,10 @@ tools:
       properties:
         action:
           type: string
-          enum:
-            - list
-            - info
-            - start
-            - stop
-            - restart
-            - update
+          enum: [list, info, start, stop, restart, update]
         addon_slug:
           type: string
-      required:
-        - action
+      required: [action]
 
   - name: package
     description: Manage Home Assistant HACS packages
@@ -229,16 +150,10 @@ tools:
       properties:
         action:
           type: string
-          enum:
-            - list
-            - info
-            - install
-            - uninstall
-            - update
+          enum: [list, info, install, uninstall, update]
         package_id:
           type: string
-      required:
-        - action
+      required: [action]
 
   - name: automation_config
     description: Get or update Home Assistant automation configurations
@@ -247,17 +162,12 @@ tools:
       properties:
         action:
           type: string
-          enum:
-            - get
-            - update
-            - create
-            - delete
+          enum: [get, update, create, delete]
         automation_id:
           type: string
         config:
           type: object
-      required:
-        - action
+      required: [action]
 
   - name: subscribe_events
     description: Subscribe to Home Assistant events via SSE
