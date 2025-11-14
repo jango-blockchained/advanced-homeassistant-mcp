@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies (both prod and dev for TypeScript runtime)
-RUN npm install
+# Install dependencies (including devDependencies for esbuild)
+RUN npm ci
 
 # Copy all source files (Smithery TypeScript runtime needs source)
 COPY src ./src
@@ -24,7 +24,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 
 # Smithery will use its TypeScript runtime to execute src/smithery.ts
 # But for container runtime, we need to build and run the HTTP server
-RUN npm run build:http-simple
+RUN npx esbuild ./src/http-simple.ts --bundle --platform=node --format=esm --outfile=./dist/http-simple.mjs --external:winston --external:winston-daily-rotate-file --external:express --external:better-sqlite3 --external:ws --external:zod --external:zod-to-json-schema --external:@valibot/to-json-schema --external:valibot --external:jsonwebtoken --external:sanitize-html --external:helmet --external:cors --external:fastmcp --external:undici
 
 # Start the simple HTTP server (ESM format)
 CMD ["node", "dist/http-simple.mjs"]
