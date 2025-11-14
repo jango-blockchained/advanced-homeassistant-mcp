@@ -1,7 +1,0 @@
-FROM node:20-slim
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-RUN ls -la node_modules/.bin/ | head -20
-RUN which esbuild || echo "esbuild not in PATH"
-RUN npx esbuild --version || echo "npx esbuild failed"
