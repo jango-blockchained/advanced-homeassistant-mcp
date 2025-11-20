@@ -84,18 +84,26 @@ export const AppConfigSchema = z.object({
 /** Type definition for the configuration object */
 export type AppConfig = z.infer<typeof AppConfigSchema>;
 
-/** Required environment variables that must be set */
+/** Required environment variables that must be set for normal operation */
 const requiredEnvVars = ["HASS_TOKEN"] as const;
 
 /**
  * Validate that all required environment variables are set
  * Throws an error if any required variable is missing
  * 
- * Skip validation during Smithery scan mode to allow tool discovery
+ * Skip validation in the following cases:
+ * 1. SMITHERY_SCAN=true (Smithery is scanning for tool capabilities)
+ * 2. HASS_TOKEN is explicitly empty (user intends to run without credentials for discovery)
+ * 
+ * This allows Smithery and other MCP clients to discover available tools
+ * before user credentials are configured. Tool execution will still fail
+ * gracefully if credentials are missing.
  */
 const isSmitheryScan = process.env.SMITHERY_SCAN === "true";
+const isDiscoveryMode = !process.env.HASS_TOKEN || process.env.HASS_TOKEN === "";
 
-if (!isSmitheryScan) {
+// Only validate in production mode when credentials are expected
+if (!isSmitheryScan && !isDiscoveryMode) {
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
       throw new Error(`Missing required environment variable: ${envVar}`);
