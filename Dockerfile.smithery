@@ -10,10 +10,14 @@ COPY package.json package-lock.json ./
 # Install dependencies (including devDependencies for esbuild)
 RUN npm ci
 
-# Copy all source files (Smithery TypeScript runtime needs source)
+# Copy all source files
 COPY src ./src
 COPY tsconfig.json ./
 COPY smithery.config.js ./
+
+# Build http-simple server for container runtime
+# Create dist directory and use node to run esbuild directly
+RUN mkdir -p dist && node node_modules/esbuild/bin/esbuild ./src/http-simple.ts --bundle --platform=node --format=esm --outfile=./dist/http-simple.mjs --external:winston --external:winston-daily-rotate-file --external:express --external:better-sqlite3 --external:ws --external:zod --external:zod-to-json-schema --external:@valibot/to-json-schema --external:valibot --external:jsonwebtoken --external:sanitize-html --external:helmet --external:cors --external:fastmcp --external:undici
 
 # Expose port
 EXPOSE 7123
@@ -21,10 +25,6 @@ EXPOSE 7123
 # Health check - note: Smithery runtime will handle the /health endpoint
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:7123/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1); })"
-
-# Smithery will use its TypeScript runtime to execute src/smithery.ts
-# But for container runtime, we need to build and run the HTTP server
-RUN npx esbuild ./src/http-simple.ts --bundle --platform=node --format=esm --outfile=./dist/http-simple.mjs --external:winston --external:winston-daily-rotate-file --external:express --external:better-sqlite3 --external:ws --external:zod --external:zod-to-json-schema --external:@valibot/to-json-schema --external:valibot --external:jsonwebtoken --external:sanitize-html --external:helmet --external:cors --external:fastmcp --external:undici
 
 # Start the simple HTTP server (ESM format)
 CMD ["node", "dist/http-simple.mjs"]
