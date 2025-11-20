@@ -90,10 +90,16 @@ const requiredEnvVars = ["HASS_TOKEN"] as const;
 /**
  * Validate that all required environment variables are set
  * Throws an error if any required variable is missing
+ * 
+ * Skip validation during Smithery scan mode to allow tool discovery
  */
-for (const envVar of requiredEnvVars) {
-  if (!process.env[envVar]) {
-    throw new Error(`Missing required environment variable: ${envVar}`);
+const isSmitheryScan = process.env.SMITHERY_SCAN === "true";
+
+if (!isSmitheryScan) {
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      throw new Error(`Missing required environment variable: ${envVar}`);
+    }
   }
 }
 
