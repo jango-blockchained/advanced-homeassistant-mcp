@@ -20,6 +20,7 @@ module.exports = {
       "fsevents",
       "bufferutil",
       "utf-8-validate",
+      "better-sqlite3",
       
       // FastMCP and MCP SDK - let runtime handle these
       "fastmcp",
@@ -48,6 +49,14 @@ module.exports = {
       // Anthropic and OpenAI SDKs
       "@anthropic-ai/sdk",
       "openai",
+      
+      // Logging
+      "winston",
+      "winston-daily-rotate-file",
+      
+      // Zod and schema tools
+      "zod",
+      "zod-to-json-schema",
     ],
     
     // Enable minification for production
@@ -62,7 +71,7 @@ module.exports = {
     // Platform configuration
     platform: "node",
     
-    // Output format
+    // Output format - ESM for Smithery
     format: "esm",
   },
 };

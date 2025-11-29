@@ -1,6 +1,23 @@
 import { z } from "zod";
 
 /**
+ * MCP Tool annotations for trust & safety
+ * @see https://modelcontextprotocol.io/specification/2025-06-18/server/tools
+ */
+export interface ToolAnnotations {
+  /** Human-readable title for the tool */
+  title?: string;
+  /** If true, the tool does not modify any state (read-only operations) */
+  readOnlyHint?: boolean;
+  /** If true, the tool may perform destructive operations (delete, remove, etc.) */
+  destructiveHint?: boolean;
+  /** If true, the tool may interact with external systems or the real world */
+  openWorldHint?: boolean;
+  /** If true, the tool result should not be shown to the user */
+  idempotentHint?: boolean;
+}
+
+/**
  * Interface for a tool that can be executed by the MCP
  * @interface Tool
  */
@@ -13,6 +30,8 @@ export interface Tool {
   parameters: z.ZodType<unknown>;
   /** Function to execute the tool with the given parameters */
   execute: (params: unknown) => Promise<unknown>;
+  /** Optional MCP annotations for trust & safety */
+  annotations?: ToolAnnotations;
 }
 
 /**

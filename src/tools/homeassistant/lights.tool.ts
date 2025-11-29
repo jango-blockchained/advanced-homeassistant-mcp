@@ -101,9 +101,15 @@ type LightsControlParams = z.infer<typeof lightsControlSchema>;
 // Define the tool using the Tool interface
 export const lightsControlTool: Tool = {
   name: "lights_control",
-  description: "Control lights in Home Assistant (list, get, turn_on, turn_off)",
-  parameters: lightsControlSchema, // Use the Zod schema directly
+  description: "Control lights in Home Assistant. Supports listing all lights, getting state of a specific light, turning lights on with optional brightness/color settings, and turning lights off.",
+  parameters: lightsControlSchema,
   execute: executeLightsControlLogic,
+  annotations: {
+    title: "Lights Control",
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
 };
 
 // No need for the class wrapper anymore

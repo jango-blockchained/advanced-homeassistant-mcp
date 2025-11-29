@@ -1,36 +1,8 @@
 # Smithery configuration file for Home Assistant MCP Server
-runtime: "container"
+# @see https://smithery.ai/docs/build/deployments/typescript
+
+# Use TypeScript runtime for proper tool quality scoring
+runtime: "typescript"
+
+# Server icon displayed in Smithery registry
 icon: "🏠"
-startCommand:
-  type: "http"
-  configSchema:
-    type: object
-    required:
-      - hassToken
-    properties:
-      hassToken:
-        type: string
-        title: "Home Assistant Token"
-        description: "Long-lived access token for connecting to Home Assistant"
-      hassHost:
-        type: string
-        default: "http://homeassistant.local:8123"
-        title: "Home Assistant Host"
-      hassSocketUrl:
-        type: string
-        default: "ws://homeassistant.local:8123"
-        title: "Home Assistant WebSocket URL"
-      debug:
-        type: boolean
-        default: false
-        title: "Debug Mode"
-  exampleConfig:
-    hassToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-    hassHost: "http://homeassistant.local:8123"
-    hassSocketUrl: "ws://homeassistant.local:8123"
-    debug: false
-build:
-  dockerfile: "Dockerfile.smithery"
-  dockerBuildPath: "."
-env:
-  NODE_ENV: "production"
