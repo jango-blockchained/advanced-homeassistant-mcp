@@ -7,7 +7,7 @@
  * @see https://smithery.ai/docs/build/deployments/typescript
  */
 
-module.exports = {
+export default {
   esbuild: {
     // Mark problematic packages as external to avoid bundling issues
     // These are either too large, have native dependencies, or are better loaded at runtime

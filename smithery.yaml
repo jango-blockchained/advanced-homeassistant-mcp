@@ -3,6 +3,3 @@
 
 # Use TypeScript runtime for proper tool quality scoring
 runtime: "typescript"
-
-# Server icon displayed in Smithery registry
-icon: "🏠"

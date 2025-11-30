@@ -27,6 +27,7 @@
     "url": "https://github.com/jango-blockchained"
   },
   "license": "MIT",
+  "type": "module",
   "main": "dist/index.js",
   "module": "src/smithery-sdk.ts",
   "bin": {
