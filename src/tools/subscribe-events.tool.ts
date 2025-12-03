@@ -6,6 +6,12 @@ import { sseManager } from "../sse/index";
 export const subscribeEventsTool: Tool = {
   name: "subscribe_events",
   description: "Subscribe to Home Assistant events via Server-Sent Events (SSE)",
+  annotations: {
+    title: "Event Subscription",
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: z.object({
     token: z.string().describe("Authentication token (required)"),
     events: z.array(z.string()).optional().describe("List of event types to subscribe to"),

@@ -142,6 +142,12 @@ export const lockControlTool: Tool = {
   name: "lock_control",
   description:
     "Control locks in Home Assistant. Supports locking, unlocking, and opening locks. Some locks may require a code/PIN. Actions include: list (get all locks), get (get specific lock info), lock, unlock, and open (for locks that support unlatching).",
+  annotations: {
+    title: "Lock Control",
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: lockControlSchema,
   execute,
 };

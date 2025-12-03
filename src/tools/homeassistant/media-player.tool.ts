@@ -311,6 +311,12 @@ export const mediaPlayerControlTool: Tool = {
   name: "media_player_control",
   description:
     "Control media players in Home Assistant. Supports playback control, volume adjustment, source selection, and media playing. Actions include: list (get all media players), get (get specific player info), turn_on/turn_off/toggle, play/pause/stop, next/previous track, volume controls, source and sound mode selection.",
+  annotations: {
+    title: "Media Player Control",
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: mediaPlayerControlSchema,
   execute,
 };

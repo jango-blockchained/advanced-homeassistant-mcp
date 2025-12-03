@@ -201,6 +201,12 @@ const _automationConfigSchema = z
 export const automationConfigTool: Tool = {
   name: "automation_config",
   description: "Advanced automation configuration and management",
+  annotations: {
+    title: "Automation Configuration",
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true,
+  },
   // Simplified schema to avoid recursive $ref issues in VSCode validation
   parameters: z.object({
     action: z

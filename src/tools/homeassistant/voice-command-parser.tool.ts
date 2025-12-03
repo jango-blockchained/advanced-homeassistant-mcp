@@ -368,6 +368,12 @@ export const voiceCommandParserTool: Tool = {
   name: "voice_command_parser",
   description:
     "Parse natural language voice transcriptions into structured Home Assistant commands. Extracts intent, entities, and parameters from voice input.",
+  annotations: {
+    title: "Voice Command Parser",
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false,
+  },
   parameters: voiceCommandParserSchema,
   execute: (params: unknown): Promise<unknown> => {
     return executeVoiceCommandParserLogic(params as VoiceCommandParserParams);

@@ -618,6 +618,12 @@ export const smartScenariosTool: Tool = {
   name: "smart_scenarios",
   description:
     "Detect and manage smart home scenarios: nobody home, window/heating conflicts, energy saving, and more",
+  annotations: {
+    title: "Smart Scenarios",
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: smartScenariosSchema,
   execute: executeSmartScenariosLogic,
 };

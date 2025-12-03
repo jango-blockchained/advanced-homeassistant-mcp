@@ -532,6 +532,12 @@ export const maintenanceTool: Tool = {
   name: "maintenance",
   description:
     "Perform maintenance tasks: find orphaned devices, analyze light usage and energy consumption, device health checks",
+  annotations: {
+    title: "System Maintenance",
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true,
+  },
   parameters: maintenanceSchema,
   execute: executeMaintenanceLogic,
 };

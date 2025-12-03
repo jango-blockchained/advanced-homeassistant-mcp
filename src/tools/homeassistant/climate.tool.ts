@@ -240,6 +240,12 @@ async function executeClimateControlLogic(params: ClimateControlParams): Promise
 export const climateControlTool: Tool = {
   name: "climate_control",
   description: "Control climate devices (thermostats, AC) in Home Assistant",
+  annotations: {
+    title: "Climate Control",
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: climateControlSchema,
 
   execute: executeClimateControlLogic,

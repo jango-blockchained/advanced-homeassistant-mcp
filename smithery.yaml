@@ -3,3 +3,38 @@
 
 # Use TypeScript runtime for proper tool quality scoring
 runtime: "typescript"
+
+# Server metadata
+name: "Home Assistant MCP Server"
+displayName: "Home Assistant MCP"
+description: "Control your smart home through AI assistants using the Model Context Protocol. Manage lights, climate, locks, media players, automations, and more."
+icon: "https://raw.githubusercontent.com/jango-blockchained/advanced-homeassistant-mcp/main/public/icon.svg"
+homepage: "https://github.com/jango-blockchained/advanced-homeassistant-mcp"
+
+# Configuration schema
+configSchema:
+  type: object
+  properties:
+    HASS_HOST:
+      type: string
+      description: "Home Assistant server URL (e.g., http://homeassistant.local:8123)"
+      title: "Home Assistant URL"
+    HASS_TOKEN:
+      type: string
+      description: "Long-lived access token from Home Assistant"
+      title: "Access Token"
+      format: password
+    ANTHROPIC_API_KEY:
+      type: string
+      description: "Optional: Anthropic API key for AI-powered voice command parsing"
+      title: "Anthropic API Key (Optional)"
+      format: password
+    LOG_LEVEL:
+      type: string
+      description: "Logging level"
+      title: "Log Level"
+      enum: ["debug", "info", "warn", "error"]
+      default: "info"
+  required:
+    - HASS_HOST
+    - HASS_TOKEN

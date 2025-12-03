@@ -5,6 +5,12 @@ import { APP_CONFIG } from "../config/app.config";
 export const addonTool: Tool = {
   name: "addon",
   description: "Manage Home Assistant add-ons",
+  annotations: {
+    title: "Add-on Management",
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true,
+  },
   parameters: z.object({
     action: z
       .enum(["list", "info", "install", "uninstall", "start", "stop", "restart"])

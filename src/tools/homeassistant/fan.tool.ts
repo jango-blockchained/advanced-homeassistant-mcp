@@ -254,6 +254,12 @@ export const fanControlTool: Tool = {
   name: "fan_control",
   description:
     "Control fans in Home Assistant. Supports turning on/off, speed control via percentage, preset modes, oscillation, and direction control. Actions include: list (get all fans), get (get specific fan info), turn_on, turn_off, toggle, set_percentage, set_preset_mode, oscillate, and set_direction.",
+  annotations: {
+    title: "Fan Control",
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: fanControlSchema,
   execute,
 };

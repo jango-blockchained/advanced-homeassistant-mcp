@@ -72,6 +72,12 @@ async function executeSceneLogic(params: SceneParams): Promise<string> {
 export const sceneTool: Tool = {
   name: "scene",
   description: "Manage and activate Home Assistant scenes",
+  annotations: {
+    title: "Scene Management",
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: sceneSchema,
   execute: executeSceneLogic,
 };

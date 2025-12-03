@@ -5,6 +5,12 @@ import { APP_CONFIG } from "../config/app.config";
 export const historyTool: Tool = {
   name: "get_history",
   description: "Get state history for Home Assistant entities",
+  annotations: {
+    title: "Entity History",
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: z.object({
     entity_id: z.string().describe("The entity ID to get history for"),
     start_time: z

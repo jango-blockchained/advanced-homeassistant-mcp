@@ -6,6 +6,12 @@ import { sseManager } from "../sse/index";
 export const getSSEStatsTool: Tool = {
   name: "get_sse_stats",
   description: "Get SSE connection statistics",
+  annotations: {
+    title: "SSE Statistics",
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false,
+  },
   parameters: z.object({
     token: z.string().describe("Authentication token (required)"),
   }),

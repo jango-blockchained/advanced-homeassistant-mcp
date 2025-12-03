@@ -22,6 +22,12 @@ const allCommands = [
 export const controlTool: Tool = {
   name: "control",
   description: "Control Home Assistant devices and services",
+  annotations: {
+    title: "Device Control",
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: z.object({
     command: z.enum(allCommands).describe("The command to execute"),
     entity_id: z.string().optional().describe("The entity ID to control"),

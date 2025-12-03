@@ -98,6 +98,7 @@ app.post("/mcp", async (req, res) => {
           name: tool.name,
           description: tool.description,
           inputSchema: tool.parameters,
+          annotations: tool.annotations,
         }));
         res.json({
           jsonrpc: "2.0",

@@ -61,6 +61,12 @@ async function executeNotifyLogic(params: NotifyParams): Promise<string> {
 export const notifyTool: Tool = {
   name: "notify",
   description: "Send notifications through Home Assistant",
+  annotations: {
+    title: "Notifications",
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: notifySchema,
   execute: executeNotifyLogic,
 };

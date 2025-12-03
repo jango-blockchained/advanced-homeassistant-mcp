@@ -460,6 +460,12 @@ export const voiceCommandExecutorTool: Tool = {
   name: "voice_command_executor",
   description:
     "Execute parsed voice commands through Home Assistant. Maps intents to service calls and controls devices.",
+  annotations: {
+    title: "Voice Command Executor",
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: voiceCommandExecutorSchema,
   execute: (params: unknown): Promise<unknown> => {
     return executeVoiceCommandExecutorLogic(params as VoiceCommandExecutorParams);

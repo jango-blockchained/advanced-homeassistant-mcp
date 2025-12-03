@@ -103,6 +103,12 @@ async function executeListDevicesLogic(params: ListDevicesParams): Promise<strin
 export const listDevicesTool: Tool = {
   name: "list_devices",
   description: "List all available Home Assistant devices with optional filtering",
+  annotations: {
+    title: "Device List",
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: listDevicesSchema,
   execute: executeListDevicesLogic,
 };

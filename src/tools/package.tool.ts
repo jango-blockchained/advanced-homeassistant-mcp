@@ -5,6 +5,12 @@ import { APP_CONFIG } from "../config/app.config";
 export const packageTool: Tool = {
   name: "package",
   description: "Manage HACS packages and custom components",
+  annotations: {
+    title: "HACS Package Management",
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true,
+  },
   parameters: z.object({
     action: z
       .enum(["list", "install", "uninstall", "update"])

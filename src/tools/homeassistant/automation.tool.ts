@@ -78,6 +78,12 @@ async function executeAutomationLogic(params: AutomationParams): Promise<string>
 export const automationTool: Tool = {
   name: "automation",
   description: "Manage Home Assistant automations (list, toggle, trigger)",
+  annotations: {
+    title: "Automation Management",
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: automationSchema,
   execute: executeAutomationLogic,
 };

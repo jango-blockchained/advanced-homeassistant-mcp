@@ -255,6 +255,12 @@ export const voiceCommandAIParserTool: Tool = {
   name: "voice_command_ai_parser",
   description:
     "Parse voice commands using AI (Claude). Better understanding of natural language, context, and complex phrasing. Falls back gracefully if AI not available.",
+  annotations: {
+    title: "AI Voice Parser",
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true,
+  },
   parameters: voiceCommandAIParserSchema,
   execute: (params: unknown): Promise<unknown> => {
     return executeVoiceCommandAIParserLogic(params as VoiceCommandAIParserParams);
