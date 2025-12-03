@@ -222,6 +222,74 @@ export default function createServer({ config }: { config?: ServerConfig } = {})
     }
   );
 
+  // Register all resources
+  const resourceList = [
+    { uri: "ha://devices/all", name: "All Devices", description: "Complete list of all Home Assistant devices and their current states", mimeType: "application/json" },
+    { uri: "ha://devices/lights", name: "All Lights", description: "All light entities and their current states", mimeType: "application/json" },
+    { uri: "ha://devices/climate", name: "Climate Devices", description: "All climate control devices (thermostats, HVAC)", mimeType: "application/json" },
+    { uri: "ha://devices/media_players", name: "Media Players", description: "All media player entities and their states", mimeType: "application/json" },
+    { uri: "ha://devices/covers", name: "Covers", description: "All cover entities (blinds, curtains, garage doors)", mimeType: "application/json" },
+    { uri: "ha://devices/locks", name: "Locks", description: "All lock entities and their states", mimeType: "application/json" },
+    { uri: "ha://devices/fans", name: "Fans", description: "All fan entities and their states", mimeType: "application/json" },
+    { uri: "ha://devices/vacuums", name: "Vacuum Cleaners", description: "All vacuum entities and their states", mimeType: "application/json" },
+    { uri: "ha://devices/alarms", name: "Alarm Panels", description: "All alarm control panel entities", mimeType: "application/json" },
+    { uri: "ha://devices/sensors", name: "Sensors", description: "All sensor entities (temperature, humidity, etc.)", mimeType: "application/json" },
+    { uri: "ha://devices/switches", name: "Switches", description: "All switch entities", mimeType: "application/json" },
+    { uri: "ha://config/areas", name: "Areas/Rooms", description: "Configured areas and rooms in Home Assistant", mimeType: "application/json" },
+    { uri: "ha://config/automations", name: "Automations", description: "List of all configured automations", mimeType: "application/json" },
+    { uri: "ha://config/scenes", name: "Scenes", description: "List of all configured scenes", mimeType: "application/json" },
+    { uri: "ha://summary/dashboard", name: "Dashboard Summary", description: "Quick overview of home status including active devices, temperatures, and security status", mimeType: "application/json" },
+  ];
+
+  for (const resource of resourceList) {
+    server.resource(
+      resource.uri,
+      resource.name,
+      async (uri: URL) => {
+        try {
+          const content = await getResource(uri.href);
+          if (!content) {
+            return { contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify({ error: "Resource not found" }) }] };
+          }
+          return { contents: [content] };
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          return { contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify({ error: errorMsg }) }] };
+        }
+      }
+    );
+  }
+
+  // Register all prompts
+  const allPrompts = getAllPrompts();
+  for (const prompt of allPrompts) {
+    const promptArgs = prompt.arguments?.map(arg => ({
+      name: arg.name,
+      description: arg.description,
+      required: arg.required,
+    })) || [];
+
+    server.prompt(
+      prompt.name,
+      prompt.description,
+      promptArgs,
+      async (args: Record<string, string>) => {
+        const rendered = renderPrompt(prompt.name, args);
+        return {
+          messages: [
+            {
+              role: "user" as const,
+              content: {
+                type: "text" as const,
+                text: rendered,
+              },
+            },
+          ],
+        };
+      }
+    );
+  }
+
   // Return the underlying server object as required by Smithery
   return server.server;
 }
