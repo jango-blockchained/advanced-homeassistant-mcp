@@ -9,69 +9,24 @@
 
 export default {
   esbuild: {
-    // Mark problematic packages as external to avoid bundling issues
-    // These are either too large, have native dependencies, or are better loaded at runtime
+    // Externalize packages that should be loaded at runtime
     external: [
-      // Large dependencies that should be loaded at runtime
-      "@valibot/to-json-schema",
-      "effect",
+      // MCP SDK - loaded at runtime via require() to avoid ESM bundling issues
+      "@modelcontextprotocol/sdk",
+      "@modelcontextprotocol/sdk/server/mcp.js",
       
-      // Native modules and binaries
+      // Native binary modules
       "fsevents",
-      "bufferutil",
+      "bufferutil", 
       "utf-8-validate",
       "better-sqlite3",
-      
-      // FastMCP and MCP SDK - let runtime handle these
-      "fastmcp",
-      "@modelcontextprotocol/sdk",
-      "@smithery/sdk",
-      
-      // Express and middleware stack
-      "express",
-      "swagger-ui-express",
-      "helmet",
-      "cors",
-      
-      // WebSocket libraries
-      "ws",
-      
-      // Audio/Speech processing (optional features)
       "node-record-lpcm16",
-      
-      // OpenAPI and validation
-      "openapi-types",
-      "ajv",
-      
-      // XML processing
-      "@xmldom/xmldom",
-      
-      // Anthropic and OpenAI SDKs
-      "@anthropic-ai/sdk",
-      "openai",
-      
-      // Logging
-      "winston",
-      "winston-daily-rotate-file",
-      
-      // Zod and schema tools
-      "zod",
-      "zod-to-json-schema",
     ],
     
-    // Enable minification for production
-    minify: process.env.NODE_ENV === 'production',
+    // Enable minification for smaller bundle
+    minify: true,
     
-    // Target Node.js 18+ as specified in package.json
+    // Target Node.js 18+
     target: "node18",
-    
-    // Enable source maps for debugging
-    sourcemap: true,
-    
-    // Platform configuration
-    platform: "node",
-    
-    // Output format - ESM for Smithery
-    format: "esm",
   },
 };

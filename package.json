@@ -29,7 +29,7 @@
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
-  "module": "src/smithery-sdk.ts",
+  "module": "src/smithery-minimal.ts",
   "bin": {
     "homeassistant-mcp": "bin/npx-entry.cjs"
   },
