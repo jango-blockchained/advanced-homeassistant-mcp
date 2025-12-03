@@ -200,11 +200,13 @@ const _automationConfigSchema = z
 
 export const automationConfigTool: Tool = {
   name: "automation_config",
-  description: "Advanced automation configuration and management",
+  description: "Advanced automation configuration and management - create, update, duplicate, and delete automations",
   annotations: {
     title: "Automation Configuration",
+    description: "Create and manage complex Home Assistant automations with advanced configuration",
     readOnlyHint: false,
     destructiveHint: true,
+    idempotentHint: false,
     openWorldHint: true,
   },
   // Simplified schema to avoid recursive $ref issues in VSCode validation

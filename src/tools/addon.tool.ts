@@ -4,11 +4,13 @@ import { APP_CONFIG } from "../config/app.config";
 
 export const addonTool: Tool = {
   name: "addon",
-  description: "Manage Home Assistant add-ons",
+  description: "Manage Home Assistant add-ons - install, uninstall, start, stop and manage installed add-ons",
   annotations: {
     title: "Add-on Management",
+    description: "Install and manage Home Assistant add-ons with lifecycle control",
     readOnlyHint: false,
     destructiveHint: true,
+    idempotentHint: false,
     openWorldHint: true,
   },
   parameters: z.object({

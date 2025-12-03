@@ -105,8 +105,10 @@ export const listDevicesTool: Tool = {
   description: "List all available Home Assistant devices with optional filtering",
   annotations: {
     title: "Device List",
+    description: "Discover and list all available Home Assistant devices with filtering options",
     readOnlyHint: true,
     destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: true,
   },
   parameters: listDevicesSchema,

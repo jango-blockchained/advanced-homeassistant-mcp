@@ -11,6 +11,29 @@ description: "Control your smart home through AI assistants using the Model Cont
 icon: "https://raw.githubusercontent.com/jango-blockchained/advanced-homeassistant-mcp/main/public/icon.svg"
 homepage: "https://github.com/jango-blockchained/advanced-homeassistant-mcp"
 
+# Server capabilities for better discovery
+prompts:
+  - name: "control-device"
+    description: "Guide for controlling a Home Assistant device with AI assistance"
+    arguments:
+      - name: "device_type"
+        description: "Type of device (light, climate, lock, etc.)"
+  - name: "create-automation"
+    description: "Guide for creating smart home automations and scenarios"
+    arguments:
+      - name: "automation_type"
+        description: "Type of automation (time-based, sensor-based, etc.)"
+  - name: "device-discovery"
+    description: "Discover and understand all available devices in Home Assistant"
+
+resources:
+  - name: "Home Assistant API Reference"
+    url: "https://developers.home-assistant.io/docs/api/rest"
+  - name: "Home Assistant Service Calls"
+    url: "https://developers.home-assistant.io/docs/dev_101_services"
+  - name: "Home Assistant WebSocket API"
+    url: "https://developers.home-assistant.io/docs/api/websocket"
+
 # Configuration schema
 configSchema:
   type: object
@@ -19,22 +42,28 @@ configSchema:
       type: string
       description: "Home Assistant server URL (e.g., http://homeassistant.local:8123)"
       title: "Home Assistant URL"
+      examples:
+        - "http://homeassistant.local:8123"
+        - "https://my-ha.example.com"
     HASS_TOKEN:
       type: string
-      description: "Long-lived access token from Home Assistant"
+      description: "Long-lived access token from Home Assistant (Settings > Devices & Services > Create Token)"
       title: "Access Token"
       format: password
+      examples:
+        - "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     ANTHROPIC_API_KEY:
       type: string
-      description: "Optional: Anthropic API key for AI-powered voice command parsing"
+      description: "Optional: Anthropic API key for AI-powered voice command parsing (get from https://console.anthropic.com)"
       title: "Anthropic API Key (Optional)"
       format: password
     LOG_LEVEL:
       type: string
-      description: "Logging level"
+      description: "Logging verbosity level"
       title: "Log Level"
       enum: ["debug", "info", "warn", "error"]
       default: "info"
   required:
     - HASS_HOST
     - HASS_TOKEN
+  additionalProperties: false

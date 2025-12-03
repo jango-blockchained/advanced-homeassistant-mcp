@@ -74,8 +74,10 @@ export const sceneTool: Tool = {
   description: "Manage and activate Home Assistant scenes",
   annotations: {
     title: "Scene Management",
+    description: "List and activate pre-configured Home Assistant scenes for quick environment setup",
     readOnlyHint: false,
     destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: true,
   },
   parameters: sceneSchema,

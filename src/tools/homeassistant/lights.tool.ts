@@ -106,8 +106,10 @@ export const lightsControlTool: Tool = {
   execute: executeLightsControlLogic,
   annotations: {
     title: "Lights Control",
+    description: "Manage lighting in your home - turn on/off, adjust brightness, change colors",
     readOnlyHint: false,
     destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: true,
   },
 };

@@ -4,11 +4,13 @@ import { APP_CONFIG } from "../config/app.config";
 
 export const packageTool: Tool = {
   name: "package",
-  description: "Manage HACS packages and custom components",
+  description: "Manage HACS packages and custom components - install, update, and manage community integrations",
   annotations: {
     title: "HACS Package Management",
+    description: "Install and manage Home Assistant community add-ons and custom components via HACS",
     readOnlyHint: false,
     destructiveHint: true,
+    idempotentHint: false,
     openWorldHint: true,
   },
   parameters: z.object({

@@ -534,9 +534,11 @@ export const maintenanceTool: Tool = {
     "Perform maintenance tasks: find orphaned devices, analyze light usage and energy consumption, device health checks",
   annotations: {
     title: "System Maintenance",
+    description: "Monitor and maintain Home Assistant system health - identify issues, unused devices, and optimization opportunities",
     readOnlyHint: false,
     destructiveHint: true,
-    openWorldHint: true,
+    idempotentHint: true,
+    openWorldHint: false,
   },
   parameters: maintenanceSchema,
   execute: executeMaintenanceLogic,

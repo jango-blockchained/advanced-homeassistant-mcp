@@ -220,8 +220,10 @@ export const coverControlTool: Tool = {
     "Control covers (blinds, curtains, garage doors, shades, etc.) in Home Assistant. Supports opening, closing, stopping, toggling, and position control. Actions include: list (get all covers), get (get specific cover info), open_cover, close_cover, stop_cover, toggle, set_cover_position, and tilt controls for venetian blinds.",
   annotations: {
     title: "Cover Control",
+    description: "Manage covers like blinds and garage doors - open, close, stop, and set positions",
     readOnlyHint: false,
     destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: true,
   },
   parameters: coverControlSchema,

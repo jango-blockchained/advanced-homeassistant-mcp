@@ -160,8 +160,10 @@ export const alarmControlTool: Tool = {
     "Control alarm systems in Home Assistant. Supports arming in different modes (home, away, night, vacation, custom bypass), disarming, and triggering alarms. Some systems may require a security code. Actions include: list (get all alarms), get (get specific alarm info), alarm_disarm, alarm_arm_home, alarm_arm_away, alarm_arm_night, alarm_arm_vacation, alarm_arm_custom_bypass, and alarm_trigger.",
   annotations: {
     title: "Alarm Control",
+    description: "Manage security alarms - arm in different modes, disarm, and check status",
     readOnlyHint: false,
     destructiveHint: true,
+    idempotentHint: false,
     openWorldHint: true,
   },
   parameters: alarmControlSchema,

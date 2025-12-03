@@ -80,8 +80,10 @@ export const automationTool: Tool = {
   description: "Manage Home Assistant automations (list, toggle, trigger)",
   annotations: {
     title: "Automation Management",
+    description: "List, enable, disable, and trigger Home Assistant automations",
     readOnlyHint: false,
     destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: true,
   },
   parameters: automationSchema,

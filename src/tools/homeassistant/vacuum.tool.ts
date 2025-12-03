@@ -208,8 +208,10 @@ export const vacuumControlTool: Tool = {
     "Control robot vacuums in Home Assistant. Supports starting, pausing, stopping, returning to dock, spot cleaning, locating the vacuum, fan speed control, and sending custom commands. Actions include: list (get all vacuums), get (get specific vacuum info), start, pause, stop, return_to_base, clean_spot, locate, set_fan_speed, and send_command for vendor-specific features.",
   annotations: {
     title: "Vacuum Control",
+    description: "Control robot vacuums - start cleaning, pause, return to dock, and set fan speed",
     readOnlyHint: false,
     destructiveHint: false,
+    idempotentHint: false,
     openWorldHint: true,
   },
   parameters: vacuumControlSchema,

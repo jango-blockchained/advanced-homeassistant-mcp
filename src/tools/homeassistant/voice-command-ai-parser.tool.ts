@@ -257,8 +257,10 @@ export const voiceCommandAIParserTool: Tool = {
     "Parse voice commands using AI (Claude). Better understanding of natural language, context, and complex phrasing. Falls back gracefully if AI not available.",
   annotations: {
     title: "AI Voice Parser",
+    description: "Use Claude AI for advanced natural language understanding of voice commands",
     readOnlyHint: true,
     destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: true,
   },
   parameters: voiceCommandAIParserSchema,

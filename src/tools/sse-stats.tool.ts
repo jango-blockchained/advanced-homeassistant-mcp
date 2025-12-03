@@ -5,11 +5,13 @@ import { sseManager } from "../sse/index";
 
 export const getSSEStatsTool: Tool = {
   name: "get_sse_stats",
-  description: "Get SSE connection statistics",
+  description: "Get SSE connection statistics - retrieve metrics about active Server-Sent Events connections",
   annotations: {
     title: "SSE Statistics",
+    description: "View metrics and diagnostics for active SSE connections and subscriptions",
     readOnlyHint: true,
     destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: false,
   },
   parameters: z.object({

@@ -162,6 +162,14 @@ export const textToSpeechTool: Tool = {
   name: "text_to_speech",
   description:
     "Generate and play text-to-speech audio via Home Assistant. Provides voice feedback for commands with support for multiple languages and TTS providers.",
+  annotations: {
+    title: "Text to Speech",
+    description: "Generate and play voice output through Home Assistant text-to-speech services",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+  },
   parameters: textToSpeechSchema,
   execute: (params: unknown): Promise<unknown> => {
     return executeTextToSpeechLogic(params as TextToSpeechParams);

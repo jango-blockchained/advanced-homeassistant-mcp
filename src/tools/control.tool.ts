@@ -21,11 +21,13 @@ const allCommands = [
 
 export const controlTool: Tool = {
   name: "control",
-  description: "Control Home Assistant devices and services",
+  description: "Control Home Assistant devices and services - universal control endpoint for turning on/off, toggling, setting positions, temperatures, and more",
   annotations: {
     title: "Device Control",
+    description: "Universal device control for lights, climate, covers, switches, and other entities",
     readOnlyHint: false,
     destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: true,
   },
   parameters: z.object({

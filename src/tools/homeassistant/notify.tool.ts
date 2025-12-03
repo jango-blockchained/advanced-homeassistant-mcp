@@ -62,9 +62,11 @@ export const notifyTool: Tool = {
   name: "notify",
   description: "Send notifications through Home Assistant",
   annotations: {
-    title: "Notifications",
+    title: "Notify",
+    description: "Send notifications through Home Assistant to mobile apps and notify services",
     readOnlyHint: false,
     destructiveHint: false,
+    idempotentHint: false,
     openWorldHint: true,
   },
   parameters: notifySchema,

@@ -243,8 +243,8 @@ export default function createServer({ config }: { config?: ServerConfig } = {})
 
   for (const resource of resourceList) {
     server.resource(
-      resource.uri,
       resource.name,
+      resource.uri,
       async (uri: URL) => {
         try {
           const content = await getResource(uri.href);

@@ -242,8 +242,10 @@ export const climateControlTool: Tool = {
   description: "Control climate devices (thermostats, AC) in Home Assistant",
   annotations: {
     title: "Climate Control",
+    description: "Manage thermostats and air conditioning - set temperature, modes, and fan speeds",
     readOnlyHint: false,
     destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: true,
   },
   parameters: climateControlSchema,
