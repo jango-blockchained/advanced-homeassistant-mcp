@@ -4,12 +4,17 @@
 # Use TypeScript runtime for proper tool quality scoring
 runtime: "typescript"
 
+# Target remote deployment (default) - server runs on Smithery infrastructure
+# For local deployment, use: target: "local"
+# target: "remote"
+
 # Server metadata
 name: "Home Assistant MCP Server"
 displayName: "Home Assistant MCP"
 description: "Control your smart home through AI assistants using the Model Context Protocol. Manage lights, climate, locks, media players, automations, and more."
 icon: "https://raw.githubusercontent.com/jango-blockchained/advanced-homeassistant-mcp/main/public/icon.svg"
 homepage: "https://github.com/jango-blockchained/advanced-homeassistant-mcp"
+version: "1.2.1"
 
 # Server capabilities for better discovery
 prompts:
@@ -63,6 +68,11 @@ configSchema:
       title: "Log Level"
       enum: ["debug", "info", "warn", "error"]
       default: "info"
+    FASTMCP_STATELESS:
+      type: boolean
+      description: "Enable stateless mode for serverless/load-balanced deployments"
+      title: "Stateless Mode"
+      default: false
   required:
     - HASS_HOST
     - HASS_TOKEN

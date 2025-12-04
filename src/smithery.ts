@@ -221,6 +221,8 @@ export default async function createServer({ config }: { config?: z.infer<typeof
 
   logger.info("Home Assistant MCP Server initialized successfully");
 
-  // Return the FastMCP server instance (Smithery CLI handles the rest)
-  return server;
+  // Return the underlying MCP server object as required by Smithery
+  // Note: FastMCP wraps the MCP SDK server, we need to return the raw server
+  // @ts-expect-error - FastMCP internal server property
+  return server.mcpServer || server;
 }

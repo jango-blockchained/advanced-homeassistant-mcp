@@ -5,11 +5,13 @@
  * over HTTP using JSON-RPC 2.0 protocol, implemented using the fastmcp framework.
  * This is used for hosted deployments on Smithery.ai
  *
- * FastMCP 3.x best practices:
+ * FastMCP 3.24.0 best practices:
  * - Use httpStream transport for hosted deployments
- * - Proper error handling and logging
- * - Tool parameter validation
- * - Resource cleanup on shutdown
+ * - Enable stateless mode for serverless/load-balanced environments
+ * - Configure health endpoint for container orchestration
+ * - Proper tool annotations for trust & safety
+ * - Progress notifications and streaming output
+ * - CORS enabled by default
  */
 
 import { logger } from "./utils/logger";
@@ -22,28 +24,84 @@ import http from "http";
 
 const port = (process.env.PORT ?? "7123") ? parseInt(process.env.PORT ?? "7123", 10) : 7123;
 const isScanning = process.env.SMITHERY_SCAN === "true";
+const isStateless = process.env.FASTMCP_STATELESS === "true" || process.env.SMITHERY_STATELESS === "true";
+const VERSION = "1.2.1";
+
+/**
+ * Tool annotations following MCP specification for trust & safety
+ */
+interface ToolAnnotations {
+  title?: string;
+  readOnlyHint?: boolean;
+  destructiveHint?: boolean;
+  idempotentHint?: boolean;
+  openWorldHint?: boolean;
+}
+
+/**
+ * Get MCP annotations for a tool based on its behavior
+ */
+function getToolAnnotations(toolName: string): ToolAnnotations {
+  const title = toolName
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+  // Read-only tools (safe, no side effects)
+  if (toolName.includes("list") || toolName.includes("get") || toolName === "system_info") {
+    return { title, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true };
+  }
+
+  // Potentially destructive tools
+  if (toolName.includes("delete") || toolName.includes("uninstall") || toolName.includes("remove")) {
+    return { title, readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true };
+  }
+
+  // Default: control tools that modify state but aren't destructive
+  return { title, readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true };
+}
 
 async function main(): Promise<void> {
   try {
     logger.info(`Starting server initialization on port ${port}`);
-    logger.info(`Initializing FastMCP server with HTTP transport${isScanning ? " (scan mode)" : ""}...`);
+    logger.info(`Initializing FastMCP server with HTTP transport${isScanning ? " (scan mode)" : ""}${isStateless ? " (stateless mode)" : ""}...`);
 
-    // Create the FastMCP server instance following v3.x best practices
+    // Create the FastMCP server instance following v3.24.0 best practices
     const server = new FastMCP({
       name: "Home Assistant MCP Server",
-      version: "1.0.0",
+      version: VERSION,
+      // Configure health endpoint for container orchestration
+      health: {
+        enabled: true,
+        message: "ok",
+        path: "/health",
+        status: 200,
+      },
+      // Configure ping behavior - enable for HTTP to maintain connection health
+      ping: {
+        enabled: true,
+        intervalMs: 30000, // 30 seconds
+        logLevel: "debug",
+      },
+      // Disable roots support for simpler operation
+      roots: {
+        enabled: false,
+      },
     });
 
-    logger.info("FastMCP server instance created (v3.22.0+)");
+    logger.info(`FastMCP server instance created (v3.24.0)`);
 
-    // Add tools from the tools registry
+    // Add tools from the tools registry with proper annotations
     const toolCount = tools.length;
     for (const tool of tools) {
       try {
+        const annotations = getToolAnnotations(tool.name);
+        
         server.addTool({
           name: tool.name,
           description: tool.description,
           parameters: tool.parameters as never,
+          annotations: annotations as never,
           execute: async (args: unknown, context) => {
             try {
               const token = process.env.HASS_TOKEN ?? "";
@@ -61,7 +119,7 @@ async function main(): Promise<void> {
             }
           },
         });
-        logger.info(`Added tool: ${tool.name}`);
+        logger.info(`Added tool: ${tool.name} (${annotations.title})`);
       } catch (error) {
         logger.error(`Failed to add tool ${tool.name}:`, error);
       }
@@ -69,12 +127,31 @@ async function main(): Promise<void> {
 
     logger.info(`Successfully added ${toolCount} tools`);
 
-    // Add system_info tool following best practices
+    // Add system_info tool with proper annotations
     server.addTool({
       name: "system_info",
-      description: "Get basic information about this MCP server",
-      execute: async (): Promise<string> =>
-        Promise.resolve("Home Assistant MCP Server (HTTP Transport, FastMCP 3.x)"),
+      description: "Get basic information about this MCP server including version, transport, and connection status",
+      annotations: {
+        title: "System Info",
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      } as never,
+      execute: async (): Promise<string> => {
+        const hasToken = Boolean(process.env.HASS_TOKEN);
+        const hassHost = process.env.HASS_HOST || "not configured";
+        return Promise.resolve(JSON.stringify({
+          name: "Home Assistant MCP Server",
+          version: VERSION,
+          transport: "httpStream",
+          stateless: isStateless,
+          hassHost,
+          connected: hasToken,
+          toolCount: toolCount + 1,
+          capabilities: ["tools", "resources", "prompts"],
+        }, null, 2));
+      },
     });
     logger.info("Added system_info tool");
 
@@ -131,35 +208,39 @@ async function main(): Promise<void> {
       logger.error("Error adding prompts:", error);
     }
 
-    // Start the server with HTTP stream transport (FastMCP 3.x)
-    logger.info(`Starting FastMCP with HTTP stream transport on port ${port}...`);
+    // Start the server with HTTP stream transport (FastMCP 3.24.0)
+    logger.info(`Starting FastMCP with HTTP stream transport on port ${port}${isStateless ? " (stateless mode)" : ""}...`);
 
     try {
-      // Start FastMCP with custom HTTP handler that includes health/config endpoints
+      // Start FastMCP with custom HTTP handler that includes config endpoints
+      // Health endpoint is already configured via FastMCP options
       await server.start({
         transportType: "httpStream",
         httpStream: {
           port: port,
           endpoint: "/mcp",
+          // Enable stateless mode for serverless/load-balanced deployments
+          stateless: isStateless,
           middleware: (app: express.Application) => {
-            // Health check endpoint
-            app.get("/health", (_req, res) => {
-              res.json({
-                status: "ok",
-                version: "1.2.1",
-                timestamp: new Date().toISOString(),
-              });
-            });
-
             // MCP config endpoint for Smithery discovery
             app.get("/.well-known/mcp-config", (_req, res) => {
               res.json({
                 mcpServers: {
                   "homeassistant-mcp": {
                     url: "/mcp",
-                    transport: "http",
+                    transport: "httpStream",
                   },
                 },
+              });
+            });
+            
+            // Ready endpoint for orchestration
+            app.get("/ready", (_req, res) => {
+              res.json({
+                status: "ready",
+                ready: 1,
+                total: 1,
+                mode: isStateless ? "stateless" : "stateful",
               });
             });
           },
@@ -172,9 +253,11 @@ async function main(): Promise<void> {
 
     logger.info(`✓ FastMCP HTTP server listening on port ${port}`);
     logger.info(`✓ Health check available at http://localhost:${port}/health`);
+    logger.info(`✓ Ready check available at http://localhost:${port}/ready`);
     logger.info(`✓ MCP config available at http://localhost:${port}/.well-known/mcp-config`);
     logger.info(`✓ MCP endpoint available at http://localhost:${port}/mcp`);
-    logger.info(`✓ Server transport: HTTP Stream (FastMCP 3.x)`);
+    logger.info(`✓ SSE endpoint available at http://localhost:${port}/sse`);
+    logger.info(`✓ Server transport: HTTP Stream (FastMCP 3.24.0${isStateless ? ", stateless" : ""})`);
     logger.info(`✓ Ready for Smithery.ai hosted deployment`);
 
     // Graceful shutdown handler
