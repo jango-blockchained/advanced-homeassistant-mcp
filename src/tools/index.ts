@@ -28,6 +28,7 @@ import { voiceCommandParserTool } from "./homeassistant/voice-command-parser.too
 import { voiceCommandExecutorTool } from "./homeassistant/voice-command-executor.tool";
 import { voiceCommandAIParserTool } from "./homeassistant/voice-command-ai-parser.tool";
 import { traceTool } from "./homeassistant/trace.tool";
+import { entityStateTool } from "./entity-state.tool";
 
 // Tool category types
 export enum ToolCategory {
@@ -84,6 +85,8 @@ export const tools: Tool[] = [
   voiceCommandAIParserTool,
   // Trace tool (WebSocket-based)
   traceTool,
+  // Generic entity state tool
+  entityStateTool,
 ];
 
 // Function to get a tool by name
@@ -127,4 +130,6 @@ export {
   voiceCommandAIParserTool,
   // Trace tool
   traceTool,
+  // Generic entity state
+  entityStateTool,
 };
