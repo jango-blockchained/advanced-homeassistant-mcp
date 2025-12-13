@@ -26,6 +26,7 @@ import { smartScenariosTool } from "./homeassistant/smart-scenarios.tool";
 import { voiceCommandParserTool } from "./homeassistant/voice-command-parser.tool";
 import { voiceCommandExecutorTool } from "./homeassistant/voice-command-executor.tool";
 import { voiceCommandAIParserTool } from "./homeassistant/voice-command-ai-parser.tool";
+import { traceTool } from "./homeassistant/trace.tool";
 
 // Tool category types
 export enum ToolCategory {
@@ -79,6 +80,8 @@ export const tools: Tool[] = [
   voiceCommandParserTool,
   voiceCommandExecutorTool,
   voiceCommandAIParserTool,
+  // Trace tool (WebSocket-based)
+  traceTool,
 ];
 
 // Function to get a tool by name
@@ -119,4 +122,6 @@ export {
   voiceCommandParserTool,
   voiceCommandExecutorTool,
   voiceCommandAIParserTool,
+  // Trace tool
+  traceTool,
 };
