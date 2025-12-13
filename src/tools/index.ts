@@ -20,6 +20,7 @@ import { lockControlTool } from "./homeassistant/lock.tool";
 import { fanControlTool } from "./homeassistant/fan.tool";
 import { vacuumControlTool } from "./homeassistant/vacuum.tool";
 import { alarmControlTool } from "./homeassistant/alarm.tool";
+import { switchControlTool } from "./homeassistant/switch.tool";
 import { maintenanceTool } from "./homeassistant/maintenance.tool";
 import { smartScenariosTool } from "./homeassistant/smart-scenarios.tool";
 // Import voice tools
@@ -74,6 +75,7 @@ export const tools: Tool[] = [
   fanControlTool,
   vacuumControlTool,
   alarmControlTool,
+  switchControlTool,
   maintenanceTool,
   smartScenariosTool,
   // Voice command tools
@@ -116,6 +118,7 @@ export {
   fanControlTool,
   vacuumControlTool,
   alarmControlTool,
+  switchControlTool,
   maintenanceTool,
   smartScenariosTool,
   // Voice command tools
