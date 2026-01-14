@@ -19,10 +19,10 @@ import { FastMCP } from "fastmcp";
 import { tools } from "./tools/index";
 import { listResources, getResource } from "./mcp/resources";
 import { getAllPrompts, renderPrompt } from "./mcp/prompts";
-import express, { type Request, type Response } from "express";
-import http from "http";
+import express from "express";
 
 const port = (process.env.PORT ?? "7123") ? parseInt(process.env.PORT ?? "7123", 10) : 7123;
+const host = process.env.HOST;
 const isScanning = process.env.SMITHERY_SCAN === "true";
 const isStateless = process.env.FASTMCP_STATELESS === "true" || process.env.SMITHERY_STATELESS === "true";
 const VERSION = "1.2.1";
@@ -96,7 +96,7 @@ async function main(): Promise<void> {
     for (const tool of tools) {
       try {
         const annotations = getToolAnnotations(tool.name);
-        
+
         server.addTool({
           name: tool.name,
           description: tool.description,
@@ -217,6 +217,7 @@ async function main(): Promise<void> {
       await server.start({
         transportType: "httpStream",
         httpStream: {
+          host:  host,
           port: port,
           endpoint: "/mcp",
           // Enable stateless mode for serverless/load-balanced deployments
@@ -233,7 +234,7 @@ async function main(): Promise<void> {
                 },
               });
             });
-            
+
             // Ready endpoint for orchestration
             app.get("/ready", (_req, res) => {
               res.json({
