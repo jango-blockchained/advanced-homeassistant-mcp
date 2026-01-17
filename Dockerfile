@@ -94,8 +94,11 @@ USER bunjs
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT:-7123}/health || exit 1
 
+# Set the default host to 0.0.0.0 so it's accessible externally outside of this container
+ENV HOST=0.0.0.0
+
 # Expose port (default 7123 for Smithery, can be overridden)
 EXPOSE ${PORT:-7123}
 
 # Start the HTTP MCP server (for Smithery deployment)
-CMD ["bun", "run", "dist/http-server.js"] 
+CMD ["bun", "run", "dist/http-server.js"]

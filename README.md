@@ -262,9 +262,14 @@ Create a `.env` file:
 HASS_HOST=http://your-ha-instance:8123
 HASS_TOKEN=your_long_lived_access_token
 
+
 # Server
 PORT=3000
 NODE_ENV=production
+
+# To expose externally
+HOST=0.0.0.0
+
 
 # Security
 JWT_SECRET=your-secret-key

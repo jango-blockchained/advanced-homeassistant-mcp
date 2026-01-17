@@ -81,6 +81,11 @@ PORT=3000
 # Range: 1024-65535
 # Used for HTTP transport mode
 
+# Server Host
+HOST=0.0.0.0
+# Default: undefined (localhost only)
+# Sets which hostname to bind the server to. Can be used to expose externally.
+
 # Node Environment
 NODE_ENV=production
 # Options: development, production, test
