@@ -14,7 +14,7 @@ displayName: "Home Assistant MCP"
 description: "Control your smart home through AI assistants using the Model Context Protocol. Manage lights, climate, locks, media players, automations, and more."
 icon: "https://raw.githubusercontent.com/jango-blockchained/advanced-homeassistant-mcp/main/public/icon.svg"
 homepage: "https://github.com/jango-blockchained/advanced-homeassistant-mcp"
-version: "1.2.1"
+version: "1.2.2"
 
 # Server capabilities for better discovery
 prompts:

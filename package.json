@@ -1,6 +1,6 @@
 {
   "name": "@jango-blockchained/homeassistant-mcp",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Home Assistant Model Context Protocol Server - Control your smart home through AI assistants",
   "keywords": [
     "mcp",
