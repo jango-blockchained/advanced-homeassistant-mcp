@@ -9,7 +9,7 @@ import { z } from "zod";
 import { UserError } from "fastmcp";
 import { logger } from "../../utils/logger.js";
 // Re-import BaseTool and MCPContext for the class definition
-import { BaseTool } from "../base-tool.js";
+
 import { MCPContext } from "../../mcp/types.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
@@ -176,39 +176,4 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<s
   }
 }
 
-// --- Original BaseTool Class Definition (for compatibility with src/index.ts) ---
-export class LightsControlTool extends BaseTool {
-  constructor() {
-    super({
-      name: lightsControlTool.name, // Reuse name from fastmcp definition
-      description: lightsControlTool.description, // Reuse description
-      parameters: lightsControlSchema, // Reuse schema
-      metadata: {
-        category: "home_assistant", // Keep original metadata if needed
-        version: "1.0.0",
-        tags: ["lights", "home_assistant", "control"],
-        // Add examples if BaseTool/MCPServer uses them
-      },
-    });
-  }
 
-  /**
-   * Execute method for the BaseTool class
-   */
-  public async execute(params: LightsControlParams, context: MCPContext): Promise<string> {
-    logger.debug(`Executing LightsControlTool (BaseTool) with params: ${JSON.stringify(params)}`);
-    try {
-      // Validate params using BaseTool's method (optional, Zod does it too)
-      const validatedParams = this.validateParams(params);
-      // Use the shared logic function
-      const result = await executeLightsControlLogic(validatedParams); // Use validated params
-      // Validate result (optional, depends on if you defined a returnType)
-      // return this.validateResult(result);
-      return result;
-    } catch (error) {
-      logger.error(`Error in LightsControlTool (BaseTool): ${String(error)}`);
-      // Let BaseTool or MCPServer handle error formatting
-      throw error;
-    }
-  }
-}

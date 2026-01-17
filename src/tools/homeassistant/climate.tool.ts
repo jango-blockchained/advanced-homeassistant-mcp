@@ -8,7 +8,7 @@
 
 import { z } from "zod";
 import { logger } from "../../utils/logger.js";
-import { BaseTool } from "../base-tool.js";
+
 import { MCPContext } from "../../mcp/types.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
@@ -253,35 +253,4 @@ export const climateControlTool: Tool = {
   execute: executeClimateControlLogic,
 };
 
-// --- Original BaseTool Class Definition (for compatibility with src/index.ts) ---
-export class ClimateControlTool extends BaseTool {
-  constructor() {
-    super({
-      name: climateControlTool.name, // Reuse name from fastmcp definition
-      description: climateControlTool.description, // Reuse description
-      parameters: climateControlSchema, // Reuse schema
-      metadata: {
-        category: "home_assistant", // Keep original metadata if needed
-        version: "1.0.0",
-        tags: ["climate", "thermostat", "hvac", "home_assistant"],
-        // Add examples if BaseTool/MCPServer uses them
-      },
-    });
-  }
 
-  /**
-   * Execute method for the BaseTool class
-   */
-  public async execute(params: ClimateControlParams, context: MCPContext): Promise<string> {
-    logger.debug(`Executing ClimateControlTool (BaseTool) with params: ${JSON.stringify(params)}`);
-    try {
-      const validatedParams = this.validateParams(params);
-      const result = await executeClimateControlLogic(validatedParams);
-      // return this.validateResult(result); // Optional result validation
-      return result;
-    } catch (error) {
-      logger.error(`Error in ClimateControlTool (BaseTool): ${String(error)}`);
-      throw error;
-    }
-  }
-}

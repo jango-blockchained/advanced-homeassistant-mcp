@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import { logger } from "../../utils/logger.js";
-import { BaseTool } from "../base-tool.js";
+
 import { MCPContext } from "../../mcp/types.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
@@ -73,29 +73,4 @@ export const notifyTool: Tool = {
   execute: executeNotifyLogic,
 };
 
-/**
- * NotifyTool class extending BaseTool (for compatibility with src/index.ts)
- */
-export class NotifyTool extends BaseTool {
-  constructor() {
-    super({
-      name: notifyTool.name,
-      description: notifyTool.description,
-      parameters: notifySchema,
-      metadata: {
-        category: "home_assistant",
-        version: "1.0.0",
-        tags: ["notification", "home_assistant", "alert"],
-      },
-    });
-  }
 
-  /**
-   * Execute method for the BaseTool class
-   */
-  public async execute(params: NotifyParams, _context: MCPContext): Promise<string> {
-    logger.debug(`Executing NotifyTool (BaseTool) with params: ${JSON.stringify(params)}`);
-    const validatedParams = this.validateParams(params);
-    return await executeNotifyLogic(validatedParams);
-  }
-}

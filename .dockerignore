@@ -1,5 +1,8 @@
 # Dependencies
 node_modules/
+.bun/
+models/
+.venv/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

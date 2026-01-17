@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import { logger } from "../../utils/logger.js";
-import { BaseTool } from "../base-tool.js";
+
 import { MCPContext } from "../../mcp/types.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
@@ -84,29 +84,4 @@ export const sceneTool: Tool = {
   execute: executeSceneLogic,
 };
 
-/**
- * SceneTool class extending BaseTool (for compatibility with src/index.ts)
- */
-export class SceneTool extends BaseTool {
-  constructor() {
-    super({
-      name: sceneTool.name,
-      description: sceneTool.description,
-      parameters: sceneSchema,
-      metadata: {
-        category: "home_assistant",
-        version: "1.0.0",
-        tags: ["scene", "home_assistant", "control"],
-      },
-    });
-  }
 
-  /**
-   * Execute method for the BaseTool class
-   */
-  public async execute(params: SceneParams, _context: MCPContext): Promise<string> {
-    logger.debug(`Executing SceneTool (BaseTool) with params: ${JSON.stringify(params)}`);
-    const validatedParams = this.validateParams(params);
-    return await executeSceneLogic(validatedParams);
-  }
-}

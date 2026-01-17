@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import { logger } from "../../utils/logger.js";
-import { BaseTool } from "../base-tool.js";
+
 import { MCPContext } from "../../mcp/types.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
@@ -90,29 +90,4 @@ export const automationTool: Tool = {
   execute: executeAutomationLogic,
 };
 
-/**
- * AutomationTool class extending BaseTool (for compatibility with src/index.ts)
- */
-export class AutomationTool extends BaseTool {
-  constructor() {
-    super({
-      name: automationTool.name,
-      description: automationTool.description,
-      parameters: automationSchema,
-      metadata: {
-        category: "home_assistant",
-        version: "1.0.0",
-        tags: ["automation", "home_assistant", "control"],
-      },
-    });
-  }
 
-  /**
-   * Execute method for the BaseTool class
-   */
-  public async execute(params: AutomationParams, _context: MCPContext): Promise<string> {
-    logger.debug(`Executing AutomationTool (BaseTool) with params: ${JSON.stringify(params)}`);
-    const validatedParams = this.validateParams(params);
-    return await executeAutomationLogic(validatedParams);
-  }
-}

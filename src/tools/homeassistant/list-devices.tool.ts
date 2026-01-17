@@ -7,7 +7,7 @@
 
 import { z } from "zod";
 import { logger } from "../../utils/logger.js";
-import { BaseTool } from "../base-tool.js";
+
 import { MCPContext } from "../../mcp/types.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
@@ -115,30 +115,4 @@ export const listDevicesTool: Tool = {
   execute: executeListDevicesLogic,
 };
 
-/**
- * ListDevicesTool class extending BaseTool (for compatibility with src/index.ts)
- */
-export class ListDevicesTool extends BaseTool {
-  constructor() {
-    super({
-      name: listDevicesTool.name,
-      description: listDevicesTool.description,
-      parameters: listDevicesSchema,
-      metadata: {
-        category: "home_assistant",
-        version: "1.0.0",
-        tags: ["devices", "home_assistant", "list"],
-      },
-    });
-  }
 
-  /**
-   * Execute method for the BaseTool class
-   */
-  public async execute(params: ListDevicesParams, _context: MCPContext): Promise<string> {
-    logger.debug(`Executing ListDevicesTool (BaseTool) with params: ${JSON.stringify(params)}`);
-    // Note: validateParams returns 'any' which we need to cast to ListDevicesParams
-    const validatedParams = this.validateParams(params) as unknown as ListDevicesParams;
-    return await executeListDevicesLogic(validatedParams);
-  }
-}

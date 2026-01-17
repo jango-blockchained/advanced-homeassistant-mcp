@@ -13,6 +13,7 @@ import { HttpTransport } from "./mcp/transports/http.transport";
 import { APP_CONFIG } from "./config";
 import { logger } from "./utils/logger";
 import { openApiConfig } from "./openapi";
+import { tools } from "./tools/index";
 import {
   securityHeadersMiddleware,
   rateLimiterMiddleware,
@@ -20,17 +21,6 @@ import {
   sanitizeInputMiddleware,
   errorHandlerMiddleware,
 } from "./security/index";
-
-// Home Assistant tools
-import { LightsControlTool } from "./tools/homeassistant/lights.tool";
-import { ClimateControlTool } from "./tools/homeassistant/climate.tool";
-import { ListDevicesTool } from "./tools/homeassistant/list-devices.tool";
-import { AutomationTool } from "./tools/homeassistant/automation.tool";
-import { SceneTool } from "./tools/homeassistant/scene.tool";
-import { NotifyTool } from "./tools/homeassistant/notify.tool";
-
-// Import additional tools from tools/index.ts
-import { tools } from "./tools/index";
 
 /**
  * Check if running in stdio mode via command line args
@@ -50,32 +40,13 @@ async function main(): Promise<void> {
 
   // Configure server
   const EXECUTION_TIMEOUT = APP_CONFIG.executionTimeout;
-  const _STREAMING_ENABLED = APP_CONFIG.streamingEnabled;
 
   // Get the server instance (singleton)
   const server = MCPServer.getInstance();
 
-  // Register Home Assistant tools (BaseTool classes)
-  server.registerTool(new LightsControlTool());
-  server.registerTool(new ClimateControlTool());
-  server.registerTool(new ListDevicesTool());
-  server.registerTool(new AutomationTool());
-  server.registerTool(new SceneTool());
-  server.registerTool(new NotifyTool());
-
-  // Register additional tools from tools/index.ts (excluding homeassistant tools which are already registered above)
-  const homeAssistantToolNames = [
-    "lights_control",
-    "climate_control",
-    "list_devices",
-    "automation",
-    "scene",
-    "notify",
-  ];
+  // Register all tools from tools/index.ts
   tools.forEach((tool) => {
-    if (!homeAssistantToolNames.includes(tool.name)) {
-      server.registerTool(tool);
-    }
+    server.registerTool(tool);
   });
 
   // Add middlewares
