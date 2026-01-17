@@ -1,0 +1,156 @@
+{
+  "type": "hosted",
+  "stateful": false,
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "hassToken": {
+        "type": "string",
+        "description": "Long-lived access token for Home Assistant"
+      },
+      "hassHost": {
+        "type": "string",
+        "default": "http://homeassistant.local:8123",
+        "description": "Home Assistant server URL"
+      },
+      "debug": {
+        "type": "boolean",
+        "default": false,
+        "description": "Enable debug logging"
+      }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "serverCard": {
+    "serverInfo": {
+      "name": "Home Assistant MCP Server",
+      "version": "1.2.1"
+    },
+    "tools": [
+      {
+        "name": "lights_control",
+        "description": "Control lights in Home Assistant. List all lights, get state of a specific light, turn lights on with brightness/color settings, or turn lights off.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      },
+      {
+        "name": "climate_control",
+        "description": "Control climate devices (thermostats, AC) in Home Assistant. List devices, get state, set HVAC mode, temperature, or fan mode.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      },
+      {
+        "name": "list_devices",
+        "description": "List all available Home Assistant devices with optional filtering by domain, area, or floor.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      },
+      {
+        "name": "cover_control",
+        "description": "Control covers (blinds, curtains, garage doors). Open, close, stop, or set position.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      },
+      {
+        "name": "media_player_control",
+        "description": "Control media players. Play, pause, stop, volume control, and source selection.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      },
+      {
+        "name": "fan_control",
+        "description": "Control fans. Turn on/off, set speed percentage, preset modes, oscillation.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      },
+      {
+        "name": "lock_control",
+        "description": "Control locks. Lock, unlock, or open (for locks that support unlatching).",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      },
+      {
+        "name": "vacuum_control",
+        "description": "Control robot vacuums. Start, pause, stop, return to dock, clean spot, locate.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      },
+      {
+        "name": "alarm_control",
+        "description": "Control alarm systems. Arm (home, away, night), disarm, or trigger alarms.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      },
+      {
+        "name": "automation",
+        "description": "Manage Home Assistant automations. List all automations, toggle on/off, or trigger manually.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      },
+      {
+        "name": "scene",
+        "description": "Manage and activate Home Assistant scenes.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      },
+      {
+        "name": "notify",
+        "description": "Send notifications through Home Assistant notification services.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      },
+      {
+        "name": "system_info",
+        "description": "Get information about the MCP server including version and Home Assistant connection status.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "annotations": {}
+      }
+    ],
+    "resources": [],
+    "prompts": []
+  },
+  "source": {
+    "commit": "dfd5012795d2fd4e1c4c251254a574f1fe918957",
+    "branch": "main"
+  }
+}

@@ -44,7 +44,7 @@ try {
 // Try to spawn the server
 try {
     // Check for simplified stdio server build first (preferred for CLI usage)
-    const stdioServerPath = path.resolve(__dirname, '../dist/stdio-server.js');
+    const stdioServerPath = path.resolve(__dirname, '../dist/stdio-server.mjs');
 
     if (fs.existsSync(stdioServerPath)) {
         // Use Node.js for NPM/NPX compatibility
