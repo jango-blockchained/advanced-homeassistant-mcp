@@ -23,6 +23,7 @@ import { alarmControlTool } from "./homeassistant/alarm.tool";
 import { switchControlTool } from "./homeassistant/switch.tool";
 import { maintenanceTool } from "./homeassistant/maintenance.tool";
 import { smartScenariosTool } from "./homeassistant/smart-scenarios.tool";
+import { lightAnimationTool } from "./homeassistant/light-animation.tool";
 // Import voice tools
 import { voiceCommandParserTool } from "./homeassistant/voice-command-parser.tool";
 import { voiceCommandExecutorTool } from "./homeassistant/voice-command-executor.tool";
@@ -80,6 +81,7 @@ export const tools: Tool[] = [
   switchControlTool,
   maintenanceTool,
   smartScenariosTool,
+  lightAnimationTool,
   // Voice command tools
   voiceCommandParserTool,
   voiceCommandExecutorTool,
@@ -127,6 +129,7 @@ export {
   switchControlTool,
   maintenanceTool,
   smartScenariosTool,
+  lightAnimationTool,
   // Voice command tools
   voiceCommandParserTool,
   voiceCommandExecutorTool,

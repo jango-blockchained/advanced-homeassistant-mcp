@@ -93,6 +93,8 @@ const lightsControlSchema = z.object({
     .tuple([z.number().min(0).max(255), z.number().min(0).max(255), z.number().min(0).max(255)])
     .optional()
     .describe("RGB color as [r, g, b] (0-255 each)"),
+  effect: z.string().optional().describe("Light effect (e.g., 'colorloop', 'random') - requires device support"),
+  transition: z.number().min(0).optional().describe("Transition time in seconds"),
 });
 
 // Infer the type from the schema
@@ -149,6 +151,8 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<s
       if (params.brightness !== undefined) attributes.brightness = params.brightness;
       if (params.color_temp !== undefined) attributes.color_temp = params.color_temp;
       if (params.rgb_color !== undefined) attributes.rgb_color = params.rgb_color;
+      if (params.effect !== undefined) attributes.effect = params.effect;
+      if (params.transition !== undefined) attributes.transition = params.transition;
 
       success = await haLightsService.turnOn(params.entity_id, attributes);
       if (!success) {
