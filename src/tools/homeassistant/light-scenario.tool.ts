@@ -1,15 +1,20 @@
-
 import { z } from "zod";
 import { Tool } from "../../types/index.js";
 import { get_hass } from "../../hass/index.js";
 import { logger } from "../../utils/logger.js";
+import { LightManager } from "../../helpers/light-manager.js";
 
 const MoodSchema = z.enum(["chill", "nightly", "focus", "romantic", "party", "default"]);
 type Mood = z.infer<typeof MoodSchema>;
 
+const StrategySchema = z.enum(["random", "round_robin", "dominant"]);
+type Strategy = z.infer<typeof StrategySchema>;
+
 const LightScenarioParamsSchema = z.object({
     target: z.string().describe("Area name (e.g. 'Wohnzimmer') or specific Entity ID"),
-    mood: MoodSchema.describe("The mood/scenario to apply"),
+    mood: MoodSchema.optional().describe("The mood/scenario to apply"),
+    colors: z.array(z.string()).optional().describe("Custom palette of hex colors (e.g. ['#FF0000', '#0000FF']) or RGB tuples"),
+    strategy: StrategySchema.optional().default("random").describe("Distribution strategy for custom colors"),
 });
 
 type LightScenarioParams = z.infer<typeof LightScenarioParamsSchema>;
@@ -68,69 +73,99 @@ export const lightScenarioTool: Tool = {
             });
         }
 
-        // 2. Determine Settings based on Mood
-        const settings: any = {};
+        // 2. Determine Settings based on Mood OR Custom Colors
+        const settingsList: any[] = [];
         let message = "";
 
-        switch (mood) {
-            case "chill":
-                // Warm, Dim
-                settings.color_temp_kelvin = 2700;
-                settings.brightness_pct = 40;
-                settings.transition = 3;
-                message = `Setting ${targetLights.length} lights to Chill (Warm/Dim)`;
-                break;
-            case "nightly":
-                // Very Warm, Very Dim
-                settings.color_temp_kelvin = 2000;
-                settings.brightness_pct = 10;
-                settings.transition = 5;
-                message = `Setting ${targetLights.length} lights to Nightly (Ultra Warm/Low)`;
-                break;
-            case "focus":
-                // Cool, Bright
-                settings.color_temp_kelvin = 4000;
-                settings.brightness_pct = 100;
-                settings.transition = 1;
-                message = `Setting ${targetLights.length} lights to Focus (Cool/Bright)`;
-                break;
-            case "romantic":
-                // Deep Red/Purple, Dim
-                settings.rgb_color = [128, 0, 128]; // Purple
-                settings.brightness_pct = 30;
-                settings.transition = 3;
-                message = `Setting ${targetLights.length} lights to Romantic (Purple/Dim)`;
-                break;
-            case "party":
-                // Special: Use effect if supported, else random color
-                // For now, simpler implementation: standard "Happy" color -> Orange/Yellow?
-                // Actually, let's use a nice vibrant color.
-                settings.rgb_color = [255, 165, 0]; // Orange
-                settings.brightness_pct = 80;
-                settings.effect = "colorloop"; // Try effect, devices might ignore if unsupported
-                message = `Setting ${targetLights.length} lights to Party mode`;
-                break;
-            case "default":
-                // Standard Warm White
-                settings.color_temp_kelvin = 3000;
-                settings.brightness_pct = 80;
-                settings.transition = 1;
-                message = `Resetting ${targetLights.length} lights to Default`;
-                break;
+        // Helper to parse hex to [r,g,b]
+        const hexToRgb = (hex: string): [number, number, number] | null => {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? [
+                parseInt(result[1], 16),
+                parseInt(result[2], 16),
+                parseInt(result[3], 16)
+            ] : null;
+        };
+
+        if (params.colors && params.colors.length > 0) {
+            // Custom Palette Mode
+            const palette = params.colors.map(c => {
+                if (c.startsWith("#")) return hexToRgb(c);
+                // Assume [r,g,b] array passed as string? Zod schema says string. 
+                // If user passes JSON string of array, we might need to parse.
+                // But Zod array(string) means ["#FF", "#00"] which is fine.
+                return null;
+            }).filter(c => c !== null) as [number, number, number][];
+
+            if (palette.length === 0) {
+                return JSON.stringify({ success: false, error: "No valid hex colors provided in palette." });
+            }
+
+            message = `Applying custom palette (${palette.length} colors) to ${targetLights.length} lights via ${params.strategy}`;
+
+            targetLights.forEach((light, index) => {
+                let color: [number, number, number];
+
+                if (params.strategy === "round_robin") {
+                    color = palette[index % palette.length];
+                } else {
+                    // Random (default)
+                    color = palette[Math.floor(Math.random() * palette.length)];
+                }
+
+                settingsList.push({
+                    entity: light,
+                    state: {
+                        rgb_color: color,
+                        brightness_pct: 80,
+                        transition: 2
+                    }
+                });
+            });
+
+        } else if (mood) {
+            // Mood Mode (Legacy + Enhanced)
+            let commonState: any = {};
+
+            switch (mood) {
+                case "chill":
+                    commonState = { color_temp_kelvin: 2700, brightness_pct: 40, transition: 3 };
+                    message = `Setting ${targetLights.length} lights to Chill`;
+                    break;
+                case "nightly":
+                    commonState = { color_temp_kelvin: 2000, brightness_pct: 10, transition: 5 };
+                    message = `Setting ${targetLights.length} lights to Nightly`;
+                    break;
+                case "focus":
+                    commonState = { color_temp_kelvin: 4000, brightness_pct: 100, transition: 1 };
+                    message = `Setting ${targetLights.length} lights to Focus`;
+                    break;
+                case "romantic":
+                    commonState = { rgb_color: [128, 0, 128], brightness_pct: 30, transition: 3 };
+                    message = `Setting ${targetLights.length} lights to Romantic`;
+                    break;
+                case "party":
+                    commonState = { rgb_color: [255, 165, 0], brightness_pct: 80, effect: "colorloop" };
+                    message = `Setting ${targetLights.length} lights to Party`;
+                    break;
+                case "default":
+                    commonState = { color_temp_kelvin: 3000, brightness_pct: 80, transition: 1 };
+                    message = `Resetting ${targetLights.length} lights to Default`;
+                    break;
+            }
+
+            targetLights.forEach(light => {
+                settingsList.push({ entity: light, state: commonState });
+            });
+        } else {
+            return JSON.stringify({ success: false, error: "Must provide either 'mood' or 'colors'." });
         }
 
-        // 3. Apply Settings
+        // 3. Apply Settings via LightManager
         try {
-            const results = await Promise.all(targetLights.map(async (light) => {
-                const serviceData = { ...settings, entity_id: light.entity_id };
-
-                // Clean up unsupported attributes if possible? 
-                // HA usually ignores extra params, but let's be safe if we can. 
-                // Actually, we can't easily know capabilities here without checking supported_color_modes per light.
-                // We will let HA handle the "best effort" application.
-
-                await hass.callService("light", "turn_on", serviceData);
-                return light.entity_id;
+            const results = await Promise.all(settingsList.map(async (item) => {
+                await LightManager.applyLightState(item.entity, item.state);
+                return item.entity.entity_id;
             }));
 
             return JSON.stringify({
