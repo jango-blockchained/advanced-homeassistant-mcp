@@ -56,6 +56,7 @@
     "test:update": "bun test --update-snapshots --preload ./test/setup.ts",
     "test:clear": "bun test --clear-cache",
     "test:staged": "bun test --findRelatedTests",
+    "test:e2e": "bun test test/e2e",
     "lint": "eslint . --ext .ts --cache",
     "format": "prettier --write \"src/**/*.ts\" --cache",
     "profile": "bun --inspect src/index.ts",
