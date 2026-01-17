@@ -18,7 +18,7 @@ export const lightShowcaseTool: Tool = {
     parameters: LightShowcaseParamsSchema,
     annotations: {
         title: "Light Showcase",
-        description: "Demo mode: Cycles through Sunrise, Ocean, Cyberpunk, and Chill themes",
+        description: "Demo mode: Cycles through Sunrise, Forest, Ocean, Romance, Cyberpunk, and Chill",
         destructiveHint: false,
         idempotentHint: false,
     },
@@ -27,7 +27,7 @@ export const lightShowcaseTool: Tool = {
         const hass = await get_hass();
         const allStates = await hass.getStates();
 
-        // 1. Resolve Target (Reusing logic from light_scenario, ideally should be shared but duplication is fine for now)
+        // 1. Resolve Target
         let targetLights: any[] = [];
         const directEntity = allStates.find(s => s.entity_id === target && s.entity_id.startsWith("light."));
         if (directEntity) {
@@ -48,7 +48,7 @@ export const lightShowcaseTool: Tool = {
             return JSON.stringify({ success: false, error: `No lights found for target '${target}'` });
         }
 
-        logger.info(`Starting Showcase on ${targetLights.length} lights (${loops} loops)`);
+        logger.info(`Starting Showcase V2 on ${targetLights.length} lights (${loops} loops)`);
 
         // Helper to apply a palette/mood
         const runStage = async (name: string, palette: string[], strategy: "random" | "round_robin", transition: number, durationMs: number) => {
@@ -102,19 +102,25 @@ export const lightShowcaseTool: Tool = {
                 // 2. Daylight (Clean)
                 await runStage("Daylight", ["#FFFFFF", "#87CEEB"], "random", 2, 4000);
 
-                // 3. Ocean (Cool Blues/Greens)
-                await runStage("Ocean", ["#00008B", "#008B8B", "#00FFFF"], "round_robin", 3, 5000);
+                // 3. Forest (Green/Gold) - NEW
+                await runStage("Forest", ["#228B22", "#32CD32", "#FFD700"], "round_robin", 3, 5000);
 
-                // 4. Cyberpunk (Neon Fast)
-                await runStage("Cyberpunk", ["#FF00FF", "#00FFFF", "#800080"], "random", 1, 3000); // Fast transition
+                // 4. Ocean (Cool Blues/Greens) - Updated with Turquoise
+                await runStage("Ocean", ["#00008B", "#008B8B", "#00FFFF", "#40E0D0"], "round_robin", 3, 5000);
 
-                // 5. Relax (Warm White End)
+                // 5. Romance (Red/Pink/Purple) - NEW
+                await runStage("Romance", ["#8B0000", "#FF1493", "#800080"], "random", 3, 5000);
+
+                // 6. Cyberpunk (Neon) - Slowed Down (2s transition, 5s hold)
+                await runStage("Cyberpunk", ["#FF00FF", "#00FFFF", "#800080"], "random", 2, 5000);
+
+                // 7. Relax (Warm White End)
                 await runMood("Relax", 2700, 40, 4, 2000);
             }
 
             return JSON.stringify({
                 success: true,
-                message: `Showcase completed successfully on ${targetLights.length} lights.`
+                message: `Showcase V2 completed successfully on ${targetLights.length} lights.`
             });
 
         } catch (err: any) {
