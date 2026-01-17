@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { EventEmitter } from "events";
-import type { HassWebSocketClient, HassState, HassServiceCall } from "./types.js";
+import type { HassWebSocketClient, HassState, HassServiceCall, TraceListResult, TraceResult, TraceContext } from "./types.js";
 import { logger } from "../utils/logger.js";
 
 export class HomeAssistantWebSocketClient extends EventEmitter implements HassWebSocketClient {
@@ -77,15 +77,20 @@ export class HomeAssistantWebSocketClient extends EventEmitter implements HassWe
     };
 
     return new Promise((resolve, reject) => {
-      const authHandler = (message: any) => {
-        if (message.type === "auth_ok") {
-          this.connected = true;
-          this.emit("connected");
-          this.socket?.removeListener("message", authHandler);
-          resolve();
-        } else if (message.type === "auth_invalid") {
-          this.socket?.removeListener("message", authHandler);
-          reject(new Error("Authentication failed"));
+      const authHandler = (data: Buffer) => {
+        try {
+          const message = JSON.parse(data.toString());
+          if (message.type === "auth_ok") {
+            this.connected = true;
+            this.emit("connected");
+            this.socket?.removeListener("message", authHandler);
+            resolve();
+          } else if (message.type === "auth_invalid") {
+            this.socket?.removeListener("message", authHandler);
+            reject(new Error("Authentication failed"));
+          }
+        } catch (error) {
+          logger.error("Failed to parse auth message:", error);
         }
       };
 
@@ -206,6 +211,32 @@ export class HomeAssistantWebSocketClient extends EventEmitter implements HassWe
       domain,
       service,
       service_data: serviceData || {},
+    });
+  }
+
+  // Trace operations (WebSocket only - these don't exist in REST API)
+  async listTraces(domain: string = "automation", itemId?: string): Promise<TraceListResult[]> {
+    return this.send({
+      type: "trace/list",
+      domain,
+      ...(itemId && { item_id: itemId }),
+    });
+  }
+
+  async getTrace(domain: string, itemId: string, runId: string): Promise<TraceResult> {
+    return this.send({
+      type: "trace/get",
+      domain,
+      item_id: itemId,
+      run_id: runId,
+    });
+  }
+
+  async listTraceContexts(domain?: string, itemId?: string): Promise<TraceContext[]> {
+    return this.send({
+      type: "trace/contexts",
+      ...(domain && { domain }),
+      ...(itemId && { item_id: itemId }),
     });
   }
 }

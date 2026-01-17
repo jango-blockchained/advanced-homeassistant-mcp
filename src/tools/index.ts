@@ -20,12 +20,16 @@ import { lockControlTool } from "./homeassistant/lock.tool";
 import { fanControlTool } from "./homeassistant/fan.tool";
 import { vacuumControlTool } from "./homeassistant/vacuum.tool";
 import { alarmControlTool } from "./homeassistant/alarm.tool";
+import { switchControlTool } from "./homeassistant/switch.tool";
 import { maintenanceTool } from "./homeassistant/maintenance.tool";
 import { smartScenariosTool } from "./homeassistant/smart-scenarios.tool";
 // Import voice tools
 import { voiceCommandParserTool } from "./homeassistant/voice-command-parser.tool";
 import { voiceCommandExecutorTool } from "./homeassistant/voice-command-executor.tool";
 import { voiceCommandAIParserTool } from "./homeassistant/voice-command-ai-parser.tool";
+import { traceTool } from "./homeassistant/trace.tool";
+import { entityStateTool } from "./entity-state.tool";
+import { searchEntitiesTool } from "./search-entities.tool";
 
 // Tool category types
 export enum ToolCategory {
@@ -73,12 +77,19 @@ export const tools: Tool[] = [
   fanControlTool,
   vacuumControlTool,
   alarmControlTool,
+  switchControlTool,
   maintenanceTool,
   smartScenariosTool,
   // Voice command tools
   voiceCommandParserTool,
   voiceCommandExecutorTool,
   voiceCommandAIParserTool,
+  // Trace tool (WebSocket-based)
+  traceTool,
+  // Generic entity state tool
+  entityStateTool,
+  // Powerful entity search
+  searchEntitiesTool,
 ];
 
 // Function to get a tool by name
@@ -113,10 +124,17 @@ export {
   fanControlTool,
   vacuumControlTool,
   alarmControlTool,
+  switchControlTool,
   maintenanceTool,
   smartScenariosTool,
   // Voice command tools
   voiceCommandParserTool,
   voiceCommandExecutorTool,
   voiceCommandAIParserTool,
+  // Trace tool
+  traceTool,
+  // Generic entity state
+  entityStateTool,
+  // Entity search
+  searchEntitiesTool,
 };

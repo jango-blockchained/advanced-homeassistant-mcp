@@ -17,7 +17,9 @@ const automationSchema = z.object({
   automation_id: z
     .string()
     .optional()
-    .describe("Automation ID (required for toggle and trigger actions)"),
+    .describe(
+      "Entity ID of the automation, e.g., 'automation.office_carbon_filter_person_detection' (required for toggle and trigger actions). Use the 'entity_id' field from list results.",
+    ),
 });
 
 // Infer the type from the schema
@@ -36,6 +38,7 @@ async function executeAutomationLogic(params: AutomationParams): Promise<string>
         .filter((state) => state.entity_id.startsWith("automation."))
         .map((automation) => ({
           entity_id: automation.entity_id,
+          id: automation.attributes?.id,
           name: automation.attributes?.friendly_name || automation.entity_id.split(".")[1],
           state: automation.state,
           last_triggered: automation.attributes?.last_triggered,

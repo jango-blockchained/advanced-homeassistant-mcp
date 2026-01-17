@@ -217,13 +217,20 @@ export const automationConfigTool: Tool = {
     automation_id: z
       .string()
       .optional()
-      .describe("Automation ID (required for update, delete, and duplicate)"),
+      .describe(
+        "Internal automation ID (NOT entity_id). Use the 'id' field from automation list, e.g., 'office_carbon_filter_person_detection' or '1759324158284'. Do NOT include 'automation.' prefix. Required for update, delete, and duplicate.",
+      ),
     config: z
       .record(z.string(), z.unknown())
       .optional()
       .describe("Automation configuration object (required for create and update)"),
   }),
   execute: async (params: AutomationConfigParams) => {
+    // Normalize automation_id: strip 'automation.' prefix if accidentally included
+    if (params.automation_id?.startsWith("automation.")) {
+      params.automation_id = params.automation_id.replace("automation.", "");
+    }
+
     try {
       switch (params.action) {
         case "create": {
@@ -231,27 +238,47 @@ export const automationConfigTool: Tool = {
             throw new Error("Configuration is required for creating automation");
           }
 
-          const response = await fetch(`${APP_CONFIG.HASS_HOST}/api/config/automation/config`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${APP_CONFIG.HASS_TOKEN}`,
-              "Content-Type": "application/json",
+          // Generate a new automation ID (timestamp-based like HA UI does)
+          const newId = params.automation_id || String(Date.now());
+
+          // Guard: Check if automation with this ID already exists
+          const existsCheck = await fetch(
+            `${APP_CONFIG.HASS_HOST}/api/config/automation/config/${newId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${APP_CONFIG.HASS_TOKEN}`,
+              },
             },
-            body: JSON.stringify(params.config),
-          });
+          );
+          if (existsCheck.ok) {
+            throw new Error(
+              `Automation with ID '${newId}' already exists. Use 'update' action to modify existing automations.`,
+            );
+          }
+
+          const configWithId = { ...params.config, id: newId };
+
+          const response = await fetch(
+            `${APP_CONFIG.HASS_HOST}/api/config/automation/config/${newId}`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${APP_CONFIG.HASS_TOKEN}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(configWithId),
+            },
+          );
 
           if (!response.ok) {
             throw new Error(`Failed to create automation: ${response.statusText}`);
           }
 
-          const responseData = (await response.json()) as {
-            automation_id: string;
-          };
-          return {
+          return JSON.stringify({
             success: true,
             message: "Successfully created automation",
-            automation_id: responseData.automation_id,
-          };
+            automation_id: newId,
+          });
         }
 
         case "update": {
@@ -262,7 +289,7 @@ export const automationConfigTool: Tool = {
           const response = await fetch(
             `${APP_CONFIG.HASS_HOST}/api/config/automation/config/${params.automation_id}`,
             {
-              method: "PUT",
+              method: "POST",
               headers: {
                 Authorization: `Bearer ${APP_CONFIG.HASS_TOKEN}`,
                 "Content-Type": "application/json",
@@ -278,11 +305,11 @@ export const automationConfigTool: Tool = {
           const responseData = (await response.json()) as {
             automation_id: string;
           };
-          return {
+          return JSON.stringify({
             success: true,
             automation_id: responseData.automation_id,
             message: "Automation updated successfully",
-          };
+          });
         }
 
         case "delete": {
@@ -305,10 +332,10 @@ export const automationConfigTool: Tool = {
             throw new Error(`Failed to delete automation: ${response.statusText}`);
           }
 
-          return {
+          return JSON.stringify({
             success: true,
             message: `Successfully deleted automation ${params.automation_id}`,
-          };
+          });
         }
 
         case "duplicate": {
@@ -332,11 +359,15 @@ export const automationConfigTool: Tool = {
           }
 
           const config = (await getResponse.json()) as AutomationConfig;
+
+          // Generate new ID and update config for the copy
+          const newId = String(Date.now());
+          config.id = newId;
           config.alias = `${config.alias} (Copy)`;
 
-          // Create new automation with modified config
+          // Create new automation with modified config (ID must be in URL)
           const createResponse = await fetch(
-            `${APP_CONFIG.HASS_HOST}/api/config/automation/config`,
+            `${APP_CONFIG.HASS_HOST}/api/config/automation/config/${newId}`,
             {
               method: "POST",
               headers: {
@@ -351,19 +382,18 @@ export const automationConfigTool: Tool = {
             throw new Error(`Failed to create duplicate automation: ${createResponse.statusText}`);
           }
 
-          const newAutomation = (await createResponse.json()) as AutomationResponse;
-          return {
+          return JSON.stringify({
             success: true,
             message: `Successfully duplicated automation ${params.automation_id}`,
-            new_automation_id: newAutomation.automation_id,
-          };
+            new_automation_id: newId,
+          });
         }
       }
     } catch (error) {
-      return {
+      return JSON.stringify({
         success: false,
         message: error instanceof Error ? error.message : "Unknown error occurred",
-      };
+      });
     }
   },
 };

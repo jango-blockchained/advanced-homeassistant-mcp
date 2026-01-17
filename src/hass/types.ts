@@ -72,3 +72,35 @@ export type MockFunction<T extends (...args: any[]) => any> = {
     mockReset(): void;
   };
 };
+
+// Trace types for WebSocket API
+export interface TraceListResult {
+  item_id: string;
+  run_id: string;
+  state: string;
+  timestamp: { start: string; finish: string | null };
+  domain: string;
+  last_step: string | null;
+  error?: string;
+}
+
+export interface TraceResult {
+  trace: Record<string, TraceStep[]>;
+  context: { id: string; parent_id: string | null; user_id: string | null };
+  script_execution: string;
+  config: Record<string, any>;
+  blueprint_inputs?: Record<string, any>;
+}
+
+export interface TraceStep {
+  path: string;
+  timestamp: string;
+  result?: any;
+  changed_variables?: Record<string, any>;
+}
+
+export interface TraceContext {
+  run_id: string;
+  domain: string;
+  item_id: string;
+}
