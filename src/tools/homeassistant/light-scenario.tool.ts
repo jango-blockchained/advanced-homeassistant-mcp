@@ -4,7 +4,7 @@ import { get_hass } from "../../hass/index.js";
 import { logger } from "../../utils/logger.js";
 import { LightManager } from "../../helpers/light-manager.js";
 
-const MoodSchema = z.enum(["chill", "nightly", "focus", "romantic", "party", "default"]);
+const MoodSchema = z.enum(["chill", "nightly", "focus", "romantic", "party", "cyberpunk", "default"]);
 type Mood = z.infer<typeof MoodSchema>;
 
 const StrategySchema = z.enum(["random", "round_robin", "dominant"]);
@@ -126,6 +126,8 @@ export const lightScenarioTool: Tool = {
         } else if (mood) {
             // Mood Mode (Legacy + Enhanced)
             let commonState: any = {};
+            // Using a flag for palette based moods
+            let moodPalette: [number, number, number][] | null = null;
 
             switch (mood) {
                 case "chill":
@@ -148,15 +150,38 @@ export const lightScenarioTool: Tool = {
                     commonState = { rgb_color: [255, 165, 0], brightness_pct: 80, effect: "colorloop" };
                     message = `Setting ${targetLights.length} lights to Party`;
                     break;
+                case "cyberpunk":
+                    moodPalette = [
+                        [0, 255, 255],   // Cyan
+                        [255, 0, 255],   // Magenta
+                        [128, 0, 128],   // Purple
+                        [0, 0, 255]      // Blue
+                    ];
+                    message = `Setting ${targetLights.length} lights to Cyberpunk`;
+                    break;
                 case "default":
                     commonState = { color_temp_kelvin: 3000, brightness_pct: 80, transition: 1 };
                     message = `Resetting ${targetLights.length} lights to Default`;
                     break;
             }
 
-            targetLights.forEach(light => {
-                settingsList.push({ entity: light, state: commonState });
-            });
+            if (moodPalette) {
+                targetLights.forEach(light => {
+                    const color = moodPalette![Math.floor(Math.random() * moodPalette!.length)];
+                    settingsList.push({
+                        entity: light,
+                        state: {
+                            rgb_color: color,
+                            brightness_pct: 80,
+                            transition: 2
+                        }
+                    });
+                });
+            } else {
+                targetLights.forEach(light => {
+                    settingsList.push({ entity: light, state: commonState });
+                });
+            }
         } else {
             return JSON.stringify({ success: false, error: "Must provide either 'mood' or 'colors'." });
         }
