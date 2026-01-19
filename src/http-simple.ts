@@ -97,10 +97,25 @@ app.post("/mcp", async (req, res) => {
         const { zodToJsonSchema } = await import("zod-to-json-schema");
         const toolsList = tools.map((tool) => {
           // Convert Zod schema to JSON Schema
-          const jsonSchema = zodToJsonSchema(tool.parameters);
+          const jsonSchema = zodToJsonSchema(tool.parameters, {
+            $refStrategy: "none",
+          });
 
           // Remove top-level $schema and definitions if they exist
-          const { $schema, ...inputSchema } = jsonSchema as any;
+          let inputSchema = jsonSchema as any;
+          if (inputSchema.definitions && inputSchema.properties) {
+            // If it has both, it's likely a complex schema, keep it but remove $schema
+            const { $schema, ...rest } = inputSchema;
+            inputSchema = rest;
+          } else if (inputSchema.definitions && inputSchema.$ref) {
+            // If it's a ref wrapper, try to resolve or just return the def
+            // For simplicity in this simple server, we return the whole object minus $schema
+            const { $schema, ...rest } = inputSchema;
+            inputSchema = rest;
+          } else {
+            const { $schema, definitions, ...rest } = inputSchema;
+            inputSchema = rest;
+          }
 
           return {
             name: tool.name,
