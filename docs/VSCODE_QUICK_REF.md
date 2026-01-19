@@ -11,39 +11,40 @@
 
 ## 🚀 Quick Commands
 
-| Action | Command |
-|--------|---------|
-| Build STDIO server | `npm run build:stdio` |
-| Build all | `npm run build:all` |
-| Start HTTP server | `npm run start` |
-| Start STDIO server | `npm run start:stdio` |
-| Run tests | `bun test` |
+| Action                | Command                  |
+| --------------------- | ------------------------ |
+| Build STDIO server    | `npm run build:stdio`    |
+| Build all             | `npm run build:all`      |
+| Start HTTP server     | `npm run start`          |
+| Start STDIO server    | `npm run start:stdio`    |
+| Run tests             | `bun test`               |
 | Clean build artifacts | `rm -rf dist logs/*.log` |
 
 ## 🔧 VS Code Keyboard Shortcuts
 
-| Action | Shortcut |
-|--------|----------|
-| Run Build Task | `Ctrl+Shift+B` (Windows/Linux) / `Cmd+Shift+B` (Mac) |
-| Start Debugging | `F5` |
-| Stop Debugging | `Shift+F5` |
-| Run Task | `Ctrl+Shift+P` → "Tasks: Run Task" |
+| Action          | Shortcut                                             |
+| --------------- | ---------------------------------------------------- |
+| Run Build Task  | `Ctrl+Shift+B` (Windows/Linux) / `Cmd+Shift+B` (Mac) |
+| Start Debugging | `F5`                                                 |
+| Stop Debugging  | `Shift+F5`                                           |
+| Run Task        | `Ctrl+Shift+P` → "Tasks: Run Task"                   |
 | Command Palette | `Ctrl+Shift+P` (Windows/Linux) / `Cmd+Shift+P` (Mac) |
 
 ## 📁 Important Files
 
-| File | Purpose |
-|------|---------|
-| `.vscode/mcp.json` | MCP server configuration |
-| `.vscode/settings.json` | Workspace settings |
-| `.vscode/launch.json` | Debug configurations |
-| `.vscode/tasks.json` | Build tasks |
-| `.env` | Environment variables (create from `.env.example`) |
-| `dist/stdio-server.mjs` | Built STDIO server (MCP entry point) |
+| File                    | Purpose                                            |
+| ----------------------- | -------------------------------------------------- |
+| `.vscode/mcp.json`      | MCP server configuration                           |
+| `.vscode/settings.json` | Workspace settings                                 |
+| `.vscode/launch.json`   | Debug configurations                               |
+| `.vscode/tasks.json`    | Build tasks                                        |
+| `.env`                  | Environment variables (create from `.env.example`) |
+| `dist/stdio-server.mjs` | Built STDIO server (MCP entry point)               |
 
 ## 🔍 Troubleshooting Quick Fixes
 
 ### MCP Server Not Working
+
 ```bash
 # Rebuild the STDIO server
 npm run build:stdio
@@ -56,11 +57,13 @@ npm run start:stdio
 ```
 
 ### TypeScript Errors in Editor
+
 1. `Ctrl+Shift+P` / `Cmd+Shift+P`
 2. Type: "TypeScript: Restart TS Server"
 3. Press Enter
 
 ### VS Code Not Detecting MCP Server
+
 1. Check that `.vscode/mcp.json` exists
 2. Verify `dist/stdio-server.mjs` exists
 3. Reload VS Code window: `Ctrl+Shift+P` → "Developer: Reload Window"
@@ -68,12 +71,14 @@ npm run start:stdio
 ## 🔑 Environment Variables
 
 Required variables in `.env`:
+
 ```bash
 HASS_HOST=http://homeassistant.local:8123
 HASS_TOKEN=eyJ0eXAiOiJKV1QiLCJhbGc...
 ```
 
 Optional variables:
+
 ```bash
 LOG_LEVEL=info          # debug, info, warn, error
 PORT=7123               # HTTP server port
@@ -83,17 +88,20 @@ NODE_ENV=development    # or production
 ## 🎯 Common Development Tasks
 
 ### Adding a New MCP Tool
+
 1. Create tool file in `src/tools/homeassistant/`
 2. Export from `src/tools/index.ts`
 3. Rebuild: `npm run build:stdio`
 4. Test with MCP client
 
 ### Updating Documentation
+
 1. Edit files in `docs/`
 2. Test locally: `mkdocs serve`
 3. Build: `mkdocs build`
 
 ### Running Integration Tests
+
 ```bash
 bun test integration
 ```
@@ -127,6 +135,7 @@ Access via: Run & Debug view (Ctrl+Shift+D / Cmd+Shift+D)
 Current Version: **1.2.3**
 
 Check package version:
+
 ```bash
 cat package.json | grep version
 ```

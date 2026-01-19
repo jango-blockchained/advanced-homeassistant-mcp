@@ -17,6 +17,7 @@ This document explains how to use the Home Assistant MCP Server within VS Code.
      ```
 
 3. **Build the Project**
+
    ```bash
    npm install
    npm run build:stdio
@@ -42,14 +43,15 @@ This is the main MCP configuration file that VS Code uses to connect to your MCP
       "env": {
         "HASS_HOST": "${env:HASS_HOST}",
         "HASS_TOKEN": "${env:HASS_TOKEN}",
-        "LOG_LEVEL": "info"
-      }
-    }
-  }
+        "LOG_LEVEL": "info",
+      },
+    },
+  },
 }
 ```
 
 **Key Points:**
+
 - Uses the built `stdio-server.mjs` file
 - Reads environment variables from your shell environment
 - Ensure you've built the project before using
@@ -61,6 +63,7 @@ Contains workspace-specific settings for TypeScript, formatting, and file associ
 ### `.vscode/launch.json`
 
 Provides debug configurations for:
+
 - **Start HTTP Server**: Run the full HTTP/WebSocket server
 - **Start STDIO Server**: Run the STDIO-only server (for MCP)
 - **Start HTTP Simple Server**: Run the lightweight HTTP server
@@ -69,6 +72,7 @@ Provides debug configurations for:
 ### `.vscode/tasks.json`
 
 Defines build and run tasks that can be executed from VS Code:
+
 - `build` - Build the main HTTP server
 - `build:stdio` - Build the STDIO server
 - `build:http-simple` - Build the simple HTTP server
@@ -81,10 +85,12 @@ Defines build and run tasks that can be executed from VS Code:
 ### Building
 
 Use the Command Palette (Ctrl+Shift+P / Cmd+Shift+P):
+
 1. Type "Tasks: Run Build Task"
 2. Select the appropriate build task
 
 Or use the terminal:
+
 ```bash
 npm run build:stdio    # Build STDIO server for MCP
 npm run build          # Build main HTTP server
@@ -99,6 +105,7 @@ npm run build:all      # Build everything
 4. Press the green play button
 
 The debugger will:
+
 - Automatically build the project
 - Launch the server
 - Attach the debugger
@@ -107,6 +114,7 @@ The debugger will:
 ### Testing
 
 Run tests using:
+
 - The "Run Tests" debug configuration
 - Command Palette: "Tasks: Run Test Task"
 - Terminal: `bun test`
@@ -128,11 +136,13 @@ When connected, the following Home Assistant tools are available:
 ### MCP Server Not Connecting
 
 1. **Check Build**: Ensure `dist/stdio-server.mjs` exists
+
    ```bash
    npm run build:stdio
    ```
 
 2. **Check Environment**: Verify `.env` file has correct credentials
+
    ```bash
    cat .env | grep HASS_
    ```
@@ -147,6 +157,7 @@ When connected, the following Home Assistant tools are available:
 ### Environment Variables Not Loading
 
 The STDIO server automatically loads `.env` from the workspace root. Ensure:
+
 - The `.env` file exists in the project root
 - Variables are correctly formatted (no quotes needed)
 - No syntax errors in the `.env` file
@@ -154,6 +165,7 @@ The STDIO server automatically loads `.env` from the workspace root. Ensure:
 ### TypeScript Errors
 
 If you see TypeScript errors in VS Code:
+
 1. Open Command Palette
 2. Run "TypeScript: Restart TS Server"
 3. If issues persist, check `tsconfig.json` matches your TypeScript version
@@ -163,6 +175,7 @@ If you see TypeScript errors in VS Code:
 ### Custom Port for HTTP Server
 
 Edit `.env`:
+
 ```
 PORT=7123
 ```
@@ -170,16 +183,17 @@ PORT=7123
 ### Custom Log Level
 
 Edit `.vscode/mcp.json`:
+
 ```jsonc
 {
   "servers": {
     "homeassistant-mcp": {
       // ...
       "env": {
-        "LOG_LEVEL": "debug"  // Change to debug, info, warn, error
-      }
-    }
-  }
+        "LOG_LEVEL": "debug", // Change to debug, info, warn, error
+      },
+    },
+  },
 }
 ```
 
@@ -193,8 +207,8 @@ If you need to use a specific Node.js version:
     "homeassistant-mcp": {
       "command": "/path/to/specific/node",
       // ...
-    }
-  }
+    },
+  },
 }
 ```
 
@@ -203,12 +217,14 @@ If you need to use a specific Node.js version:
 For production use outside of VS Code development:
 
 1. **HTTP Server** (recommended for remote access):
+
    ```bash
    npm run build
    npm run start
    ```
 
 2. **STDIO Server** (for local MCP clients):
+
    ```bash
    npm run build:stdio
    npm run start:stdio

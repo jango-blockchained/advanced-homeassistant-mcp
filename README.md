@@ -74,7 +74,7 @@ That's it! Your AI assistant can now control your smart home. 🤖✨
 
 ### Prerequisites
 
-- 🚀 [Bun](https://bun.sh) (v1.0.26+) - *Recommended*
+- 🚀 [Bun](https://bun.sh) (v1.0.26+) - _Recommended_
 - 🏠 [Home Assistant](https://www.home-assistant.io/) instance
 
 ### Option 1: Smithery.ai (Recommended for Quick Setup)
@@ -93,6 +93,7 @@ npx @smithery/cli install @jango-blockchained/homeassistant-mcp --client vscode
 ```
 
 You'll be prompted to configure:
+
 - Home Assistant URL
 - Long-lived access token
 - Optional settings (port, debug mode)
@@ -144,6 +145,7 @@ docker run -d \
 ```
 
 **Available Docker tags:**
+
 - `latest` - Latest stable release
 - `1.0.x` - Specific version
 - `dev` - Latest development build from main branch
@@ -249,7 +251,6 @@ Add to `.cursor/config/config.json`:
 Or with npx:
 
 ```json
-
 {
   "mcpServers": {
     "homeassistant-mcp": {
@@ -331,6 +332,7 @@ RATE_LIMIT_MAX=50
 ### Built-in Tools (34 Total)
 
 #### 🎨 Aurora Sound-to-Light (10 tools) ✨ NEW!
+
 - 🎵 **Audio Analysis**: Extract BPM, beats, mood, frequency data
 - 🔍 **Device Scanning**: Find Aurora-compatible lights
 - 📊 **Device Profiling**: Measure latency & capabilities for sync
@@ -345,6 +347,7 @@ RATE_LIMIT_MAX=50
 > 🎨 **Aurora** is a complete sound-to-light synchronization system that transforms your Home Assistant lights into a professional light show synchronized to music!
 
 #### 🏠 Device Control (13 tools)
+
 - 🔦 **Lights Control**: Brightness, color temp, RGB, effects
 - 🌡️ **Climate Control**: HVAC modes, temperature, fan control
 - 📺 **Media Players**: Playback, volume, sources, sound modes
@@ -356,11 +359,13 @@ RATE_LIMIT_MAX=50
 - 🎛️ **Generic Control**: Universal device control interface
 
 #### ⚙️ Automation & Scenes (3 tools)
+
 - 🎬 **Scenes**: Activate predefined scenes
 - ⚙️ **Automations**: List, toggle, trigger automations
 - 🔧 **Automation Config**: Create/update/delete complex automations
 
 #### 🔧 System Management (6 tools)
+
 - 📋 **Device Discovery**: List and filter devices by domain/area
 - 📱 **Notifications**: Multi-channel alert system
 - 📊 **History**: Query historical state data
@@ -369,13 +374,13 @@ RATE_LIMIT_MAX=50
 - 🔔 **Event Subscription**: Real-time SSE event streaming
 
 #### 🧠 Smart Features (2 tools)
+
 - 🔧 **Maintenance Tool**: Spook-like maintenance features
   - Find orphaned/unavailable devices
   - Analyze light usage patterns by room
   - Monitor energy consumption
   - Device health checks with battery warnings
   - Entity cleanup recommendations
-  
 - 🧠 **Smart Scenarios**: Intelligent automation detection
   - Nobody home: Auto turn off lights, reduce climate
   - Window/heating conflicts: Auto disable heating
@@ -393,7 +398,6 @@ RATE_LIMIT_MAX=50
   - Climate optimization
   - Media control
   - Troubleshooting helpers
-  
 - 📊 **Resources**: Direct access to Home Assistant states and configurations
   - Device lists by type (lights, climate, sensors, etc.)
   - Area/room configurations
@@ -412,52 +416,60 @@ RATE_LIMIT_MAX=50
 Once integrated, your AI assistant can understand commands like:
 
 **Device Control:**
+
 > "Turn off all lights in the bedroom"  
 > "Set the thermostat to 72°F"  
 > "Play music on the living room speaker"  
 > "Open the garage door"  
 > "Lock all doors"  
 > "Start the robot vacuum"  
-> "Set the bedroom fan to 50%"  
+> "Set the bedroom fan to 50%"
 
 **Automation & Scenes:**
+
 > "Activate the movie scene"  
 > "Trigger the morning routine automation"  
-> "Show me all my automations"  
+> "Show me all my automations"
 
 **Information & Monitoring:**
+
 > "What's the current temperature in the living room?"  
 > "Show me all unavailable devices"  
-> "Which lights are currently on?"  
+> "Which lights are currently on?"
 
 **Notifications:**
+
 > "Notify everyone that dinner is ready"  
-> "Send an alert to my phone"  
+> "Send an alert to my phone"
 
 **Smart Maintenance:**
+
 > "Check my Home Assistant health"  
 > "Find orphaned or unavailable devices"  
 > "Analyze my light usage patterns"  
 > "Show me my energy consumption"  
-> "Which devices have low battery?"  
+> "Which devices have low battery?"
 
 **Aurora Sound-to-Light:** ✨ NEW!
+
 > "Analyze this music file and sync my lights"  
 > "Scan for lights that can do Aurora effects"  
 > "Profile my living room lights for synchronization"  
 > "Create a light show for this song"  
 > "Play the timeline I just created"  
 > "Pause the light show"  
-> "Show me Aurora status"  
+> "Show me Aurora status"
 
 **Smart Scenarios:**
+
 > "I'm leaving home, activate away mode"  
 > "Are any windows open with heating on?"  
 > "Check for energy-wasting issues"  
 > "Turn off everything, I'm going on vacation"  
-> "What can I do to save energy?"  
+> "What can I do to save energy?"
 
 You can also use prompts for guided assistance:
+
 > "Help me set up a morning routine"  
 > "Show me energy saving tips"  
 > "How do I control my media players?"
@@ -495,6 +507,7 @@ bun test
 This project uses **automated releases** to GitHub, npm, and Docker. See [AUTOMATED_RELEASES.md](docs/AUTOMATED_RELEASES.md) for details.
 
 **Quick Release:**
+
 1. Go to **Actions** → **Version Bump and Release**
 2. Click **Run workflow**
 3. Select version bump type (patch/minor/major)
