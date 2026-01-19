@@ -205,9 +205,31 @@ Or use npx:
 }
 ```
 
-#### VS Code + Claude Extension
+#### VS Code + Copilot/Claude Extension
 
-The `.vscode/settings.json` is pre-configured for immediate use.
+The `.vscode/mcp.json` is pre-configured for immediate use with the MCP extension. For development:
+
+1. Ensure you have built the project: `npm run build:stdio`
+2. Configure your environment variables in `.env`
+3. The MCP server will automatically connect using the configuration in `.vscode/mcp.json`
+
+Alternatively, you can manually configure in your VS Code settings:
+
+```json
+{
+  "mcp.servers": {
+    "homeassistant-mcp": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/stdio-server.mjs"],
+      "env": {
+        "HASS_HOST": "${env:HASS_HOST}",
+        "HASS_TOKEN": "${env:HASS_TOKEN}"
+      }
+    }
+  }
+}
+```
 
 #### Cursor
 

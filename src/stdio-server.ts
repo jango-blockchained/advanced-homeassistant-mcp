@@ -37,7 +37,7 @@ import { listResources, getResource } from "./mcp/resources";
 import { getAllPrompts, renderPrompt } from "./mcp/prompts";
 
 // Get version from package.json via environment variable
-const VERSION = (process.env.npm_package_version ?? "1.2.1") as `${number}.${number}.${number}`;
+const VERSION = (process.env.npm_package_version ?? "1.2.3") as `${number}.${number}.${number}`;
 
 /**
  * Tool annotations following MCP specification for trust & safety

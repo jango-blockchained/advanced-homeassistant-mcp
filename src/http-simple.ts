@@ -26,7 +26,7 @@ app.use((_req, res, next) => {
 app.get("/health", (_req, res) => {
   res.json({
     status: "ok",
-    version: "1.2.1",
+    version: "1.2.3",
     timestamp: new Date().toISOString(),
   });
 });
@@ -79,7 +79,7 @@ app.post("/mcp", async (req, res) => {
             },
             serverInfo: {
               name: "Home Assistant MCP Server",
-              version: "1.2.1",
+              version: "1.2.3",
             },
           },
           id: requestId,

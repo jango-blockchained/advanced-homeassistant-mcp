@@ -88,6 +88,8 @@ Technical documentation for developers and contributors:
 |-------|-------------|
 | **[Architecture](ARCHITECTURE.md)** | System design, components, and data flow |
 | **[Development](DEVELOPMENT.md)** | Development setup, building, testing, debugging |
+| **[VS Code Integration](VSCODE_INTEGRATION.md)** | Complete VS Code setup and integration guide |
+| **[VS Code Quick Reference](VSCODE_QUICK_REF.md)** | Quick reference for VS Code development |
 | **[Contributing](CONTRIBUTING.md)** | How to contribute code and documentation |
 | **[Implementation Summary](IMPLEMENTATION_SUMMARY.md)** | Technical implementation details |
 
