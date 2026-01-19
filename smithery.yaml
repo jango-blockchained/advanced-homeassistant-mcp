@@ -14,7 +14,7 @@ displayName: "Home Assistant MCP"
 description: "Control your smart home through AI assistants using the Model Context Protocol. Manage lights, climate, locks, media players, automations, and more."
 icon: "https://raw.githubusercontent.com/jango-blockchained/advanced-homeassistant-mcp/main/public/icon.svg"
 homepage: "https://github.com/jango-blockchained/advanced-homeassistant-mcp"
-version: "1.2.3"
+version: "1.2.4"
 
 # Server capabilities for better discovery
 prompts:
@@ -55,12 +55,14 @@ configSchema:
       description: "Long-lived access token from Home Assistant (Settings > Devices & Services > Create Token)"
       title: "Access Token"
       format: password
-      examples:
-        - "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    HASS_SOCKET_URL:
+      type: string
+      description: "Optional: Home Assistant WebSocket URL (e.g., ws://homeassistant.local:8123/api/websocket)"
+      title: "WebSocket URL"
     ANTHROPIC_API_KEY:
       type: string
-      description: "Optional: Anthropic API key for AI-powered voice command parsing (get from https://console.anthropic.com)"
-      title: "Anthropic API Key (Optional)"
+      description: "Optional: Anthropic API key for AI-powered voice command parsing"
+      title: "Anthropic API Key"
       format: password
     LOG_LEVEL:
       type: string
@@ -68,12 +70,7 @@ configSchema:
       title: "Log Level"
       enum: ["debug", "info", "warn", "error"]
       default: "info"
-    FASTMCP_STATELESS:
-      type: boolean
-      description: "Enable stateless mode for serverless/load-balanced deployments"
-      title: "Stateless Mode"
-      default: false
   required:
     - HASS_HOST
     - HASS_TOKEN
-  additionalProperties: false
+  additionalProperties: true

@@ -94,12 +94,21 @@ app.post("/mcp", async (req, res) => {
       }
 
       case "tools/list": {
-        const toolsList = tools.map((tool) => ({
-          name: tool.name,
-          description: tool.description,
-          inputSchema: tool.parameters,
-          annotations: tool.annotations,
-        }));
+        const { zodToJsonSchema } = await import("zod-to-json-schema");
+        const toolsList = tools.map((tool) => {
+          // Convert Zod schema to JSON Schema
+          const jsonSchema = zodToJsonSchema(tool.parameters);
+
+          // Remove top-level $schema and definitions if they exist
+          const { $schema, ...inputSchema } = jsonSchema as any;
+
+          return {
+            name: tool.name,
+            description: tool.description,
+            inputSchema,
+            annotations: tool.annotations,
+          };
+        });
         res.json({
           jsonrpc: "2.0",
           result: {
@@ -241,6 +250,6 @@ app.listen(port, () => {
   logger.info(`✓ Health: http://localhost:${port}/health`);
   logger.info(`✓ MCP config: http://localhost:${port}/.well-known/mcp-config`);
   logger.info(`✓ MCP endpoint: http://localhost:${port}/mcp`);
-  logger.info(`✓ Environment: PORT=${port}, NODE_ENV=${process.env.NODE_ENV ?? 'development'}`);
-  logger.info(`✓ Home Assistant: ${process.env.HASS_HOST ?? 'not configured'}`);
+  logger.info(`✓ Environment: PORT=${port}, NODE_ENV=${process.env.NODE_ENV ?? "development"}`);
+  logger.info(`✓ Home Assistant: ${process.env.HASS_HOST ?? "not configured"}`);
 });

@@ -271,7 +271,10 @@ export class MCPServer extends EventEmitter {
               try {
                 // Convert Zod schema to JSON Schema
                 const jsonSchema = zodToJsonSchema(tool.parameters) as JSONSchema;
-                inputSchema = jsonSchema;
+
+                // Remove top-level $schema and other non-standard fields for MCP
+                const { $schema, definitions, ...cleanedSchema } = jsonSchema;
+                inputSchema = cleanedSchema;
               } catch (error) {
                 logger.warn(`Failed to convert schema for tool ${tool.name}:`, error);
                 // Fallback to basic schema
@@ -286,6 +289,7 @@ export class MCPServer extends EventEmitter {
               name: tool.name,
               description: tool.description,
               inputSchema,
+              annotations: (tool as any).annotations,
             };
           }),
         },
