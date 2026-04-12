@@ -109,8 +109,13 @@ class HomeAssistantAPI {
     return state;
   }
 
-  async callService(domain: string, service: string, data: Record<string, unknown>): Promise<void> {
-    await this.fetchApi(`services/${domain}/${service}`, {
+  async callService(
+    domain: string,
+    service: string,
+    data: Record<string, unknown>,
+    returnResponse: boolean = false,
+  ): Promise<any> {
+    const response = await this.fetchApi(`services/${domain}/${service}`, {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -124,6 +129,8 @@ class HomeAssistantAPI {
       // For other services, clear all state caches to be safe
       this.invalidateAllStateCache();
     }
+
+    return response;
   }
 
   /**
@@ -201,13 +208,16 @@ export async function get_hass_safe(): Promise<HomeAssistantAPI | null> {
         logger.debug("Home Assistant not configured (no token) - skipping initialization");
         return null;
       }
-      
+
       instance = new HomeAssistantAPI(false); // throwOnMissingToken = false
       // Try to verify connection
       await instance.getStates();
       logger.info("Successfully connected to Home Assistant");
     } catch (error) {
-      logger.debug("Failed to initialize Home Assistant connection - continuing without connection:", error);
+      logger.debug(
+        "Failed to initialize Home Assistant connection - continuing without connection:",
+        error,
+      );
       // Don't throw - allow server to continue
       return null;
     }
@@ -220,9 +230,10 @@ export async function call_service(
   domain: string,
   service: string,
   data: Record<string, unknown>,
-): Promise<void> {
+  returnResponse: boolean = false,
+): Promise<any> {
   const hass = await get_hass();
-  return hass.callService(domain, service, data);
+  return hass.callService(domain, service, data, returnResponse);
 }
 
 // Helper function to list devices

@@ -21,6 +21,7 @@ import { fanControlTool } from "./homeassistant/fan.tool";
 import { vacuumControlTool } from "./homeassistant/vacuum.tool";
 import { alarmControlTool } from "./homeassistant/alarm.tool";
 import { switchControlTool } from "./homeassistant/switch.tool";
+import { todoControlTool } from "./homeassistant/todo.tool";
 import { maintenanceTool } from "./homeassistant/maintenance.tool";
 import { smartScenariosTool } from "./homeassistant/smart-scenarios.tool";
 import { lightAnimationTool } from "./homeassistant/light-animation.tool";
@@ -82,6 +83,7 @@ export const tools: Tool[] = [
   vacuumControlTool,
   alarmControlTool,
   switchControlTool,
+  todoControlTool,
   maintenanceTool,
   smartScenariosTool,
   lightAnimationTool,
@@ -133,6 +135,7 @@ export {
   vacuumControlTool,
   alarmControlTool,
   switchControlTool,
+  todoControlTool,
   maintenanceTool,
   smartScenariosTool,
   lightAnimationTool,

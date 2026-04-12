@@ -65,6 +65,7 @@ export const MCP_SCHEMA = {
             items: { type: "number" },
             minItems: 3,
             maxItems: 3,
+            description: "RGB color as [r, g, b] (0-255 each)",
           },
           position: { type: "number" },
           tilt_position: { type: "number" },

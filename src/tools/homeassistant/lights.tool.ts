@@ -90,10 +90,14 @@ const lightsControlSchema = z.object({
     .optional()
     .describe("Color temperature in Mireds (153-500)"),
   rgb_color: z
-    .tuple([z.number().min(0).max(255), z.number().min(0).max(255), z.number().min(0).max(255)])
+    .array(z.number().min(0).max(255))
+    .length(3)
     .optional()
     .describe("RGB color as [r, g, b] (0-255 each)"),
-  effect: z.string().optional().describe("Light effect (e.g., 'colorloop', 'random') - requires device support"),
+  effect: z
+    .string()
+    .optional()
+    .describe("Light effect (e.g., 'colorloop', 'random') - requires device support"),
   transition: z.number().min(0).optional().describe("Transition time in seconds"),
 });
 
@@ -103,7 +107,8 @@ type LightsControlParams = z.infer<typeof lightsControlSchema>;
 // Define the tool using the Tool interface
 export const lightsControlTool: Tool = {
   name: "lights_control",
-  description: "Control lights in Home Assistant. Supports listing all lights, getting state of a specific light, turning lights on with optional brightness/color settings, and turning lights off.",
+  description:
+    "Control lights in Home Assistant. Supports listing all lights, getting state of a specific light, turning lights on with optional brightness/color settings, and turning lights off.",
   parameters: lightsControlSchema,
   execute: executeLightsControlLogic,
   annotations: {
@@ -179,5 +184,3 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<s
       throw new UserError(`Unknown action: ${String(params.action)}`);
   }
 }
-
-

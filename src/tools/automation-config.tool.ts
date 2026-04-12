@@ -200,7 +200,8 @@ const _automationConfigSchema = z
 
 export const automationConfigTool: Tool = {
   name: "automation_config",
-  description: "Advanced automation configuration and management - create, update, duplicate, and delete automations",
+  description:
+    "Advanced automation configuration and management - create, update, duplicate, and delete automations",
   annotations: {
     title: "Automation Configuration",
     description: "Create and manage complex Home Assistant automations with advanced configuration",
@@ -274,6 +275,20 @@ export const automationConfigTool: Tool = {
             throw new Error(`Failed to create automation: ${response.statusText}`);
           }
 
+          const responseText = await response.text();
+          let automationId = newId;
+
+          if (responseText) {
+            try {
+              const responseData = JSON.parse(responseText) as { automation_id?: string };
+              if (responseData.automation_id) {
+                automationId = responseData.automation_id;
+              }
+            } catch {
+              // Response is not JSON, use the ID we sent
+            }
+          }
+
           return {
             content: [
               {
@@ -281,7 +296,7 @@ export const automationConfigTool: Tool = {
                 text: JSON.stringify({
                   success: true,
                   message: "Successfully created automation",
-                  automation_id: newId,
+                  automation_id: automationId,
                 }),
               },
             ],
@@ -309,16 +324,29 @@ export const automationConfigTool: Tool = {
             throw new Error(`Failed to update automation: ${response.statusText}`);
           }
 
-          const responseData = (await response.json()) as {
-            automation_id: string;
-          };
+          const updateResponseText = await response.text();
+          let updatedAutomationId = params.automation_id;
+
+          if (updateResponseText) {
+            try {
+              const updateResponseData = JSON.parse(updateResponseText) as {
+                automation_id?: string;
+              };
+              if (updateResponseData.automation_id) {
+                updatedAutomationId = updateResponseData.automation_id;
+              }
+            } catch {
+              // Response is not JSON, use the ID we sent
+            }
+          }
+
           return {
             content: [
               {
                 type: "text",
                 text: JSON.stringify({
                   success: true,
-                  automation_id: responseData.automation_id,
+                  automation_id: updatedAutomationId,
                   message: "Automation updated successfully",
                 }),
               },
@@ -403,6 +431,22 @@ export const automationConfigTool: Tool = {
             throw new Error(`Failed to create duplicate automation: ${createResponse.statusText}`);
           }
 
+          const duplicateResponseText = await createResponse.text();
+          let duplicatedAutomationId = newId;
+
+          if (duplicateResponseText) {
+            try {
+              const duplicateResponseData = JSON.parse(duplicateResponseText) as {
+                automation_id?: string;
+              };
+              if (duplicateResponseData.automation_id) {
+                duplicatedAutomationId = duplicateResponseData.automation_id;
+              }
+            } catch {
+              // Response is not JSON, use the ID we sent
+            }
+          }
+
           return {
             content: [
               {
@@ -410,7 +454,7 @@ export const automationConfigTool: Tool = {
                 text: JSON.stringify({
                   success: true,
                   message: `Successfully duplicated automation ${params.automation_id}`,
-                  new_automation_id: newId,
+                  new_automation_id: duplicatedAutomationId,
                 }),
               },
             ],

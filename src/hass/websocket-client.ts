@@ -1,6 +1,13 @@
 import WebSocket from "ws";
 import { EventEmitter } from "events";
-import type { HassWebSocketClient, HassState, HassServiceCall, TraceListResult, TraceResult, TraceContext } from "./types.js";
+import type {
+  HassWebSocketClient,
+  HassState,
+  HassServiceCall,
+  TraceListResult,
+  TraceResult,
+  TraceContext,
+} from "./types.js";
 import { logger } from "../utils/logger.js";
 
 export class HomeAssistantWebSocketClient extends EventEmitter implements HassWebSocketClient {
@@ -205,13 +212,20 @@ export class HomeAssistantWebSocketClient extends EventEmitter implements HassWe
     return result;
   }
 
-  async callService(domain: string, service: string, serviceData?: any): Promise<void> {
-    await this.send({
+  async callService(
+    domain: string,
+    service: string,
+    serviceData?: any,
+    returnResponse: boolean = false,
+  ): Promise<any> {
+    const result = await this.send({
       type: "call_service",
       domain,
       service,
       service_data: serviceData || {},
+      ...(returnResponse && { return_response: true }),
     });
+    return result;
   }
 
   // Trace operations (WebSocket only - these don't exist in REST API)

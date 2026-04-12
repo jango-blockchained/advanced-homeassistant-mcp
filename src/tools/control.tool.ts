@@ -21,10 +21,12 @@ const allCommands = [
 
 export const controlTool: Tool = {
   name: "control",
-  description: "Control Home Assistant devices and services - universal control endpoint for turning on/off, toggling, setting positions, temperatures, and more",
+  description:
+    "Control Home Assistant devices and services - universal control endpoint for turning on/off, toggling, setting positions, temperatures, and more",
   annotations: {
     title: "Device Control",
-    description: "Universal device control for lights, climate, covers, switches, and other entities",
+    description:
+      "Universal device control for lights, climate, covers, switches, and other entities",
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: true,
@@ -48,9 +50,10 @@ export const controlTool: Tool = {
       .describe("Brightness level for lights (0-255)"),
     color_temp: z.number().optional().describe("Color temperature for lights"),
     rgb_color: z
-      .tuple([z.number(), z.number(), z.number()])
+      .array(z.number().min(0).max(255))
+      .length(3)
       .optional()
-      .describe("RGB color values"),
+      .describe("RGB color as [r, g, b] (0-255 each)"),
     // Cover parameters
     position: z.number().min(0).max(100).optional().describe("Position for covers (0-100)"),
     tilt_position: z
