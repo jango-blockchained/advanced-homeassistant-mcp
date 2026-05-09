@@ -1,7 +1,7 @@
 import type { HassEntity } from "../interfaces/hass.js";
 import { logger } from "../utils/logger.js";
 
-class HomeAssistantAPI {
+export class HomeAssistantAPI {
   private baseUrl: string;
   private token: string;
   private cache = new Map<string, { data: unknown; timestamp: number }>();
@@ -35,6 +35,14 @@ class HomeAssistantAPI {
       this.cache.delete(key);
     }
     return null;
+  }
+
+  /**
+   * Clear all cached data. Primarily a test hook so each test can start
+   * with a clean cache despite the module-level singleton.
+   */
+  public clearCache(): void {
+    this.cache.clear();
   }
 
   private setCache(key: string, data: unknown): void {

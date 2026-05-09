@@ -1,93 +1,48 @@
+/**
+ * Smoke test for the get_hass / get_hass_safe wrappers in src/hass/index.ts.
+ *
+ * The previous version replaced the entire hass/index.js module via
+ * `mock.module(...)`. That mock persisted across files in the same bun
+ * process and leaked into every later test that imports `hass/index.js`
+ * (tool tests, the api test, etc.), making the suite order-dependent. We
+ * now exercise the real exports against a mocked global.fetch instead.
+ */
+
 import { describe, expect, test, mock, beforeEach, afterEach } from "bun:test";
-import { WebSocket } from 'ws';
-import { EventEmitter } from 'events';
-import type { HassInstanceImpl } from '../../src/hass/types.js';
-import type { Entity } from '../../src/types/hass.js';
-import { get_hass } from '../../src/hass/index.js';
-import { HassWebSocketClient } from '../../src/websocket/client.js';
-import { HomeAssistantAPI } from '../../src/hass/index.js';
+import { get_hass_safe } from "../../src/hass/index.js";
 
-// Define WebSocket mock types
-type WebSocketCallback = (...args: any[]) => void;
+const originalFetch = globalThis.fetch;
+const originalToken = process.env.HASS_TOKEN;
 
-interface MockHassServices {
-    light: Record<string, unknown>;
-    climate: Record<string, unknown>;
-    switch: Record<string, unknown>;
-    media_player: Record<string, unknown>;
-}
+describe("Home Assistant Integration", () => {
+  beforeEach(() => {
+    process.env.HASS_TOKEN = "test_token_for_testing";
+  });
 
-interface MockHassInstance {
-    services: MockHassServices;
-}
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    process.env.HASS_TOKEN = originalToken;
+  });
 
-// Extend HassInstanceImpl for testing
-interface TestHassInstance extends HassInstanceImpl {
-    _baseUrl: string;
-    _token: string;
-}
+  test("get_hass_safe yields an instance with the expected method surface", async () => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(new Response("[]", { status: 200 })),
+    ) as unknown as typeof fetch;
 
-// Mock fetch globally
-const mockFetch = mock() as typeof fetch;
-global.fetch = mockFetch;
+    const hass = await get_hass_safe();
+    expect(hass).not.toBeNull();
+    expect(typeof hass!.getStates).toBe("function");
+    expect(typeof hass!.getState).toBe("function");
+    expect(typeof hass!.callService).toBe("function");
+  });
 
-const mockState: Entity = {
-    entity_id: 'light.test',
-    state: 'on',
-    attributes: {},
-    last_changed: '',
-    last_updated: '',
-    context: {
-        id: '',
-        parent_id: null,
-        user_id: null
-    }
-};
+  test("get_hass_safe returns the same singleton on repeat calls", async () => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(new Response("[]", { status: 200 })),
+    ) as unknown as typeof fetch;
 
-// Mock get_hass
-mock.module('../../src/hass/index.js', () => {
-    const mockInstance = {
-        baseUrl: 'http://localhost:8123',
-        token: 'test_token',
-        getStates: mock(async () => [mockState]),
-        getState: mock(async () => mockState),
-        callService: mock(async () => {})
-    };
-    return {
-        get_hass: mock(async () => mockInstance)
-    };
+    const a = await get_hass_safe();
+    const b = await get_hass_safe();
+    expect(a).toBe(b);
+  });
 });
-
-describe('Home Assistant Integration', () => {
-    describe('HomeAssistantAPI', () => {
-        let instance: {
-            baseUrl: string;
-            token: string;
-            getStates: any;
-            getState: any;
-            callService: any;
-        };
-        const mockBaseUrl = 'http://localhost:8123';
-        const mockToken = 'test_token';
-
-        beforeEach(async () => {
-            instance = await get_hass();
-            mock.restore();
-        });
-
-        test('should create instance with correct properties', () => {
-            expect(instance.baseUrl).toBe(mockBaseUrl);
-            expect(instance.token).toBe(mockToken);
-        });
-
-        test('should fetch states', async () => {
-            const states = await instance.getStates();
-            expect(states).toEqual([mockState]);
-        });
-
-        test('should call service', async () => {
-            await instance.callService('light', 'turn_on', { entity_id: 'light.test' });
-            expect(instance.callService).toHaveBeenCalledWith('light', 'turn_on', { entity_id: 'light.test' });
-        });
-    });
-}); 

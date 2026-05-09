@@ -3,12 +3,12 @@
  * Verifies that SSE clients are properly removed from tracking Map on disconnect
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 import { EventEmitter } from 'events';
 
 describe('SSE Client Cleanup', () => {
   let clients: Map<string, any>;
-  let mockResponse: EventEmitter & { end?: jest.Mock; writableEnded?: boolean };
+  let mockResponse: EventEmitter & { end?: ReturnType<typeof mock>; writableEnded?: boolean };
   let clientId: string;
 
   beforeEach(() => {
@@ -17,7 +17,7 @@ describe('SSE Client Cleanup', () => {
 
     // Mock SSE response object
     mockResponse = new EventEmitter();
-    mockResponse.end = jest.fn();
+    mockResponse.end = mock(() => undefined);
     mockResponse.writableEnded = false;
   });
 

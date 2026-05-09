@@ -30,32 +30,34 @@ export class LiteMCP extends EventEmitter {
     timeout: 5000,
   };
 
-  public async execute(command: string, params: Record<string, any> = {}): Promise<any> {
+  public execute(command: string, params: Record<string, any> = {}): Promise<any> {
     try {
       // Emit command execution event
       this.emit("command", { command, params });
 
-      // Execute command logic here
-      const result = await this.processCommand(command, params);
+      // Execute command logic here. processCommand is sync today; if it
+      // ever needs to do async work we'll re-add the await.
+      const result = this.processCommand(command, params);
 
       // Emit success event
       this.emit("success", { command, params, result });
 
-      return result;
+      return Promise.resolve(result);
     } catch (error) {
       // Emit error event
       this.emit("error", { command, params, error });
-      throw error;
+      return Promise.reject(error as Error);
     }
   }
 
-  private async processCommand(command: string, params: Record<string, any>): Promise<any> {
+  private processCommand(command: string, params: Record<string, any>): { command: string; params: Record<string, any>; status: string } {
     // Command processing logic
     return { command, params, status: "processed" };
   }
 
-  public async shutdown(): Promise<void> {
+  public shutdown(): Promise<void> {
     // Cleanup logic
     this.removeAllListeners();
+    return Promise.resolve();
   }
 }

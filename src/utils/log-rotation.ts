@@ -9,14 +9,10 @@
 
 import fs from "fs/promises";
 import path from "path";
-import { glob } from "glob";
 import { logger } from "./logger.js";
 import { APP_CONFIG } from "../config/app.config.ts";
 import { unlink } from "fs/promises";
 import { join } from "path";
-import { promisify } from "util";
-
-const globPromise = promisify(glob);
 
 /**
  * Interface for log file information

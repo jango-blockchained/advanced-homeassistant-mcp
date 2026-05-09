@@ -86,20 +86,20 @@ export class NLPProcessor {
     }
   }
 
-  async validateIntent(
+  validateIntent(
     intent: AIIntent,
     confidence: AIConfidence,
     threshold = 0.7,
   ): Promise<boolean> {
-    return (
+    return Promise.resolve(
       confidence.overall >= threshold &&
-      confidence.intent >= threshold &&
-      confidence.entities >= threshold &&
-      confidence.context >= threshold
+        confidence.intent >= threshold &&
+        confidence.entities >= threshold &&
+        confidence.context >= threshold,
     );
   }
 
-  async suggestCorrections(input: string, error: AIError): Promise<string[]> {
+  suggestCorrections(input: string, error: AIError): Promise<string[]> {
     // Implement correction suggestions based on the error
     const suggestions: string[] = [];
 
@@ -124,6 +124,6 @@ export class NLPProcessor {
       );
     }
 
-    return suggestions;
+    return Promise.resolve(suggestions);
   }
 }

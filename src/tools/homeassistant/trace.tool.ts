@@ -66,7 +66,7 @@ async function executeTraceLogic(params: TraceParams): Promise<string> {
         if (!params.item_id || !params.run_id) {
           throw new Error("Both item_id and run_id are required for 'get' action");
         }
-        const trace = await hass.getTrace(params.domain!, params.item_id, params.run_id);
+        const trace = await hass.getTrace(params.domain, params.item_id, params.run_id);
         return JSON.stringify({
           success: true,
           trace,
@@ -88,7 +88,8 @@ async function executeTraceLogic(params: TraceParams): Promise<string> {
       }
 
       default:
-        throw new Error(`Unknown action: ${params.action}`);
+        // params.action narrows to never after the exhaustive switch.
+        throw new Error(`Unknown action: ${String(params.action)}`);
     }
   } catch (error) {
     logger.error(`Error in trace logic: ${error instanceof Error ? error.message : String(error)}`);

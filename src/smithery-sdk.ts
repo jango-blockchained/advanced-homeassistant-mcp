@@ -140,7 +140,7 @@ export default function createServer({ config }: { config?: ServerConfig } = {})
         description: a.description,
         required: a.required,
       })) || [],
-      async (args: any) => ({
+      (args: Record<string, string>) => ({
         messages: [
           { role: "user", content: { type: "text", text: renderPrompt(prompt.name, args) } },
         ],

@@ -143,7 +143,7 @@ async function main(): Promise<void> {
     }
 
     // Mount MCP handler on /mcp using SSE transport
-    app.post("/mcp", async (req, res) => {
+    app.post("/mcp", (req, res) => {
       try {
         // Handle MCP JSON-RPC request
         const request = req.body;

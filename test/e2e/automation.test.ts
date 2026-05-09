@@ -2,18 +2,44 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { spawn, type ChildProcessWithoutNullStreams } from "child_process";
 import * as readline from "readline";
+import { existsSync } from "fs";
+import { resolve } from "path";
 
 const SERVER_COMMAND = "bun";
 const SERVER_ARGS = ["run", "dist/stdio-server.mjs"]; // Use the built file directly
 const CWD = process.cwd();
 
-describe("E2E Tests", () => {
+// This e2e test boots a real `bun run dist/stdio-server.mjs` and talks JSON-RPC
+// to it over stdio. It needs:
+//   - `bun` on PATH
+//   - `dist/stdio-server.mjs` already built
+//   - a reachable Home Assistant
+// None of those are guaranteed in the default `bun test` run, so we skip
+// unless the caller opts in via RUN_E2E=true (and the build exists).
+const E2E_PREREQS_MET =
+  process.env.RUN_E2E === "true" && existsSync(resolve(CWD, "dist/stdio-server.mjs"));
+
+describe.skipIf(!E2E_PREREQS_MET)("E2E Tests", () => {
     let serverProcess: ChildProcessWithoutNullStreams;
     let rl: readline.Interface;
     let messageId = 0;
-    let responseResolvers = new Map<number | string, (value: any) => void>();
+    const responseResolvers = new Map<number | string, (value: unknown) => void>();
 
-    const createRequest = (method: string, params?: any) => ({
+    interface JsonRpcRequest {
+        jsonrpc: string;
+        id: number;
+        method: string;
+        params?: unknown;
+    }
+
+    interface JsonRpcResponse {
+        jsonrpc?: string;
+        id?: number;
+        result?: { content?: Array<{ type: string; text: string }>; tools?: Array<{ name: string }> };
+        error?: { code: number; message: string };
+    }
+
+    const createRequest = (method: string, params?: unknown): JsonRpcRequest => ({
         jsonrpc: "2.0",
         id: messageId++,
         method,
@@ -21,9 +47,9 @@ describe("E2E Tests", () => {
     });
 
     // Helper to send request and wait for specific response ID
-    const sendRequest = (req: any): Promise<any> => {
+    const sendRequest = (req: JsonRpcRequest): Promise<JsonRpcResponse> => {
         return new Promise((resolve) => {
-            responseResolvers.set(req.id, resolve);
+            responseResolvers.set(req.id, resolve as (value: unknown) => void);
             const str = JSON.stringify(req);
             serverProcess.stdin.write(str + "\n");
         });
@@ -46,15 +72,15 @@ describe("E2E Tests", () => {
         rl.on("line", (line) => {
             if (!line.trim()) return;
             try {
-                const msg = JSON.parse(line);
+                const msg = JSON.parse(line) as { id?: number | string; method?: string };
                 if (msg.id !== undefined && responseResolvers.has(msg.id)) {
                     responseResolvers.get(msg.id)!(msg);
                     responseResolvers.delete(msg.id);
                 } else if (msg.method === "notifications/initialized") {
                     // Ignore for now
                 }
-            } catch (e) {
-                // console.error("Error parsing JSON:", e);
+            } catch {
+                // Ignore non-JSON lines
             }
         });
 
@@ -68,23 +94,17 @@ describe("E2E Tests", () => {
         // We can't use sendRequest for initialize strictly because we need to wait for it before tests run
         // But we can just fire it and wait a bit, or handle it in the first test.
         // For robust test, let's wait for init response here.
-        const response = await new Promise<any>((resolve) => {
-            const handler = (line: string) => {
-                try {
-                    const msg = JSON.parse(line);
-                    if (msg.id === initReq.id) {
-                        serverProcess.stdout.removeListener("data", handler); // This might not work easily with readline
-                        resolve(msg);
-                    }
-                } catch { }
-            };
+        interface InitResponse {
+            result?: { serverInfo?: { name: string; version: string } };
+        }
+        const response = await new Promise<InitResponse>((resolve) => {
             // Re-implement simple sender for init since RL is already consuming stream
-            responseResolvers.set(initReq.id, resolve);
+            responseResolvers.set(initReq.id, resolve as (value: unknown) => void);
             serverProcess.stdin.write(JSON.stringify(initReq) + "\n");
         });
 
         expect(response.result).toBeDefined();
-        expect(response.result.serverInfo).toBeDefined();
+        expect(response.result!.serverInfo).toBeDefined();
 
         // Send initialized notification
         serverProcess.stdin.write(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n");
@@ -98,8 +118,9 @@ describe("E2E Tests", () => {
         const listReq = createRequest("tools/list");
         const res = await sendRequest(listReq);
         expect(res.result).toBeDefined();
-        expect(res.result.tools).toBeInstanceOf(Array);
-        const toolNames = res.result.tools.map((t: any) => t.name);
+        const tools = res.result!.tools;
+        expect(tools).toBeInstanceOf(Array);
+        const toolNames = tools!.map((t) => t.name);
         expect(toolNames).toContain("automation_config");
     });
 
@@ -122,15 +143,20 @@ describe("E2E Tests", () => {
 
         // This is the core verification for Issue #38
         expect(res.result).toBeDefined();
-        expect(res.result.content).toBeInstanceOf(Array);
-        expect(res.result.content.length).toBeGreaterThan(0);
-        expect(res.result.content[0].type).toBe("text");
+        const content = res.result!.content!;
+        expect(content).toBeInstanceOf(Array);
+        expect(content.length).toBeGreaterThan(0);
+        expect(content[0].type).toBe("text");
 
-        const text = res.result.content[0].text;
+        const text = content[0].text;
         expect(typeof text).toBe("string");
 
         // Parse the inner text
-        const inner = JSON.parse(text);
+        const inner = JSON.parse(text) as {
+            message?: string;
+            success?: boolean;
+            automation_id?: string;
+        };
         // We expect failure (Unauthorized) or success, but structurally it must be valid JSON
         // The key thing is the tool did not crash or return raw JSON at top level
         expect(inner.message).toBeDefined();

@@ -190,7 +190,9 @@ async function execute(params: VacuumControlInput): Promise<string> {
       }
 
       default:
-        return JSON.stringify({ success: false, error: `Unknown action: ${action}` });
+        // `action` narrows to never after the exhaustive switch; cast to
+        // string for the runtime-fallback message.
+        return JSON.stringify({ success: false, error: `Unknown action: ${String(action)}` });
     }
   } catch (error) {
     logger.error("Error in vacuum control tool:", error);

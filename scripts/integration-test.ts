@@ -21,7 +21,7 @@ class IntegrationTestSuite {
    * Test 1: 24-Hour Stability Test
    * Simulates long-running server with periodic activity
    */
-  async testStability24Hour(): Promise<void> {
+  testStability24Hour(): Promise<void> {
     console.log('\n🔄 Integration Test 1: 24-Hour Stability Simulation');
     console.log('─'.repeat(60));
 
@@ -31,7 +31,7 @@ class IntegrationTestSuite {
 
     let iterationCount = 0;
     let errorCount = 0;
-    let memoryPeaks: number[] = [];
+    const memoryPeaks: number[] = [];
 
     console.log('Starting stability test (30s simulated 24 hours)...');
     const memInitial = process.memoryUsage().heapUsed;
@@ -98,13 +98,14 @@ class IntegrationTestSuite {
     console.log(`✓ Iterations: ${iterationCount}`);
     console.log(`✓ Errors: ${errorCount}`);
     console.log(`✓ Memory delta: ${((memFinal - memInitial) / 1024 / 1024).toFixed(2)} MB`);
+    return Promise.resolve();
   }
 
   /**
    * Test 2: Load Test with 1000+ Clients
    * Simulates multiple concurrent SSE connections
    */
-  async testLoadWith1000Clients(): Promise<void> {
+  testLoadWith1000Clients(): Promise<void> {
     console.log('\n🔄 Integration Test 2: Load Test with 1000+ Clients');
     console.log('─'.repeat(60));
 
@@ -172,13 +173,14 @@ class IntegrationTestSuite {
     console.log(`✓ Total messages: ${(NUM_CLIENTS * BROADCAST_COUNT).toLocaleString()}`);
     console.log(`✓ Broadcasts succeeded: ${broadcastsSucceeded}/${BROADCAST_COUNT}`);
     console.log(`✓ Messages/sec: ${((NUM_CLIENTS * BROADCAST_COUNT) / (duration / 1000)).toFixed(0)}`);
+    return Promise.resolve();
   }
 
   /**
    * Test 3: Sequential Animation Testing
    * Runs multiple Aurora timelines sequentially
    */
-  async testSequentialAnimations(): Promise<void> {
+  testSequentialAnimations(): Promise<void> {
     console.log('\n🔄 Integration Test 3: Sequential Aurora Animation');
     console.log('─'.repeat(60));
 
@@ -251,13 +253,14 @@ class IntegrationTestSuite {
     console.log(`✓ Test duration: ${duration}ms`);
     console.log(`✓ Animations succeeded: ${successCount}/${NUM_TIMELINES}`);
     console.log(`✓ Time per animation: ${(duration / NUM_TIMELINES).toFixed(1)}ms`);
+    return Promise.resolve();
   }
 
   /**
    * Test 4: Home Assistant API Resilience
    * Simulates API failures and recovery
    */
-  async testHAAPIResilience(): Promise<void> {
+  testHAAPIResilience(): Promise<void> {
     console.log('\n🔄 Integration Test 4: Home Assistant API Resilience');
     console.log('─'.repeat(60));
 
@@ -320,6 +323,7 @@ class IntegrationTestSuite {
     console.log(`✓ Success rate: ${successRate.toFixed(1)}%`);
     console.log(`✓ Recoveries: ${recoveryCount}`);
     console.log(`✓ Calls/sec: ${(TOTAL_CALLS / (duration / 1000)).toFixed(0)}`);
+    return Promise.resolve();
   }
 
   /**
