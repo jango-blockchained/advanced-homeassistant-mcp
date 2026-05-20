@@ -4,6 +4,7 @@ import {
     TEST_CONFIG,
     createMockResponse,
 } from "../utils/test-utils.js";
+import { APP_CONFIG } from "../../src/config/app.config.js";
 
 type TestResult = { success: boolean; error?: string; message?: string; [key: string]: unknown };
 
@@ -58,6 +59,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             "climate_control",
             "control",
             "cover_control",
+            "dashboard",
             "fan_control",
             "get_entity_state",
             "get_error_log",
@@ -73,6 +75,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             "media_player_control",
             "notify",
             "package",
+            "render_template",
             "scene",
             "search_entities",
             "smart_scenarios",
@@ -521,7 +524,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             if (!sseStatsTool) throw new Error("get_sse_stats tool not found");
 
             const result: unknown = await sseStatsTool.execute({
-                token: TEST_CONFIG.HASS_TOKEN,
+                token: APP_CONFIG.HASS_TOKEN || TEST_CONFIG.HASS_TOKEN,
             });
 
             const parsed = parseResult(result);

@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-05-20
+
+### ✨ New Features
+
+#### Render Template Tool (`render_template`)
+- **Tool Name**: `render_template`
+- **Description**: Added support for rendering complex Home Assistant Jinja2 templates directly through the Home Assistant WebSocket API.
+- **Utility**: Allows LLMs and external clients to evaluate expressions, state checks, and template logic dynamically.
+
+#### Dashboard Control Tool (`dashboard_control`)
+- **Tool Name**: `dashboard_control`
+- **Description**: Added comprehensive dashboard control capabilities, allowing clients to query and manage Home Assistant dashboards, view configurations, layouts, and card setups.
+- **Utility**: Enables smooth UI/dashboard discovery and navigation via natural language.
+
+#### Expanded Error Log Querying (`get_error_log`)
+- **Tool Name**: `get_error_log`
+- **Description**: Enhanced the error log retrieval tool to support advanced options:
+  - Tail logs limit and pagination offset.
+  - Pattern-based matching/filtering.
+  - Severity level and module filtering.
+- **Utility**: Allows targeted diagnostics and granular debugging of Home Assistant and MCP server health.
+
+### 🐛 Bug Fixes & Code Health
+
+#### Test Suite Repair
+- Resolved tool registry test expectations to correctly account for the new `render_template` and `dashboard` tools.
+- Fixed the token mismatch auth discrepancy inside the `get_sse_stats` test to align with environment-specific configuration during test executions.
+- All 554 tests are now passing successfully with zero failures.
+
+#### Linting & Formatting Cleanliness
+- Addressed and resolved all compiler and linter errors across the workspace, bringing ESLint errors down to zero.
+- Re-verified all target builds (`bun run build:all`) successfully compiling.
+
 ## [1.2.0] - 2025-11-07
 
 ### 🐛 Critical Bug Fixes
