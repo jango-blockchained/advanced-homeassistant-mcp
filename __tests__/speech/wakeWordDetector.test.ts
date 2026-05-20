@@ -9,7 +9,33 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { WakeWordDetector } from "../../src/speech/wakeWordDetector";
+import { EventEmitter } from "events";
+
+// Hoisted: replace child_process.spawn so tests don't try to launch real
+// ffmpeg/killall. Each spawn returns an EventEmitter-shaped fake process
+// with stdout/stderr streams the source can wire its handlers onto without
+// crashing on ENOENT.
+function makeFakeProcess() {
+  const proc = new EventEmitter() as EventEmitter & {
+    stdout: EventEmitter;
+    stderr: EventEmitter;
+    kill: () => void;
+  };
+  proc.stdout = new EventEmitter();
+  proc.stderr = new EventEmitter();
+  proc.kill = () => undefined;
+  return proc;
+}
+
+// `void` rather than `await` — the factory is sync so the actual return is
+// void, but the union return type would otherwise trip the floating-promise
+// lint. Bun hoists mock.module to before static imports.
+void mock.module("child_process", () => ({
+  spawn: () => makeFakeProcess(),
+  default: { spawn: () => makeFakeProcess() },
+}));
+
+const { WakeWordDetector } = await import("../../src/speech/wakeWordDetector");
 
 // Mock global fetch for Wyoming service status check
 const createMockFetch = (shouldSucceed: boolean = true) => {
@@ -277,7 +303,7 @@ describe("WakeWordDetector", () => {
   });
 
   describe("State Management", () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       global.fetch = createMockFetch(true);
     });
 
@@ -367,7 +393,7 @@ describe("WakeWordDetector", () => {
   });
 
   describe("Configuration", () => {
-    test("should accept various host formats", async () => {
+    test("should accept various host formats", () => {
       const hosts = [
         "localhost",
         "127.0.0.1",
@@ -381,7 +407,7 @@ describe("WakeWordDetector", () => {
       }
     });
 
-    test("should accept various port numbers", async () => {
+    test("should accept various port numbers", () => {
       const ports = [10400, 8080, 9000, 3000];
 
       for (const port of ports) {

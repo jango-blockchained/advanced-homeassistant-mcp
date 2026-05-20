@@ -8,6 +8,12 @@ describe("SSE Security Features", () => {
   const validToken = "valid_token";
   let sseManager: SSEManager;
   let validateTokenMock: Mock<(token: string, ip: string) => { valid: boolean; error?: string }>;
+  // Capture the real implementation so afterEach can put it back. Without
+  // this, the assignment to TokenManager.validateToken below leaks into
+  // other test files in the same bun process and breaks security tests.
+  // Bind to TokenManager so the static method's `this`-using callees
+  // (recordFailedAttempt, isRateLimited) resolve correctly post-restore.
+  const originalValidateToken = TokenManager.validateToken.bind(TokenManager);
 
   beforeEach(() => {
     sseManager = new SSEManager({
@@ -15,7 +21,11 @@ describe("SSE Security Features", () => {
       rateLimit: {
         MAX_MESSAGES: 2,
         WINDOW_MS: 1000,
-        BURST_LIMIT: 1,
+        // BURST_LIMIT is OR'd with MAX_MESSAGES inside isRateLimited, so a
+        // BURST_LIMIT of 1 would dominate and we'd see only one send go
+        // through. Set it above MAX_MESSAGES so the test exercises the
+        // window cap, which is what these tests are about.
+        BURST_LIMIT: 10,
       },
     });
 
@@ -27,7 +37,7 @@ describe("SSE Security Features", () => {
   });
 
   afterEach(() => {
-    validateTokenMock.mockReset();
+    TokenManager.validateToken = originalValidateToken;
   });
 
   function createTestClient(
@@ -92,13 +102,24 @@ describe("SSE Security Features", () => {
     });
 
     it("should cleanup inactive clients", async () => {
-      const client = createTestClient("test-client");
-      sseManager.addClient(client, validToken);
+      // Stand up a fresh manager with a fast cleanup interval. We need the
+      // ping interval to STAY large — pings touch lastPingAt and would
+      // perpetually rescue the client from the cleanup sweep otherwise.
+      const fastManager = new SSEManager({
+        maxClients: 2,
+        pingInterval: 60_000,
+        cleanupInterval: 100,
+        rateLimit: { MAX_MESSAGES: 100, WINDOW_MS: 1000, BURST_LIMIT: 100 },
+      });
 
-      // Wait for cleanup interval
+      const client = createTestClient("test-client");
+      const added = fastManager.addClient(client, validToken)!;
+      // Make the client look stale: lastPingAt older than 2 * pingInterval.
+      added.lastPingAt = new Date(Date.now() - 10 * 60_000);
+
       await new Promise((resolve) => setTimeout(resolve, 250));
 
-      const stats = sseManager.getStatistics();
+      const stats = fastManager.getStatistics();
       expect(stats.totalClients).toBe(0);
     });
   });

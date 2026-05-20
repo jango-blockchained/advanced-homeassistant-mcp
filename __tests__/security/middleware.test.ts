@@ -46,30 +46,31 @@ describe('Security Middleware Utilities', () => {
     });
 
     describe('Request Validation', () => {
+        // validateRequestHeaders takes Express-shaped requests; Fetch Request
+        // / Headers don't support `headers["x"]` indexing.
+        const expressRequest = (init: { method: string; headers: Record<string, string> }) =>
+            init as never;
+
         test('should validate content type', () => {
-            const mockRequest = new Request('http://localhost', {
+            const mockRequest = expressRequest({
                 method: 'POST',
-                headers: {
-                    'content-type': 'application/json'
-                }
+                headers: { 'content-type': 'application/json' }
             });
 
             expect(() => validateRequestHeaders(mockRequest)).not.toThrow();
         });
 
         test('should reject invalid content type', () => {
-            const mockRequest = new Request('http://localhost', {
+            const mockRequest = expressRequest({
                 method: 'POST',
-                headers: {
-                    'content-type': 'text/plain'
-                }
+                headers: { 'content-type': 'text/plain' }
             });
 
             expect(() => validateRequestHeaders(mockRequest)).toThrow('Content-Type must be application/json');
         });
 
         test('should reject large request bodies', () => {
-            const mockRequest = new Request('http://localhost', {
+            const mockRequest = expressRequest({
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json',

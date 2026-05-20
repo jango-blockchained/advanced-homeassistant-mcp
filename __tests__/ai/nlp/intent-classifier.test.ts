@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, beforeEach } from "bun:test";
 import { IntentClassifier } from '../../../src/ai/nlp/intent-classifier.js';
 
 describe('IntentClassifier', () => {

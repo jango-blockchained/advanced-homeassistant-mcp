@@ -5,7 +5,17 @@ import { AIRateLimit, AIContext, AIResponse, AIError, AIModel } from "../types/i
 import rateLimit from "express-rate-limit";
 
 const router = express.Router();
-const nlpProcessor = new NLPProcessor();
+
+// Lazily resolve the processor so that tests can `mock.module(...)` the module
+// before the first request comes in. A module-load `new NLPProcessor()` would
+// be constructed against the real implementation before any mock can apply.
+let _processor: NLPProcessor | null = null;
+function getProcessor(): NLPProcessor {
+  if (!_processor) {
+    _processor = new NLPProcessor();
+  }
+  return _processor;
+}
 
 // Rate limiting configuration
 const rateLimitConfig: AIRateLimit = {
@@ -72,7 +82,9 @@ const errorHandler = (
       "Use standard command patterns",
       "Check device names and parameters",
     ],
-    context: req.body.context,
+    // req.body may be undefined for GET requests with no body or when an
+    // upstream parser hasn't run; treat as optional.
+    context: (req.body as { context?: AIContext } | undefined)?.context,
   };
 
   res.status(500).json({ error: aiError });
@@ -82,22 +94,22 @@ const errorHandler = (
 router.post(
   "/interpret",
   globalLimiter,
-  async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
       const { input, context, model = "claude" } = interpretRequestSchema.parse(req.body);
 
       // Apply model-specific rate limiting
       modelSpecificLimiter(model)(req, res, async () => {
-        const { intent, confidence, error } = await nlpProcessor.processCommand(input, context);
+        const { intent, confidence, error } = await getProcessor().processCommand(input, context);
 
         if (error) {
           return res.status(400).json({ error });
         }
 
-        const isValid = await nlpProcessor.validateIntent(intent, confidence);
+        const isValid = await getProcessor().validateIntent(intent, confidence);
 
         if (!isValid) {
-          const suggestions = await nlpProcessor.suggestCorrections(input, {
+          const suggestions = await getProcessor().suggestCorrections(input, {
             code: "INVALID_INTENT",
             message: "Could not understand the command with high confidence",
             suggestion: "Please try rephrasing your command",
@@ -141,15 +153,21 @@ router.post(
   },
 );
 
+interface ExecuteRequestBody {
+  intent: { action: string; target: string; parameters?: Record<string, unknown> };
+  context: AIContext;
+  model?: string;
+}
+
 router.post(
   "/execute",
   globalLimiter,
-  async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
-      const { intent, context, model = "claude" } = req.body;
+      const { intent, context, model = "claude" } = req.body as ExecuteRequestBody;
 
       // Apply model-specific rate limiting
-      modelSpecificLimiter(model)(req, res, async () => {
+      modelSpecificLimiter(model)(req, res, () => {
         // Execute the intent through Home Assistant
         // This would integrate with your existing Home Assistant service
 
@@ -159,7 +177,7 @@ router.post(
             success: true,
             action_taken: intent.action,
             entities_affected: [intent.target],
-            state_changes: intent.parameters,
+            state_changes: intent.parameters ?? {},
           },
           next_suggestions: [
             "Would you like to verify the state?",
@@ -181,12 +199,15 @@ router.post(
 router.get(
   "/suggestions",
   globalLimiter,
-  async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
-      const { context, model = "claude" } = req.body;
+      // GET requests don't typically carry a body. Tolerate either an empty
+      // body or one supplied by `supertest.send(...)` for legacy callers.
+      const body = (req.body ?? {}) as { context?: AIContext; model?: string };
+      const { model = "claude" } = body;
 
       // Apply model-specific rate limiting
-      modelSpecificLimiter(model)(req, res, async () => {
+      modelSpecificLimiter(model)(req, res, () => {
         // Generate context-aware suggestions
         const suggestions = [
           "Turn on the lights in the living room",

@@ -197,7 +197,8 @@ async function executeSearchEntitiesLogic(params: SearchEntitiesParams): Promise
     if (params.pattern) {
       const regex = globToRegex(params.pattern);
       entities = entities.filter((e) => {
-        const friendlyName = e.attributes?.friendly_name || "";
+        // attributes is `unknown`-shaped; coerce to string for the regex test.
+        const friendlyName = String(e.attributes?.friendly_name ?? "");
         return regex.test(e.entity_id) || regex.test(friendlyName);
       });
     }
@@ -305,7 +306,9 @@ async function executeSearchEntitiesLogic(params: SearchEntitiesParams): Promise
     });
   } catch (error) {
     if (error instanceof UserError) throw error;
-    logger.error(`Failed to search entities: ${error}`);
+    logger.error(
+      `Failed to search entities: ${error instanceof Error ? error.message : String(error)}`,
+    );
     throw new UserError(`Search failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

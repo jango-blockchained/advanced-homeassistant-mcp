@@ -51,11 +51,13 @@ export type TestResponse = {
     }>;
 };
 
-// Test Configuration
+// Test Configuration. Default HASS_TOKEN intentionally aligns with the value
+// set in test/setup.ts, so tools that compare params.token against the
+// process-env token (e.g. get_sse_stats) authenticate in tests.
 export const TEST_CONFIG = {
-    HASS_HOST: process.env.TEST_HASS_HOST || 'http://localhost:8123',
-    HASS_TOKEN: process.env.TEST_HASS_TOKEN || 'test_token',
-    HASS_SOCKET_URL: process.env.TEST_HASS_SOCKET_URL || 'ws://localhost:8123/api/websocket'
+    HASS_HOST: process.env.TEST_HASS_HOST || process.env.HASS_HOST || 'http://localhost:8123',
+    HASS_TOKEN: process.env.TEST_HASS_TOKEN || process.env.HASS_TOKEN || 'test_token_for_testing',
+    HASS_SOCKET_URL: process.env.TEST_HASS_SOCKET_URL || process.env.HASS_SOCKET_URL || 'ws://localhost:8123/api/websocket'
 } as const;
 
 // Mock WebSocket Implementation
@@ -118,10 +120,11 @@ export const createMockLiteMCPInstance = (): MockLiteMCPInstance => {
     };
 
     const server = MCPServer.getInstance();
-    const originalRegisterTool = server.registerTool;
-    const originalStart = server.start;
-    const originalUse = server.use;
-    const originalRegisterTransport = server.registerTransport;
+    // Bind so the captured references stay attached to `server` when restored.
+    const originalRegisterTool = server.registerTool.bind(server);
+    const originalStart = server.start.bind(server);
+    const originalUse = server.use.bind(server);
+    const originalRegisterTransport = server.registerTransport.bind(server);
 
     server.registerTool = ((tool) => {
         instance.addTool(tool as unknown as Tool);

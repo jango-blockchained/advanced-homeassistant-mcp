@@ -82,7 +82,7 @@ describe("VoiceSessionManager", () => {
     });
 
     test("should emit session_started event", (done) => {
-      voiceSessionManager.once("session_started", (session) => {
+      voiceSessionManager.once("session_started", (session: { id: string }) => {
         expect(session).toBeDefined();
         expect(session.id).toBeDefined();
         voiceSessionManager.endSession(session.id);

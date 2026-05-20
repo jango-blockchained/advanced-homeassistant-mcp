@@ -17,25 +17,25 @@ export const getSSEStatsTool: Tool = {
   parameters: z.object({
     token: z.string().describe("Authentication token (required)"),
   }),
-  execute: async (params: { token: string }) => {
+  execute: (params: { token: string }) => {
     try {
       if (params.token !== APP_CONFIG.HASS_TOKEN) {
-        return {
+        return Promise.resolve({
           success: false,
           message: "Authentication failed",
-        };
+        });
       }
 
-      const stats = await sseManager.getStatistics();
-      return {
+      const stats = sseManager.getStatistics();
+      return Promise.resolve({
         success: true,
         statistics: stats,
-      };
+      });
     } catch (error) {
-      return {
+      return Promise.resolve({
         success: false,
         message: error instanceof Error ? error.message : "Unknown error occurred",
-      };
+      });
     }
   },
 };

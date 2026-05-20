@@ -1,191 +1,87 @@
-import { describe, expect, test, beforeEach, afterEach, mock } from "bun:test";
-import {
-    type MockLiteMCPInstance,
-    type Tool,
-    type TestResponse,
-    TEST_CONFIG,
-    createMockLiteMCPInstance,
-    setupTestEnvironment,
-    cleanupMocks,
-    createMockResponse,
-    getMockCallArgs
-} from '../utils/test-utils';
+import { describe, expect, test, beforeEach, mock } from "bun:test";
+import { tools } from "../../src/tools/index.js";
+import { createMockResponse } from "../utils/test-utils";
+import { get_hass_safe } from "../../src/hass/index.js";
 
-describe('Entity State Tools', () => {
-    let liteMcpInstance: MockLiteMCPInstance;
-    let addToolCalls: Tool[];
-    let mocks: ReturnType<typeof setupTestEnvironment>;
+interface EntityStateResult {
+  entity_id?: string;
+  state?: string;
+  last_changed?: string;
+  last_updated?: string;
+  attributes?: Record<string, unknown>;
+}
 
-    const mockEntityState = {
-        entity_id: 'light.living_room',
-        state: 'on',
-        attributes: {
-            brightness: 255,
-            color_temp: 400,
-            friendly_name: 'Living Room Light'
-        },
-        last_changed: '2024-03-20T12:00:00Z',
-        last_updated: '2024-03-20T12:00:00Z',
-        context: {
-            id: 'test_context_id',
-            parent_id: null,
-            user_id: null
-        }
+const entityStateTool = tools.find((t) => t.name === "get_entity_state")!;
+
+describe("get_entity_state tool", () => {
+  beforeEach(async () => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(createMockResponse({})),
+    ) as unknown as typeof fetch;
+    const hass = await get_hass_safe();
+    hass?.clearCache();
+  });
+
+  test("the tool is registered", () => {
+    expect(entityStateTool).toBeDefined();
+    expect(entityStateTool.name).toBe("get_entity_state");
+  });
+
+  test("returns the entity state from /api/states/{entity_id}", async () => {
+    const upstream = {
+      entity_id: "sensor.kitchen_temperature",
+      state: "21.4",
+      last_changed: "2024-01-01T00:00:00Z",
+      last_updated: "2024-01-01T00:01:00Z",
+      attributes: { unit_of_measurement: "°C", friendly_name: "Kitchen temp" },
     };
+    globalThis.fetch = mock(() =>
+      Promise.resolve(createMockResponse(upstream)),
+    ) as unknown as typeof fetch;
 
-    beforeEach(async () => {
-        // Setup test environment
-        mocks = setupTestEnvironment();
-        liteMcpInstance = createMockLiteMCPInstance();
-
-        // Import the module which will execute the main function
-        await import('../../src/index.js');
-
-        // Get the mock instance and tool calls
-        addToolCalls = liteMcpInstance.addTool.mock.calls.map(call => call.args[0]);
+    const raw = await entityStateTool.execute({
+      entity_id: "sensor.kitchen_temperature",
+      include_attributes: true,
     });
+    const result = JSON.parse(raw as string) as EntityStateResult;
 
-    afterEach(() => {
-        cleanupMocks({ liteMcpInstance, ...mocks });
+    expect(result.entity_id).toBe("sensor.kitchen_temperature");
+    expect(result.state).toBe("21.4");
+    expect(result.attributes).toEqual(upstream.attributes);
+  });
+
+  test("omits attributes when include_attributes is false", async () => {
+    const upstream = {
+      entity_id: "binary_sensor.motion_kitchen",
+      state: "off",
+      last_changed: "",
+      last_updated: "",
+      attributes: { friendly_name: "Motion" },
+    };
+    globalThis.fetch = mock(() =>
+      Promise.resolve(createMockResponse(upstream)),
+    ) as unknown as typeof fetch;
+
+    const raw = await entityStateTool.execute({
+      entity_id: "binary_sensor.motion_kitchen",
+      include_attributes: false,
     });
+    const result = JSON.parse(raw as string) as EntityStateResult;
 
-    describe('entity_state tool', () => {
-        test('should successfully get entity state', async () => {
-            // Setup response
-            mocks.mockFetch = mock(() => Promise.resolve(createMockResponse(mockEntityState)));
-            globalThis.fetch = mocks.mockFetch;
+    expect(result.entity_id).toBe("binary_sensor.motion_kitchen");
+    expect(result.attributes).toBeUndefined();
+  });
 
-            const entityStateTool = addToolCalls.find(tool => tool.name === 'entity_state');
-            expect(entityStateTool).toBeDefined();
+  test("propagates a UserError when the upstream call fails", async () => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(createMockResponse({ message: "not found" }, 404)),
+    ) as unknown as typeof fetch;
 
-            if (!entityStateTool) {
-                throw new Error('entity_state tool not found');
-            }
-
-            const result = await entityStateTool.execute({
-                entity_id: 'light.living_room'
-            }) as TestResponse;
-
-            expect(result.success).toBe(true);
-            expect(result.state).toBe('on');
-            expect(result.attributes).toEqual(mockEntityState.attributes);
-
-            // Verify the fetch call
-            type FetchArgs = [url: string, init: RequestInit];
-            const args = getMockCallArgs<FetchArgs>(mocks.mockFetch);
-            expect(args).toBeDefined();
-
-            if (!args) {
-                throw new Error('No fetch calls recorded');
-            }
-
-            const [urlStr, options] = args;
-            expect(urlStr).toBe(`${TEST_CONFIG.HASS_HOST}/api/states/light.living_room`);
-            expect(options).toEqual({
-                headers: {
-                    Authorization: `Bearer ${TEST_CONFIG.HASS_TOKEN}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-        });
-
-        test('should handle entity not found', async () => {
-            // Setup error response
-            mocks.mockFetch = mock(() => Promise.reject(new Error('Entity not found')));
-            globalThis.fetch = mocks.mockFetch;
-
-            const entityStateTool = addToolCalls.find(tool => tool.name === 'entity_state');
-            expect(entityStateTool).toBeDefined();
-
-            if (!entityStateTool) {
-                throw new Error('entity_state tool not found');
-            }
-
-            const result = await entityStateTool.execute({
-                entity_id: 'light.non_existent'
-            }) as TestResponse;
-
-            expect(result.success).toBe(false);
-            expect(result.message).toBe('Failed to get entity state: Entity not found');
-        });
-
-        test('should require entity_id', async () => {
-            const entityStateTool = addToolCalls.find(tool => tool.name === 'entity_state');
-            expect(entityStateTool).toBeDefined();
-
-            if (!entityStateTool) {
-                throw new Error('entity_state tool not found');
-            }
-
-            const result = await entityStateTool.execute({}) as TestResponse;
-
-            expect(result.success).toBe(false);
-            expect(result.message).toBe('Entity ID is required');
-        });
-
-        test('should handle invalid entity_id format', async () => {
-            const entityStateTool = addToolCalls.find(tool => tool.name === 'entity_state');
-            expect(entityStateTool).toBeDefined();
-
-            if (!entityStateTool) {
-                throw new Error('entity_state tool not found');
-            }
-
-            const result = await entityStateTool.execute({
-                entity_id: 'invalid_entity_id'
-            }) as TestResponse;
-
-            expect(result.success).toBe(false);
-            expect(result.message).toBe('Invalid entity ID format: invalid_entity_id');
-        });
-
-        test('should successfully get multiple entity states', async () => {
-            // Setup response
-            const mockStates = [
-                { ...mockEntityState },
-                {
-                    ...mockEntityState,
-                    entity_id: 'light.kitchen',
-                    attributes: { ...mockEntityState.attributes, friendly_name: 'Kitchen Light' }
-                }
-            ];
-            mocks.mockFetch = mock(() => Promise.resolve(createMockResponse(mockStates)));
-            globalThis.fetch = mocks.mockFetch;
-
-            const entityStateTool = addToolCalls.find(tool => tool.name === 'entity_state');
-            expect(entityStateTool).toBeDefined();
-
-            if (!entityStateTool) {
-                throw new Error('entity_state tool not found');
-            }
-
-            const result = await entityStateTool.execute({
-                entity_id: ['light.living_room', 'light.kitchen']
-            }) as TestResponse;
-
-            expect(result.success).toBe(true);
-            expect(Array.isArray(result.states)).toBe(true);
-            expect(result.states).toHaveLength(2);
-            expect(result.states[0].entity_id).toBe('light.living_room');
-            expect(result.states[1].entity_id).toBe('light.kitchen');
-
-            // Verify the fetch call
-            type FetchArgs = [url: string, init: RequestInit];
-            const args = getMockCallArgs<FetchArgs>(mocks.mockFetch);
-            expect(args).toBeDefined();
-
-            if (!args) {
-                throw new Error('No fetch calls recorded');
-            }
-
-            const [urlStr, options] = args;
-            expect(urlStr).toBe(`${TEST_CONFIG.HASS_HOST}/api/states`);
-            expect(options).toEqual({
-                headers: {
-                    Authorization: `Bearer ${TEST_CONFIG.HASS_TOKEN}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-        });
-    });
-}); 
+    await expect(
+      entityStateTool.execute({
+        entity_id: "sensor.does_not_exist",
+        include_attributes: true,
+      }),
+    ).rejects.toThrow(/sensor\.does_not_exist/);
+  });
+});

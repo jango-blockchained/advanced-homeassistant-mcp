@@ -15,8 +15,10 @@ export function zodToJsonSchema(schema: z.ZodType<any>): any {
 
   // Handle ZodObject
   if (schema instanceof z.ZodObject) {
-    const shape = (schema as any)._def.shape();
-    const properties: Record<string, any> = {};
+    // _def.shape() is `any`-typed in zod's d.ts; pin to a typed record so
+    // iteration produces ZodType values (not any).
+    const shape = (schema as z.ZodObject<z.ZodRawShape>)._def.shape() as Record<string, z.ZodType<unknown>>;
+    const properties: Record<string, unknown> = {};
     const required: string[] = [];
 
     for (const [key, value] of Object.entries(shape)) {
@@ -24,7 +26,7 @@ export function zodToJsonSchema(schema: z.ZodType<any>): any {
         required.push(key);
       }
 
-      properties[key] = zodTypeToJsonSchema(value as z.ZodType<any>);
+      properties[key] = zodTypeToJsonSchema(value);
     }
 
     return {
@@ -49,17 +51,21 @@ export function zodTypeToJsonSchema(zodType: z.ZodType<any>): any {
   } else if (zodType instanceof z.ZodBoolean) {
     return { type: "boolean" };
   } else if (zodType instanceof z.ZodArray) {
+    // ZodArray's _def is typed as any; type-assert to recover the element schema.
+    const def = zodType._def as { type: z.ZodType<unknown> };
     return {
       type: "array",
-      items: zodTypeToJsonSchema((zodType as any)._def.type),
+      items: zodTypeToJsonSchema(def.type),
     };
   } else if (zodType instanceof z.ZodEnum) {
+    const def = zodType._def as { values: readonly string[] };
     return {
       type: "string",
-      enum: (zodType as any)._def.values,
+      enum: def.values,
     };
   } else if (zodType instanceof z.ZodOptional) {
-    return zodTypeToJsonSchema((zodType as any)._def.innerType);
+    const def = zodType._def as { innerType: z.ZodType<unknown> };
+    return zodTypeToJsonSchema(def.innerType);
   } else if (zodType instanceof z.ZodObject) {
     return zodToJsonSchema(zodType);
   }

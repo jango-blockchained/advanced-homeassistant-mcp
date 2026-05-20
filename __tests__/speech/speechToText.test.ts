@@ -1,251 +1,141 @@
-import { describe, expect, test, beforeEach, afterEach, mock, spyOn } from "bun:test";
-import type { Mock } from "bun:test";
-import { EventEmitter } from "events";
-import { SpeechToText, TranscriptionError, type TranscriptionOptions } from "../../src/speech/speechToText";
+/**
+ * SpeechToText tests for the current implementation.
+ *
+ * The current src/speech/speechToText.ts talks to a Fast-Whisper HTTP
+ * service (no docker `spawn`, no Bun.spawn — those were the previous
+ * incarnation). We mock global.fetch to drive both the health-check in
+ * `initialize()` and the audio POST in `transcribe()`.
+ */
+
+import { describe, expect, test, beforeEach, afterEach, mock } from "bun:test";
+import { SpeechToText, TranscriptionError } from "../../src/speech/speechToText";
 import type { SpeechToTextConfig } from "../../src/speech/types";
-import type { ChildProcess } from "child_process";
 
-interface MockProcess extends EventEmitter {
-    stdout: EventEmitter;
-    stderr: EventEmitter;
-    kill: Mock<() => void>;
-}
-
-type SpawnFn = {
-    (cmds: string[], options?: Record<string, unknown>): ChildProcess;
+const config: SpeechToTextConfig = {
+  modelPath: "/test/model",
+  modelType: "base.en",
+  containerName: "test-container",
 };
 
-describe('SpeechToText', () => {
-    let spawnMock: Mock<SpawnFn>;
-    let mockProcess: MockProcess;
-    let speechToText: SpeechToText;
+const originalFetch = globalThis.fetch;
 
-    beforeEach(() => {
-        // Create mock process
-        mockProcess = new EventEmitter() as MockProcess;
-        mockProcess.stdout = new EventEmitter();
-        mockProcess.stderr = new EventEmitter();
-        mockProcess.kill = mock(() => { });
+describe("SpeechToText", () => {
+  let speechToText: SpeechToText;
 
-        // Create spawn mock
-        spawnMock = mock((cmds: string[], options?: Record<string, unknown>) => mockProcess as unknown as ChildProcess);
-        (globalThis as any).Bun = { spawn: spawnMock };
+  beforeEach(() => {
+    speechToText = new SpeechToText(config);
+  });
 
-        // Initialize SpeechToText
-        const config: SpeechToTextConfig = {
-            modelPath: '/test/model',
-            modelType: 'base.en',
-            containerName: 'test-container'
-        };
-        speechToText = new SpeechToText(config);
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  describe("Initialization", () => {
+    test("constructs without throwing", () => {
+      expect(speechToText).toBeDefined();
     });
 
-    afterEach(() => {
-        // Cleanup
-        mockProcess.removeAllListeners();
-        mockProcess.stdout.removeAllListeners();
-        mockProcess.stderr.removeAllListeners();
+    test("initialize() succeeds when whisper /health responds 2xx", async () => {
+      globalThis.fetch = mock(() =>
+        Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200 })),
+      ) as unknown as typeof fetch;
+
+      await expect(speechToText.initialize()).resolves.toBeUndefined();
     });
 
-    describe('Initialization', () => {
-        test('should create instance with default config', () => {
-            const config: SpeechToTextConfig = {
-                modelPath: '/test/model',
-                modelType: 'base.en'
-            };
-            const instance = new SpeechToText(config);
-            expect(instance).toBeDefined();
-        });
+    test("initialize() does not throw when whisper /health is unreachable", async () => {
+      // Source explicitly tolerates an unhealthy whisper at init time
+      // (logs a warning rather than failing) so the rest of the pipeline can
+      // come up. Verify that contract.
+      globalThis.fetch = mock(() =>
+        Promise.reject(new Error("ECONNREFUSED")),
+      ) as unknown as typeof fetch;
 
-        test('should initialize successfully', async () => {
-            const result = await speechToText.initialize();
-            expect(result).toBeUndefined();
-        });
-
-        test('should not initialize twice', async () => {
-            await speechToText.initialize();
-            const result = await speechToText.initialize();
-            expect(result).toBeUndefined();
-        });
+      await expect(speechToText.initialize()).resolves.toBeUndefined();
     });
 
-    describe('Health Check', () => {
-        test('should return true when Docker container is running', async () => {
-            // Setup mock process
-            setTimeout(() => {
-                mockProcess.stdout.emit('data', Buffer.from('Up 2 hours'));
-            }, 0);
+    test("initialize() is idempotent", async () => {
+      const fetchMock = mock(() =>
+        Promise.resolve(new Response("{}", { status: 200 })),
+      );
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-            const result = await speechToText.checkHealth();
-            expect(result).toBe(true);
-        });
+      await speechToText.initialize();
+      await speechToText.initialize();
 
-        test('should return false when Docker container is not running', async () => {
-            // Setup mock process
-            setTimeout(() => {
-                mockProcess.stdout.emit('data', Buffer.from('No containers found'));
-            }, 0);
+      // Second call short-circuits before reaching fetch.
+      expect(fetchMock.mock.calls.length).toBe(1);
+    });
+  });
 
-            const result = await speechToText.checkHealth();
-            expect(result).toBe(false);
-        });
-
-        test('should handle Docker command errors', async () => {
-            // Setup mock process
-            setTimeout(() => {
-                mockProcess.stderr.emit('data', Buffer.from('Docker error'));
-            }, 0);
-
-            const result = await speechToText.checkHealth();
-            expect(result).toBe(false);
-        });
+  describe("transcribe()", () => {
+    test("rejects when called before initialize()", async () => {
+      await expect(speechToText.transcribe(Buffer.from("audio"))).rejects.toThrow(
+        /not initialized/,
+      );
     });
 
-    describe('Wake Word Detection', () => {
-        test('should detect wake word and emit event', async () => {
-            // Setup mock process
-            setTimeout(() => {
-                mockProcess.stdout.emit('data', Buffer.from('Wake word detected'));
-            }, 0);
+    test("POSTs the audio buffer to /asr and returns the transcribed text", async () => {
+      const fetchMock = mock((url: string, _init?: RequestInit) => {
+        if (url.endsWith("/health")) {
+          return Promise.resolve(new Response("{}", { status: 200 }));
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({ text: "hello world" }), { status: 200 }),
+        );
+      });
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-            const wakeWordPromise = new Promise<void>((resolve) => {
-                speechToText.on('wake_word', () => {
-                    resolve();
-                });
-            });
+      await speechToText.initialize();
+      const text = await speechToText.transcribe(Buffer.from("not-actually-audio"));
 
-            speechToText.startWakeWordDetection();
-            await wakeWordPromise;
-        });
+      expect(text).toBe("hello world");
 
-        test('should handle non-wake-word files', async () => {
-            // Setup mock process
-            setTimeout(() => {
-                mockProcess.stdout.emit('data', Buffer.from('Processing audio'));
-            }, 0);
-
-            const wakeWordPromise = new Promise<void>((resolve, reject) => {
-                const timeout = setTimeout(() => {
-                    resolve();
-                }, 100);
-
-                speechToText.on('wake_word', () => {
-                    clearTimeout(timeout);
-                    reject(new Error('Wake word should not be detected'));
-                });
-            });
-
-            speechToText.startWakeWordDetection();
-            await wakeWordPromise;
-        });
+      const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit?]>;
+      const transcriptionCall = calls.find(([url]) => url.includes("/asr"));
+      expect(transcriptionCall).toBeDefined();
+      expect(transcriptionCall?.[1]?.method).toBe("POST");
     });
 
-    describe('Audio Transcription', () => {
-        const mockTranscriptionResult = {
-            text: 'Test transcription',
-            segments: [{
-                text: 'Test transcription',
-                start: 0,
-                end: 1,
-                confidence: 0.95
-            }]
-        };
+    test("wraps non-2xx responses in TranscriptionError", async () => {
+      const fetchMock = mock((url: string) => {
+        if (url.endsWith("/health")) {
+          return Promise.resolve(new Response("{}", { status: 200 }));
+        }
+        return Promise.resolve(new Response("server error", { status: 500 }));
+      });
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-        test('should transcribe audio successfully', async () => {
-            // Setup mock process
-            setTimeout(() => {
-                mockProcess.stdout.emit('data', Buffer.from(JSON.stringify(mockTranscriptionResult)));
-            }, 0);
+      await speechToText.initialize();
+      await expect(speechToText.transcribe(Buffer.from("x"))).rejects.toBeInstanceOf(
+        TranscriptionError,
+      );
+    });
+  });
 
-            const result = await speechToText.transcribeAudio('/test/audio.wav');
-            expect(result).toEqual(mockTranscriptionResult);
-        });
+  describe("Lifecycle events", () => {
+    test("emits 'ready' once initialization succeeds", async () => {
+      globalThis.fetch = mock(() =>
+        Promise.resolve(new Response("{}", { status: 200 })),
+      ) as unknown as typeof fetch;
 
-        test('should handle transcription errors', async () => {
-            // Setup mock process
-            setTimeout(() => {
-                mockProcess.stderr.emit('data', Buffer.from('Transcription failed'));
-            }, 0);
-
-            await expect(speechToText.transcribeAudio('/test/audio.wav')).rejects.toThrow(TranscriptionError);
-        });
-
-        test('should handle invalid JSON output', async () => {
-            // Setup mock process
-            setTimeout(() => {
-                mockProcess.stdout.emit('data', Buffer.from('Invalid JSON'));
-            }, 0);
-
-            await expect(speechToText.transcribeAudio('/test/audio.wav')).rejects.toThrow(TranscriptionError);
-        });
-
-        test('should pass correct transcription options', async () => {
-            const options: TranscriptionOptions = {
-                model: 'base.en',
-                language: 'en',
-                temperature: 0,
-                beamSize: 5,
-                patience: 1,
-                device: 'cpu'
-            };
-
-            await speechToText.transcribeAudio('/test/audio.wav', options);
-
-            const spawnArgs = spawnMock.mock.calls[0]?.args[1] || [];
-            expect(spawnArgs).toContain('--model');
-            expect(spawnArgs).toContain(options.model);
-            expect(spawnArgs).toContain('--language');
-            expect(spawnArgs).toContain(options.language);
-            expect(spawnArgs).toContain('--temperature');
-            expect(spawnArgs).toContain(options.temperature?.toString());
-            expect(spawnArgs).toContain('--beam-size');
-            expect(spawnArgs).toContain(options.beamSize?.toString());
-            expect(spawnArgs).toContain('--patience');
-            expect(spawnArgs).toContain(options.patience?.toString());
-            expect(spawnArgs).toContain('--device');
-            expect(spawnArgs).toContain(options.device);
-        });
+      const ready = new Promise((resolve) => speechToText.once("ready", resolve));
+      await speechToText.initialize();
+      await ready;
     });
 
-    describe('Event Handling', () => {
-        test('should emit progress events', async () => {
-            const progressPromise = new Promise<void>((resolve) => {
-                speechToText.on('progress', (progress) => {
-                    expect(progress).toEqual({ type: 'stdout', data: 'Processing' });
-                    resolve();
-                });
-            });
+    test("shutdown() emits 'shutdown' and is idempotent", async () => {
+      globalThis.fetch = mock(() =>
+        Promise.resolve(new Response("{}", { status: 200 })),
+      ) as unknown as typeof fetch;
 
-            const transcribePromise = speechToText.transcribeAudio('/test/audio.wav');
-            mockProcess.stdout.emit('data', Buffer.from('Processing'));
-            await Promise.all([transcribePromise.catch(() => { }), progressPromise]);
-        });
+      await speechToText.initialize();
+      const shutdownEvent = new Promise((resolve) => speechToText.once("shutdown", resolve));
+      await speechToText.shutdown();
+      await shutdownEvent;
 
-        test('should emit error events', async () => {
-            const errorPromise = new Promise<void>((resolve) => {
-                speechToText.on('error', (error) => {
-                    expect(error instanceof Error).toBe(true);
-                    expect(error.message).toBe('Test error');
-                    resolve();
-                });
-            });
-
-            speechToText.emit('error', new Error('Test error'));
-            await errorPromise;
-        });
+      // Second shutdown() short-circuits without re-emitting.
+      await expect(speechToText.shutdown()).resolves.toBeUndefined();
     });
-
-    describe('Cleanup', () => {
-        test('should stop wake word detection', () => {
-            speechToText.startWakeWordDetection();
-            speechToText.stopWakeWordDetection();
-            expect(mockProcess.kill.mock.calls.length).toBe(1);
-        });
-
-        test('should clean up resources on shutdown', async () => {
-            await speechToText.initialize();
-            await speechToText.shutdown();
-            expect(mockProcess.kill.mock.calls.length).toBe(1);
-        });
-    });
-}); 
+  });
+});

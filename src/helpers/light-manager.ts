@@ -2,13 +2,13 @@
 import { get_hass } from "../hass/index.js";
 import { logger } from "../utils/logger.js";
 
-interface LightState {
+export interface LightState {
     rgb_color?: [number, number, number];
     color_temp_kelvin?: number;
     brightness_pct?: number;
     transition?: number;
     effect?: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export class LightManager {
@@ -31,7 +31,7 @@ export class LightManager {
      */
     static async applyLightState(entity: any, state: LightState): Promise<void> {
         const hass = await get_hass();
-        const serviceData: any = { entity_id: entity.entity_id };
+        const serviceData: Record<string, unknown> = { entity_id: entity.entity_id };
 
         const attrs = entity.attributes || {};
         const modes = attrs.supported_color_modes || [];
@@ -55,8 +55,9 @@ export class LightManager {
                 serviceData.rgb_color = state.rgb_color;
             } else if (supportsTemp) {
                 // Fallback: Map Color to Temp
-                serviceData.color_temp_kelvin = this.mapColorToTemp(state.rgb_color);
-                logger.debug(`Degrading Color ${state.rgb_color} to Temp ${serviceData.color_temp_kelvin}K for ${entity.entity_id}`);
+                const tempK = this.mapColorToTemp(state.rgb_color);
+                serviceData.color_temp_kelvin = tempK;
+                logger.debug(`Degrading Color [${state.rgb_color.join(", ")}] to Temp ${tempK}K for ${entity.entity_id}`);
             } else {
                 // No color or temp support (Dimmer/Switch only) - Change nothing regarding color
                 logger.debug(`Ignoring color for ${entity.entity_id} (Not supported)`);

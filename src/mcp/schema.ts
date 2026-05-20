@@ -2,6 +2,8 @@ import { z } from "zod";
 import { DomainSchema } from "../schemas.js";
 
 export const MCP_SCHEMA = {
+  name: "homeassistant-mcp",
+  version: "1.3.1",
   tools: [
     {
       name: "list_devices",

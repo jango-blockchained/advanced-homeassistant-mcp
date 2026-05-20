@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Tool } from "../../types/index.js";
 import { get_hass } from "../../hass/index.js";
 import { logger } from "../../utils/logger.js";
-import { LightManager } from "../../helpers/light-manager.js";
+import { LightManager, type LightState } from "../../helpers/light-manager.js";
 
 const MoodSchema = z.enum(["chill", "nightly", "focus", "romantic", "party", "cyberpunk", "default"]);
 type Mood = z.infer<typeof MoodSchema>;
@@ -74,7 +74,7 @@ export const lightScenarioTool: Tool = {
         }
 
         // 2. Determine Settings based on Mood OR Custom Colors
-        const settingsList: any[] = [];
+        const settingsList: Array<{ entity: { entity_id: string }; state: LightState }> = [];
         let message = "";
 
         // Helper to parse hex to [r,g,b]
@@ -89,13 +89,15 @@ export const lightScenarioTool: Tool = {
 
         if (params.colors && params.colors.length > 0) {
             // Custom Palette Mode
-            const palette = params.colors.map(c => {
-                if (c.startsWith("#")) return hexToRgb(c);
-                // Assume [r,g,b] array passed as string? Zod schema says string. 
-                // If user passes JSON string of array, we might need to parse.
-                // But Zod array(string) means ["#FF", "#00"] which is fine.
-                return null;
-            }).filter(c => c !== null) as [number, number, number][];
+            const palette: [number, number, number][] = params.colors
+                .map((c) => {
+                    if (c.startsWith("#")) return hexToRgb(c);
+                    // Assume [r,g,b] array passed as string? Zod schema says string.
+                    // If user passes JSON string of array, we might need to parse.
+                    // But Zod array(string) means ["#FF", "#00"] which is fine.
+                    return null;
+                })
+                .filter((c): c is [number, number, number] => c !== null);
 
             if (palette.length === 0) {
                 return JSON.stringify({ success: false, error: "No valid hex colors provided in palette." });
@@ -167,7 +169,7 @@ export const lightScenarioTool: Tool = {
 
             if (moodPalette) {
                 targetLights.forEach(light => {
-                    const color = moodPalette![Math.floor(Math.random() * moodPalette!.length)];
+                    const color = moodPalette[Math.floor(Math.random() * moodPalette.length)];
                     settingsList.push({
                         entity: light,
                         state: {

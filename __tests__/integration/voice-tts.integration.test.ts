@@ -18,20 +18,21 @@ class MockHomeAssistantTTSService {
   private cache: Map<string, string> = new Map();
   private playLog: Array<{ entityId: string; url: string }> = [];
 
-  async generateAudio(text: string, language: string, provider: string): Promise<string> {
+  generateAudio(text: string, language: string, provider: string): Promise<string> {
     const cacheKey = `${provider}_${language}_${text}`;
 
     if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey)!;
+      return Promise.resolve(this.cache.get(cacheKey)!);
     }
 
     const url = `https://ha.local/api/tts/audio/${provider}_${language}_${Buffer.from(text).toString("base64")}`;
     this.cache.set(cacheKey, url);
-    return url;
+    return Promise.resolve(url);
   }
 
-  async playAudio(entityId: string, mediaUrl: string): Promise<void> {
+  playAudio(entityId: string, mediaUrl: string): Promise<void> {
     this.playLog.push({ entityId, url: mediaUrl });
+    return Promise.resolve();
   }
 
   getCacheSize(): number {

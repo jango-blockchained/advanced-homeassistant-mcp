@@ -61,7 +61,10 @@ export default function createServer({ config }: { config?: ServerConfig } = {})
   if (config?.HASS_SOCKET_URL) process.env.HASS_SOCKET_URL = config.HASS_SOCKET_URL;
   if (config?.LOG_LEVEL) process.env.LOG_LEVEL = config.LOG_LEVEL;
 
-  // Dynamically require the SDK at runtime
+  // Dynamically require the SDK at runtime so bundlers don't pull it in
+  // statically (the SDK is CJS-only and we want to keep this module
+  // bundle-free at build time).
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
   const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
 
   const server = new McpServer({
@@ -121,8 +124,10 @@ export default function createServer({ config }: { config?: ServerConfig } = {})
       },
     );
 
-    // Add annotations if the SDK supports it (some versions don't expose it directly in .tool())
-    const toolInstance = (server as any)._tools?.get(tool.name);
+    // Add annotations if the SDK supports it (some versions don't expose
+    // it directly in .tool()). `server` is already `any` (from the
+    // require()), so the cast is redundant — index `_tools` directly.
+    const toolInstance = server._tools?.get(tool.name);
     if (toolInstance && tool.annotations) {
       toolInstance.annotations = {
         title: tool.annotations.title || formatToolTitle(tool.name),
@@ -170,7 +175,7 @@ export default function createServer({ config }: { config?: ServerConfig } = {})
         description: a.description,
         required: a.required,
       })) || [],
-      async (args: any) => ({
+      (args: Record<string, string>) => ({
         messages: [
           { role: "user", content: { type: "text", text: renderPrompt(prompt.name, args) } },
         ],

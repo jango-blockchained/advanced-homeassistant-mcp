@@ -7,9 +7,22 @@ import {
 
 type TestResult = { success: boolean; error?: string; message?: string; [key: string]: unknown };
 
+interface FastMcpToolResult {
+    isError?: boolean;
+    content?: Array<{ type: string; text: string }>;
+}
+
+// Tools return one of three shapes: a JSON-encoded string, a plain object
+// (the SSE-stats / scene-style `{ success, ... }` shape), or a FastMCP-style
+// `{ isError?, content: [{type, text}] }` wrapper. Normalize to TestResult
+// so the assertions below can be uniform across all of them.
 function parseResult(result: unknown): TestResult {
     if (typeof result === "string") {
         return JSON.parse(result) as TestResult;
+    }
+    const wrapped = result as FastMcpToolResult;
+    if (wrapped?.content?.[0]?.text) {
+        return JSON.parse(wrapped.content[0].text) as TestResult;
     }
     return result as TestResult;
 }
@@ -32,8 +45,49 @@ describe("Comprehensive Tool Suite Tests", () => {
     });
 
     describe("Tool Registry", () => {
-        test("should have all 19 tools registered", () => {
-            expect(tools.length).toBe(19);
+        // Snapshot of every tool currently registered. Update intentionally
+        // when a tool is added/removed/renamed — that's the whole point of
+        // an exact-match check vs `>= N`, which would silently mask
+        // regressions.
+        const expectedTools = [
+            "addon",
+            "alarm_control",
+            "animation_control",
+            "automation",
+            "automation_config",
+            "climate_control",
+            "control",
+            "cover_control",
+            "fan_control",
+            "get_entity_state",
+            "get_error_log",
+            "get_history",
+            "get_sse_stats",
+            "light_animation",
+            "light_scenario",
+            "light_showcase",
+            "lights_control",
+            "list_devices",
+            "lock_control",
+            "maintenance",
+            "media_player_control",
+            "notify",
+            "package",
+            "scene",
+            "search_entities",
+            "smart_scenarios",
+            "subscribe_events",
+            "switch_control",
+            "todo_control",
+            "trace",
+            "vacuum_control",
+            "voice_command_ai_parser",
+            "voice_command_executor",
+            "voice_command_parser",
+        ].sort();
+
+        test("should have all expected tools registered", () => {
+            expect(tools.length).toBe(expectedTools.length);
         });
 
         test("should have unique tool names", () => {
@@ -56,27 +110,6 @@ describe("Comprehensive Tool Suite Tests", () => {
 
         test("should list all available tools", () => {
             const toolNames = tools.map((t) => t.name).sort();
-            const expectedTools = [
-                "addon",
-                "alarm_control",
-                "automation",
-                "automation_config",
-                "climate_control",
-                "control",
-                "cover_control",
-                "fan_control",
-                "get_history",
-                "get_sse_stats",
-                "lights_control",
-                "list_devices",
-                "lock_control",
-                "media_player_control",
-                "notify",
-                "package",
-                "scene",
-                "subscribe_events",
-                "vacuum_control",
-            ].sort();
             expect(toolNames).toEqual(expectedTools);
         });
     });
@@ -381,11 +414,18 @@ describe("Comprehensive Tool Suite Tests", () => {
                 action: [{ service: "light.turn_on" }],
             };
 
-            mocks.mockFetch = mock(() =>
-                Promise.resolve(
-                    createMockResponse({ automation_id: "automation.test" })
-                )
-            );
+            // Source flow: GET to check if the id already exists (must 404 so
+            // we proceed), then POST the new config.
+            let call = 0;
+            mocks.mockFetch = mock(() => {
+                call += 1;
+                if (call === 1) {
+                    return Promise.resolve(createMockResponse({}, 404));
+                }
+                return Promise.resolve(
+                    createMockResponse({ automation_id: "automation.test" }),
+                );
+            });
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
             const automationConfigTool = tools.find(

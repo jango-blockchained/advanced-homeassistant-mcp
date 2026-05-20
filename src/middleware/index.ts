@@ -217,6 +217,8 @@ export const sanitizeInput = (req: Request, res: Response, next: NextFunction): 
         sanitized = sanitized.replace(/on\w+\s*=\s*(?:".*?"|'.*?'|[^"'>\s]+)/gi, "");
         // Trim whitespace
         return sanitized.trim();
+      } else if (Array.isArray(value)) {
+        return value.map(sanitizeValue);
       } else if (typeof value === "object" && value !== null) {
         const result: Record<string, unknown> = {};
         Object.entries(value as Record<string, unknown>).forEach(([key, val]) => {

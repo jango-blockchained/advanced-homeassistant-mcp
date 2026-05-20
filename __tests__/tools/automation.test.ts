@@ -1,190 +1,107 @@
-import { describe, expect, test, beforeEach, afterEach, mock } from "bun:test";
-import {
-    type MockLiteMCPInstance,
-    type Tool,
-    type TestResponse,
-    TEST_CONFIG,
-    createMockLiteMCPInstance,
-    setupTestEnvironment,
-    cleanupMocks,
-    createMockResponse,
-    getMockCallArgs
-} from '../utils/test-utils';
+import { describe, expect, test, beforeEach, mock } from "bun:test";
+import { tools } from "../../src/tools/index.js";
+import { createMockResponse } from "../utils/test-utils";
+import { get_hass_safe } from "../../src/hass/index.js";
 
-describe('Automation Tools', () => {
-    let liteMcpInstance: MockLiteMCPInstance;
-    let addToolCalls: Tool[];
-    let mocks: ReturnType<typeof setupTestEnvironment>;
+interface AutomationResult {
+  success: boolean;
+  message?: string;
+  automation_id?: string;
+  action?: string;
+  automations?: Array<Record<string, unknown>>;
+  total_count?: number;
+}
 
-    beforeEach(async () => {
-        // Setup test environment
-        mocks = setupTestEnvironment();
-        liteMcpInstance = createMockLiteMCPInstance();
+const automationTool = tools.find((t) => t.name === "automation")!;
 
-        // Import the module which will execute the main function
-        await import('../../src/index.js');
+function parseResult(result: unknown): AutomationResult {
+  return JSON.parse(result as string) as AutomationResult;
+}
 
-        // Get the mock instance and tool calls
-        addToolCalls = liteMcpInstance.addTool.mock.calls.map(call => call.args[0]);
-    });
+describe("automation tool", () => {
+  beforeEach(async () => {
+    // Default fetch mock just returns an empty success body. Individual tests
+    // override `globalThis.fetch` for the call shapes they actually exercise.
+    globalThis.fetch = mock(() =>
+      Promise.resolve(createMockResponse({})),
+    ) as unknown as typeof fetch;
+    // Clear the hass singleton's cache so getStates() doesn't return data
+    // populated by an earlier test.
+    const hass = await get_hass_safe();
+    hass?.clearCache();
+  });
 
-    afterEach(() => {
-        cleanupMocks({ liteMcpInstance, ...mocks });
-    });
+  test("the tool is registered with the expected schema", () => {
+    expect(automationTool).toBeDefined();
+    expect(automationTool.name).toBe("automation");
+    expect(typeof automationTool.execute).toBe("function");
+  });
 
-    describe('automation tool', () => {
-        const mockAutomations = [
-            {
-                entity_id: 'automation.morning_routine',
-                state: 'on',
-                attributes: {
-                    friendly_name: 'Morning Routine',
-                    last_triggered: '2024-01-01T07:00:00Z'
-                }
-            },
-            {
-                entity_id: 'automation.night_mode',
-                state: 'off',
-                attributes: {
-                    friendly_name: 'Night Mode',
-                    last_triggered: '2024-01-01T22:00:00Z'
-                }
-            }
-        ];
+  test("list returns automations from /api/states filtered by domain", async () => {
+    const states = [
+      {
+        entity_id: "automation.morning_lights",
+        state: "on",
+        attributes: { friendly_name: "Morning lights", id: "abc", last_triggered: null },
+      },
+      // Non-automation entries must be filtered out.
+      { entity_id: "light.kitchen", state: "off", attributes: {} },
+    ];
+    globalThis.fetch = mock(() =>
+      Promise.resolve(createMockResponse(states)),
+    ) as unknown as typeof fetch;
 
-        test('should successfully list automations', async () => {
-            // Setup response
-            mocks.mockFetch = mock(() => Promise.resolve(createMockResponse(mockAutomations)));
-            globalThis.fetch = mocks.mockFetch;
+    const result = parseResult(await automationTool.execute({ action: "list" }));
+    expect(result.success).toBe(true);
+    expect(result.total_count).toBe(1);
+    expect(result.automations?.[0]?.entity_id).toBe("automation.morning_lights");
+    expect(result.automations?.[0]?.name).toBe("Morning lights");
+  });
 
-            const automationTool = addToolCalls.find(tool => tool.name === 'automation');
-            expect(automationTool).toBeDefined();
+  test("toggle calls the automation/toggle service for the given entity", async () => {
+    const fetchMock = mock(() => Promise.resolve(createMockResponse({})));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-            if (!automationTool) {
-                throw new Error('automation tool not found');
-            }
+    const result = parseResult(
+      await automationTool.execute({
+        action: "toggle",
+        automation_id: "automation.morning_lights",
+      }),
+    );
 
-            const result = await automationTool.execute({
-                action: 'list'
-            }) as TestResponse;
+    expect(result.success).toBe(true);
+    expect(result.action).toBe("toggle");
+    expect(result.automation_id).toBe("automation.morning_lights");
 
-            expect(result.success).toBe(true);
-            expect(result.automations).toEqual([
-                {
-                    entity_id: 'automation.morning_routine',
-                    name: 'Morning Routine',
-                    state: 'on',
-                    last_triggered: '2024-01-01T07:00:00Z'
-                },
-                {
-                    entity_id: 'automation.night_mode',
-                    name: 'Night Mode',
-                    state: 'off',
-                    last_triggered: '2024-01-01T22:00:00Z'
-                }
-            ]);
-        });
+    const calls = fetchMock.mock.calls;
+    const url = calls[0]?.[0] as unknown as string;
+    const init = calls[0]?.[1] as unknown as RequestInit;
+    expect(url).toContain("/api/services/automation/toggle");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual({ entity_id: "automation.morning_lights" });
+  });
 
-        test('should successfully toggle an automation', async () => {
-            // Setup response
-            mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
-            globalThis.fetch = mocks.mockFetch;
+  test("trigger calls the automation/trigger service for the given entity", async () => {
+    const fetchMock = mock(() => Promise.resolve(createMockResponse({})));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-            const automationTool = addToolCalls.find(tool => tool.name === 'automation');
-            expect(automationTool).toBeDefined();
+    const result = parseResult(
+      await automationTool.execute({
+        action: "trigger",
+        automation_id: "automation.morning_lights",
+      }),
+    );
 
-            if (!automationTool) {
-                throw new Error('automation tool not found');
-            }
+    expect(result.success).toBe(true);
+    expect(result.action).toBe("trigger");
+    expect((fetchMock.mock.calls[0]?.[0] as unknown as string)).toContain(
+      "/api/services/automation/trigger",
+    );
+  });
 
-            const result = await automationTool.execute({
-                action: 'toggle',
-                automation_id: 'automation.morning_routine'
-            }) as TestResponse;
-
-            expect(result.success).toBe(true);
-            expect(result.message).toBe('Successfully toggled automation automation.morning_routine');
-
-            // Verify the fetch call
-            type FetchArgs = [url: string, init: RequestInit];
-            const args = getMockCallArgs<FetchArgs>(mocks.mockFetch);
-            expect(args).toBeDefined();
-
-            if (!args) {
-                throw new Error('No fetch calls recorded');
-            }
-
-            const [urlStr, options] = args;
-            expect(urlStr).toBe(`${TEST_CONFIG.HASS_HOST}/api/services/automation/toggle`);
-            expect(options).toEqual({
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${TEST_CONFIG.HASS_TOKEN}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    entity_id: 'automation.morning_routine'
-                })
-            });
-        });
-
-        test('should successfully trigger an automation', async () => {
-            // Setup response
-            mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
-            globalThis.fetch = mocks.mockFetch;
-
-            const automationTool = addToolCalls.find(tool => tool.name === 'automation');
-            expect(automationTool).toBeDefined();
-
-            if (!automationTool) {
-                throw new Error('automation tool not found');
-            }
-
-            const result = await automationTool.execute({
-                action: 'trigger',
-                automation_id: 'automation.morning_routine'
-            }) as TestResponse;
-
-            expect(result.success).toBe(true);
-            expect(result.message).toBe('Successfully triggered automation automation.morning_routine');
-
-            // Verify the fetch call
-            type FetchArgs = [url: string, init: RequestInit];
-            const args = getMockCallArgs<FetchArgs>(mocks.mockFetch);
-            expect(args).toBeDefined();
-
-            if (!args) {
-                throw new Error('No fetch calls recorded');
-            }
-
-            const [urlStr, options] = args;
-            expect(urlStr).toBe(`${TEST_CONFIG.HASS_HOST}/api/services/automation/trigger`);
-            expect(options).toEqual({
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${TEST_CONFIG.HASS_TOKEN}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    entity_id: 'automation.morning_routine'
-                })
-            });
-        });
-
-        test('should require automation_id for toggle and trigger actions', async () => {
-            const automationTool = addToolCalls.find(tool => tool.name === 'automation');
-            expect(automationTool).toBeDefined();
-
-            if (!automationTool) {
-                throw new Error('automation tool not found');
-            }
-
-            const result = await automationTool.execute({
-                action: 'toggle'
-            }) as TestResponse;
-
-            expect(result.success).toBe(false);
-            expect(result.message).toBe('Automation ID is required for toggle and trigger actions');
-        });
-    });
-}); 
+  test("toggle/trigger without automation_id returns success:false with a clear message", async () => {
+    const result = parseResult(await automationTool.execute({ action: "toggle" }));
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("Automation ID is required");
+  });
+});

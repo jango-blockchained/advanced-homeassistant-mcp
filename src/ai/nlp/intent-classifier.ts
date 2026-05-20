@@ -41,7 +41,7 @@ export class IntentClassifier {
     ];
   }
 
-  async classify(
+  classify(
     input: string,
     extractedEntities: {
       parameters: Record<string, any>;
@@ -79,7 +79,7 @@ export class IntentClassifier {
       bestMatch = this.inferFromContext(input, extractedEntities);
     }
 
-    return bestMatch;
+    return Promise.resolve(bestMatch);
   }
 
   private calculateConfidence(match: string, input: string): number {

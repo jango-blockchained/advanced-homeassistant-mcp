@@ -18,8 +18,13 @@ type ErrorLogParams = z.infer<typeof ErrorLogSchema>;
 /**
  * Strip ANSI escape codes (color sequences) from log output.
  * The Supervisor logs endpoint returns ANSI-colored text.
+ *
+ * eslint-disable-next-line: the no-control-regex rule warns about \x1b
+ * (ESC) in regexes because it's usually a typo. Here it's intentional and
+ * load-bearing — that byte is exactly what an ANSI sequence starts with.
  */
 function stripAnsi(text: string): string {
+  // eslint-disable-next-line no-control-regex
   return text.replace(/\x1b\[[0-9;]*m/g, "");
 }
 

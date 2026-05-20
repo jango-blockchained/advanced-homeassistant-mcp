@@ -50,12 +50,14 @@ interface FeedbackOptions {
 class MockWakeWordDetector {
   private isActive: boolean = false;
 
-  async start(): Promise<void> {
+  start(): Promise<void> {
     this.isActive = true;
+    return Promise.resolve();
   }
 
-  async stop(): Promise<void> {
+  stop(): Promise<void> {
     this.isActive = false;
+    return Promise.resolve();
   }
 
   isListening(): boolean {
@@ -73,7 +75,7 @@ class MockWakeWordDetector {
  * Mock Speech-to-Text Service
  */
 class MockSpeechToText {
-  async transcribe(command: VoiceCommand): Promise<TranscriptionResult> {
+  transcribe(command: VoiceCommand): Promise<TranscriptionResult> {
     // Simulate STT processing
     const sampleTranscriptions: Record<string, string> = {
       "turn_on_lights": "Turn on the living room lights",
@@ -86,11 +88,11 @@ class MockSpeechToText {
     const key = new TextDecoder().decode(command.audio);
     const text = sampleTranscriptions[key] || "Unknown command";
 
-    return {
+    return Promise.resolve({
       text,
       confidence: 0.92,
       language: command.language,
-    };
+    });
   }
 }
 
@@ -98,52 +100,52 @@ class MockSpeechToText {
  * Mock Intent Classifier
  */
 class MockIntentClassifier {
-  async classify(transcription: TranscriptionResult): Promise<Intent> {
+  classify(transcription: TranscriptionResult): Promise<Intent> {
     const text = transcription.text.toLowerCase();
 
     if (text.includes("turn on")) {
-      return {
+      return Promise.resolve({
         type: "device_control",
         action: "turn_on",
         target: this.extractTarget(text),
-      };
+      });
     } else if (text.includes("set") && text.includes("temperature")) {
-      return {
+      return Promise.resolve({
         type: "climate_control",
         action: "set_temperature",
         target: "climate.thermostat",
         parameters: {
           temperature: this.extractNumber(text),
         },
-      };
+      });
     } else if (text.includes("play")) {
-      return {
+      return Promise.resolve({
         type: "media_control",
         action: "play",
         target: "media_player.living_room",
         parameters: {
           content: "music",
         },
-      };
+      });
     } else if (text.includes("status")) {
-      return {
+      return Promise.resolve({
         type: "query",
         action: "get_status",
         target: this.extractTarget(text),
-      };
+      });
     } else if (text.includes("turn off")) {
-      return {
+      return Promise.resolve({
         type: "device_control",
         action: "turn_off",
         target: this.extractTarget(text),
-      };
+      });
     }
 
-    return {
+    return Promise.resolve({
       type: "unknown",
       action: "unknown",
       target: "unknown",
-    };
+    });
   }
 
   private extractTarget(text: string): string {
@@ -166,53 +168,54 @@ class MockIntentClassifier {
 class MockCommandExecutor {
   private deviceStates: Map<string, any> = new Map();
 
-  async execute(intent: Intent): Promise<ExecutionResult> {
+  execute(intent: Intent): Promise<ExecutionResult> {
     switch (intent.action) {
       case "turn_on":
         this.deviceStates.set(intent.target, { state: "on" });
-        return {
+        return Promise.resolve({
           success: true,
           message: `Successfully turned on ${intent.target}`,
-        };
+        });
 
       case "turn_off":
         this.deviceStates.set(intent.target, { state: "off" });
-        return {
+        return Promise.resolve({
           success: true,
           message: `Successfully turned off ${intent.target}`,
-        };
+        });
 
       case "set_temperature":
         this.deviceStates.set(intent.target, {
           temperature: intent.parameters?.temperature,
         });
-        return {
+        return Promise.resolve({
           success: true,
           message: `Temperature set to ${intent.parameters?.temperature} degrees`,
-        };
+        });
 
       case "play":
         this.deviceStates.set(intent.target, { playing: true });
-        return {
+        return Promise.resolve({
           success: true,
           message: "Playing music",
-        };
+        });
 
-      case "get_status":
+      case "get_status": {
         const state = this.deviceStates.get(intent.target);
-        return {
+        return Promise.resolve({
           success: true,
           message: state
             ? `Status: ${JSON.stringify(state)}`
             : "Device not found or inactive",
           details: state,
-        };
+        });
+      }
 
       default:
-        return {
+        return Promise.resolve({
           success: false,
           message: "Unknown command",
-        };
+        });
     }
   }
 

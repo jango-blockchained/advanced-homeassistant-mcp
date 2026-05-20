@@ -3,7 +3,6 @@ import helmet from "helmet";
 import { HelmetOptions } from "helmet";
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction, RequestHandler } from "express";
-import sanitizeHtml from "sanitize-html";
 import { logger } from "../utils/logger.js";
 
 // Security configuration
@@ -123,20 +122,20 @@ export function validateRequestHeaders(
 ): boolean {
   // Validate content type for POST/PUT/PATCH requests
   if (["POST", "PUT", "PATCH"].includes(request.method)) {
-    const contentType = request.headers["content-type"] as string | undefined;
+    const contentType = request.headers["content-type"];
     if (!contentType || !contentType.includes(requiredContentType)) {
       throw new Error(`Content-Type must be ${requiredContentType}`);
     }
   }
 
   // Validate request size
-  const contentLength = request.headers["content-length"] as string | undefined;
+  const contentLength = request.headers["content-length"];
   if (contentLength && parseInt(contentLength, 10) > 1024 * 1024) {
     throw new Error("Request body too large");
   }
 
   // Validate authorization header if required
-  const authHeader = request.headers["authorization"] as string | undefined;
+  const authHeader = request.headers["authorization"];
   if (authHeader) {
     const [type, token] = authHeader.split(" ");
     if (type !== "Bearer" || !token) {
@@ -170,20 +169,29 @@ export const validateRequestMiddleware: RequestHandler = (
   }
 };
 
+// OWASP-recommended HTML escape: covers the six characters that can break out
+// of element content or attribute context. Using a dedicated escape (rather
+// than a tag-stripping sanitizer) keeps round-tripping predictable: the user's
+// original text is preserved verbatim, just rendered inert when interpreted as
+// HTML. Order matters: escape & first so we don't double-encode subsequent
+// entity references.
+const HTML_ESCAPE_MAP: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+  "/": "&#x2F;",
+};
+
+function escapeHtml(input: string): string {
+  return input.replace(/[&<>"'/]/g, (ch) => HTML_ESCAPE_MAP[ch]);
+}
+
 // Extracted input sanitization logic
 export function sanitizeValue(value: unknown): unknown {
   if (typeof value === "string") {
-    // Use battle-tested sanitize-html library for robust XSS protection
-    return sanitizeHtml(value, {
-      allowedTags: [], // No HTML tags allowed
-      allowedAttributes: {}, // No attributes allowed
-      disallowedTagsMode: "escape", // Escape rather than strip
-      // Additional security options
-      parseStyleAttributes: false,
-      transformTags: {
-        "*": () => ({ tagName: "", attribs: {} }), // Remove all tags
-      },
-    });
+    return escapeHtml(value);
   }
 
   if (Array.isArray(value)) {
@@ -263,6 +271,15 @@ const SECURITY_CONFIG = {
 const failedAttempts = new Map<string, { count: number; lastAttempt: number }>();
 
 export class TokenManager {
+  /**
+   * Test/admin hook: returns the live failed-attempts map. Mutating the
+   * returned Map directly is supported (tests need to reset between cases),
+   * which is why this returns the underlying instance rather than a copy.
+   */
+  static get failedAttempts(): Map<string, { count: number; lastAttempt: number }> {
+    return failedAttempts;
+  }
+
   /**
    * Encrypts a token using AES-256-GCM
    */

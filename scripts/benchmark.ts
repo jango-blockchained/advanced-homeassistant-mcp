@@ -47,13 +47,13 @@ class BenchmarkSuite {
    * Benchmark 1: Aurora Timeline Memory Efficiency
    * Tests sliding window with large command queues
    */
-  async benchmarkAuroraMemory(): Promise<void> {
+  benchmarkAuroraMemory(): Promise<void> {
     console.log('\n📊 Benchmark 1: Aurora Timeline Memory Efficiency');
     console.log('─'.repeat(50));
 
     const MAX_QUEUE_SIZE = 5000;
     const LOOKAHEAD_SECONDS = 2.0;
-    let memBefore = process.memoryUsage().heapUsed;
+    const memBefore = process.memoryUsage().heapUsed;
 
     // Simulate long timeline (10 minutes = 600 seconds)
     const timelineData = this.generateTimelineCommands(600 * 100); // 60,000 commands
@@ -82,7 +82,7 @@ class BenchmarkSuite {
     }
 
     const duration = performance.now() - startTime;
-    let memAfter = process.memoryUsage().heapUsed;
+    const memAfter = process.memoryUsage().heapUsed;
 
     const result: BenchmarkResult = {
       name: 'Aurora Timeline Memory',
@@ -100,13 +100,14 @@ class BenchmarkSuite {
     console.log(`✓ Ops/sec: ${result.opsPerSecond.toFixed(0)}`);
 
     this.results.push(result);
+    return Promise.resolve();
   }
 
   /**
    * Benchmark 2: Audio Analysis FFT Performance
    * Tests Hamming window pre-computation vs per-frame computation
    */
-  async benchmarkFFTWindowing(): Promise<void> {
+  benchmarkFFTWindowing(): Promise<void> {
     console.log('\n📊 Benchmark 2: Audio Analysis FFT Performance');
     console.log('─'.repeat(50));
 
@@ -114,7 +115,7 @@ class BenchmarkSuite {
     const AUDIO_FRAMES = 86400; // 10 minute audio at 44.1kHz hop size 512
 
     // Test 1: Per-frame window computation (baseline)
-    let memBefore = process.memoryUsage().heapUsed;
+    const memBefore = process.memoryUsage().heapUsed;
     const startBaseline = performance.now();
 
     for (let frame = 0; frame < AUDIO_FRAMES; frame++) {
@@ -131,7 +132,7 @@ class BenchmarkSuite {
     }
 
     const baselineDuration = performance.now() - startBaseline;
-    let memAfter = process.memoryUsage().heapUsed;
+    const memAfter = process.memoryUsage().heapUsed;
 
     const baselineResult: BenchmarkResult = {
       name: 'FFT Window (Per-Frame)',
@@ -185,13 +186,14 @@ class BenchmarkSuite {
 
     this.results.push(baselineResult);
     this.results.push(optimizedResult);
+    return Promise.resolve();
   }
 
   /**
    * Benchmark 3: SSE Message Serialization
    * Tests single vs per-client JSON serialization
    */
-  async benchmarkSSEBroadcast(): Promise<void> {
+  benchmarkSSEBroadcast(): Promise<void> {
     console.log('\n📊 Benchmark 3: SSE Broadcast Efficiency');
     console.log('─'.repeat(50));
 
@@ -208,7 +210,7 @@ class BenchmarkSuite {
     };
 
     // Test 1: Per-client serialization (baseline)
-    let memBefore = process.memoryUsage().heapUsed;
+    const memBefore = process.memoryUsage().heapUsed;
     const startBaseline = performance.now();
 
     let serializedCount = 0;
@@ -221,7 +223,7 @@ class BenchmarkSuite {
     }
 
     const baselineDuration = performance.now() - startBaseline;
-    let memAfter = process.memoryUsage().heapUsed;
+    const memAfter = process.memoryUsage().heapUsed;
 
     const baselineResult: BenchmarkResult = {
       name: 'SSE Broadcast (Per-Client)',
@@ -274,13 +276,14 @@ class BenchmarkSuite {
 
     this.results.push(baselineResult);
     this.results.push(optimizedResult);
+    return Promise.resolve();
   }
 
   /**
    * Benchmark 4: Cache Hit Rate
    * Tests domain-specific vs full cache invalidation
    */
-  async benchmarkCacheHitRate(): Promise<void> {
+  benchmarkCacheHitRate(): Promise<void> {
     console.log('\n📊 Benchmark 4: Cache Hit Rate Improvement');
     console.log('─'.repeat(50));
 
@@ -364,20 +367,21 @@ class BenchmarkSuite {
       opsPerSecond: 0,
       improvement: hitRate2 - hitRate1
     });
+    return Promise.resolve();
   }
 
   /**
    * Benchmark 5: WebSocket Subscription Cleanup
    * Tests for memory leaks in subscription management
    */
-  async benchmarkWebSocketCleanup(): Promise<void> {
+  benchmarkWebSocketCleanup(): Promise<void> {
     console.log('\n📊 Benchmark 5: WebSocket Subscription Cleanup');
     console.log('─'.repeat(50));
 
     const SUBSCRIPTION_CYCLES = 10000;
 
     // Test 1: Without proper cleanup (baseline - simulated leak)
-    let memBefore = process.memoryUsage().heapUsed;
+    const memBefore = process.memoryUsage().heapUsed;
     const subscriptions1: Map<number, any> = new Map();
 
     for (let i = 0; i < SUBSCRIPTION_CYCLES; i++) {
@@ -395,7 +399,7 @@ class BenchmarkSuite {
       }
     }
 
-    let memAfter = process.memoryUsage().heapUsed;
+    const memAfter = process.memoryUsage().heapUsed;
     const leakyDelta = memAfter - memBefore;
 
     console.log(`✓ Baseline (with leaks): ${subscriptions1.size.toLocaleString()} subscriptions`);
@@ -444,6 +448,7 @@ class BenchmarkSuite {
       opsPerSecond: 0,
       improvement: ((leakyDelta - cleanDelta) / leakyDelta) * 100
     });
+    return Promise.resolve();
   }
 
   /**
