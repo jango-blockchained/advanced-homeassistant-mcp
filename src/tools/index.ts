@@ -36,6 +36,7 @@ import { traceTool } from "./homeassistant/trace.tool";
 import { entityStateTool } from "./entity-state.tool";
 import { searchEntitiesTool } from "./search-entities.tool";
 import { errorLogTool } from "./error-log.tool";
+import { renderTemplateTool } from "./template.tool";
 
 // Tool category types
 export enum ToolCategory {
@@ -103,6 +104,8 @@ export const tools: Tool[] = [
   searchEntitiesTool,
   // Error log
   errorLogTool,
+  // Template evaluation
+  renderTemplateTool,
 ];
 
 // Function to get a tool by name
@@ -157,4 +160,6 @@ export {
   searchEntitiesTool,
   // Error log
   errorLogTool,
+  // Template evaluation
+  renderTemplateTool,
 };
