@@ -1,28 +1,20 @@
-import { describe, expect, test, mock, beforeEach } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import express from 'express';
 import request from 'supertest';
 import { config } from 'dotenv';
 import { resolve } from 'path';
 import type { Entity } from '../../src/types/hass.js';
-import { TokenManager } from '../../src/security/index.js';
 import { MCP_SCHEMA } from '../../src/mcp/schema.js';
 
 // Load test environment variables
 void config({ path: resolve(process.cwd(), '.env.test') });
 
-// Mock dependencies
-mock.module('../../src/security/index.js', () => ({
-    TokenManager: {
-        validateToken: mock((token) => token === 'valid-test-token')
-    },
-    rateLimiter: (req: any, res: any, next: any) => next(),
-    securityHeaders: (req: any, res: any, next: any) => next(),
-    validateRequest: (req: any, res: any, next: any) => next(),
-    sanitizeInput: (req: any, res: any, next: any) => next(),
-    errorHandler: (err: any, req: any, res: any, next: any) => {
-        res.status(500).json({ error: err.message });
-    }
-}));
+// Note: this test stands up its own Express app with inline auth; it does
+// not exercise src/security/index.ts. Previous versions used mock.module to
+// stub TokenManager + middleware, but Bun's mock.module persists across
+// files in the same process and the stubs leaked into other tests
+// (TokenManager.encryptToken became undefined for security/token-manager).
+// The mock was vestigial here, so drop it entirely.
 
 // Create mock entity
 const mockEntity: Entity = {
@@ -37,15 +29,6 @@ const mockEntity: Entity = {
         user_id: null
     }
 };
-
-// Mock LiteMCP
-mock.module('litemcp', () => ({
-    LiteMCP: mock(() => ({
-        name: 'home-assistant',
-        version: '0.1.0',
-        tools: []
-    }))
-}));
 
 // Create Express app for testing
 const app = express();

@@ -125,8 +125,10 @@ describe('TokenManager', () => {
 
     describe('Error Handling', () => {
         test('should throw descriptive errors for invalid inputs', () => {
-            expect(() => TokenManager.encryptToken(null as any, encryptionKey)).toThrow('Invalid token');
-            expect(() => TokenManager.encryptToken(validToken, null as any)).toThrow('Invalid encryption key');
+            // Cast through unknown to satisfy strict typings while still
+            // exercising the runtime null-input path the source guards.
+            expect(() => TokenManager.encryptToken(null as unknown as string, encryptionKey)).toThrow('Invalid token');
+            expect(() => TokenManager.encryptToken(validToken, null as unknown as string)).toThrow('Invalid encryption key');
             expect(() => TokenManager.decryptToken('invalid-base64', encryptionKey)).toThrow('Invalid encrypted token');
         });
 

@@ -93,10 +93,11 @@ router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
   }
 });
 
-// Get SSE stats endpoint
-router.get("/stats", async (req, res) => {
+// Get SSE stats endpoint. getStatistics is synchronous; the handler doesn't
+// need to be async, but Express tolerates either signature.
+router.get("/stats", (req, res) => {
   try {
-    const stats = await sseManager.getStatistics();
+    const stats = sseManager.getStatistics();
     res.json(stats);
   } catch (error) {
     res.status(500).json({

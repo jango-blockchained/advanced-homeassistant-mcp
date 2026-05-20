@@ -5,12 +5,24 @@ import jwt from 'jsonwebtoken';
 const TEST_SECRET = 'test-secret-that-is-long-enough-for-testing-purposes';
 
 describe('Security Module', () => {
+    // Capture the real validateToken once, bound to TokenManager so the
+    // static method's internal `this.recordFailedAttempt(...)` continues to
+    // resolve correctly. Other test files (SSE, security middleware) also
+    // reassign TokenManager.validateToken; restoring here prevents leakage
+    // in either direction.
+    const originalValidateToken = TokenManager.validateToken.bind(TokenManager);
+
     beforeEach(() => {
         process.env.JWT_SECRET = TEST_SECRET;
+        TokenManager.validateToken = originalValidateToken;
+        // failedAttempts is a process-wide Map; reset between tests so prior
+        // runs don't pre-trip the rate limiter.
+        TokenManager.failedAttempts.clear();
     });
 
     afterEach(() => {
         delete process.env.JWT_SECRET;
+        TokenManager.validateToken = originalValidateToken;
     });
 
     describe('TokenManager', () => {
@@ -70,16 +82,14 @@ describe('Security Module', () => {
             const invalidToken = 'x'.repeat(64);
             const testIp = '127.0.0.1';
 
-            // First attempt
-            const firstResult = TokenManager.validateToken(invalidToken, testIp);
-            expect(firstResult.valid).toBe(false);
-
-            // Multiple failed attempts
-            for (let i = 0; i < 4; i++) {
-                TokenManager.validateToken(invalidToken, testIp);
+            // 5 failed attempts (MAX_FAILED_ATTEMPTS) all return the verify
+            // error; the 6th sees count==MAX and returns the rate-limit error.
+            for (let i = 0; i < 5; i++) {
+                const result = TokenManager.validateToken(invalidToken, testIp);
+                expect(result.valid).toBe(false);
+                expect(result.error).toBe('Invalid token signature');
             }
 
-            // Next attempt should be rate limited
             const limitedResult = TokenManager.validateToken(invalidToken, testIp);
             expect(limitedResult.valid).toBe(false);
             expect(limitedResult.error).toBe('Too many failed attempts. Please try again later.');
@@ -87,59 +97,52 @@ describe('Security Module', () => {
     });
 
     describe('Request Validation', () => {
-        let mockRequest: any;
-        let mockResponse: any;
-        let mockNext: any;
+        // validateRequestHeaders consumes Express-shaped requests (plain
+        // header objects accessed via bracket notation), not Fetch Request
+        // / Headers instances — Headers doesn't support `headers["x"]`
+        // indexing, which would make every test spuriously fail with
+        // "Content-Type must be application/json".
+        interface MockReq {
+            method: string;
+            headers: Record<string, string | undefined>;
+            body?: unknown;
+        }
+        let mockRequest: MockReq;
 
         beforeEach(() => {
-            mockRequest = new Request('http://localhost/test', {
+            mockRequest = {
                 method: 'POST',
-                headers: {
-                    'content-type': 'application/json'
-                },
-                body: JSON.stringify({})
-            });
-
-            mockResponse = {
-                status: mock(() => mockResponse),
-                json: mock(() => mockResponse),
-                setHeader: mock(() => mockResponse),
-                removeHeader: mock(() => mockResponse)
+                headers: { 'content-type': 'application/json' },
+                body: {}
             };
-
-            mockNext = mock(() => { });
         });
 
         test('should pass valid requests', () => {
-            if (mockRequest.headers) {
-                mockRequest.headers.authorization = 'Bearer valid-token';
-            }
-            const validateTokenSpy = mock(() => ({ valid: true }));
-            TokenManager.validateToken = validateTokenSpy;
+            mockRequest.headers.authorization = 'Bearer valid-token';
+            // The outer afterEach restores validateToken; safe to overwrite here.
+            TokenManager.validateToken = mock(() => ({ valid: true })) as unknown as typeof TokenManager.validateToken;
 
-            expect(() => validateRequestHeaders(mockRequest)).not.toThrow();
+            expect(() => validateRequestHeaders(mockRequest as never)).not.toThrow();
         });
 
         test('should reject invalid content type', () => {
-            const invalidRequest = new Request('http://localhost/test', {
+            const invalidRequest = {
                 method: 'POST',
-                headers: {
-                    'content-type': 'text/plain'
-                }
-            });
+                headers: { 'content-type': 'text/plain' }
+            };
 
-            expect(() => validateRequestHeaders(invalidRequest)).toThrow('Content-Type must be application/json');
+            expect(() => validateRequestHeaders(invalidRequest as never)).toThrow(
+                'Content-Type must be application/json'
+            );
         });
 
         test('should reject missing token', () => {
-            const noAuthRequest = new Request('http://localhost/test', {
+            const noAuthRequest = {
                 method: 'POST',
-                headers: {
-                    'content-type': 'application/json'
-                }
-            });
+                headers: { 'content-type': 'application/json' }
+            };
 
-            expect(() => validateRequestHeaders(noAuthRequest)).not.toThrow(); // No auth header is ok, auth is optional
+            expect(() => validateRequestHeaders(noAuthRequest as never)).not.toThrow(); // No auth header is ok, auth is optional
         });
     });
 

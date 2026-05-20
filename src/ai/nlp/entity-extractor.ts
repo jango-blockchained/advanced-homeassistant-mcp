@@ -29,7 +29,7 @@ export class EntityExtractor {
     this.parameterPatterns.set("color", /(red|green|blue|white|warm|cool)/i);
   }
 
-  async extract(input: string): Promise<ExtractedEntities> {
+  extract(input: string): Promise<ExtractedEntities> {
     const entities: ExtractedEntities = {
       primary_target: "",
       parameters: {},
@@ -56,14 +56,14 @@ export class EntityExtractor {
       // Calculate confidence based on matches
       entities.confidence = this.calculateConfidence(entities, input);
 
-      return entities;
+      return Promise.resolve(entities);
     } catch (error) {
       logger.error("Entity extraction error:", error);
-      return {
+      return Promise.resolve({
         primary_target: "",
         parameters: {},
         confidence: 0,
-      };
+      });
     }
   }
 
@@ -96,9 +96,10 @@ export class EntityExtractor {
     return Math.min(1, confidence);
   }
 
-  async updateDeviceMap(devices: Record<string, string>): Promise<void> {
+  updateDeviceMap(devices: Record<string, string>): Promise<void> {
     for (const [key, value] of Object.entries(devices)) {
       this.deviceNameMap.set(key, value);
     }
+    return Promise.resolve();
   }
 }

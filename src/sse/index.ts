@@ -408,6 +408,14 @@ export class SSEManager extends EventEmitter {
   }
 
   private sendToClient(client: SSEClient, data: any): void {
+    // The other call sites (broadcastEvent, broadcastDomain, broadcastEntityChange)
+    // already gate on isRateLimited; this private helper is also reached via
+    // SSEManager["sendToClient"] in tests and the entity-state warmup path,
+    // so guard here too — otherwise bursts that arrive through those paths
+    // bypass the cap.
+    if (this.isRateLimited(client)) {
+      return;
+    }
     try {
       logger.info(`Attempting to send data to client ${client.id}`);
       client.send(JSON.stringify(data));

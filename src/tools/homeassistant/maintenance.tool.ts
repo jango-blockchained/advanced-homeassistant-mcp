@@ -523,7 +523,8 @@ async function executeMaintenanceLogic(params: MaintenanceParams): Promise<strin
     }
 
     default:
-      throw new UserError(`Unknown action: ${params.action}`);
+      // params.action narrows to never after the exhaustive switch.
+      throw new UserError(`Unknown action: ${String(params.action)}`);
   }
 }
 

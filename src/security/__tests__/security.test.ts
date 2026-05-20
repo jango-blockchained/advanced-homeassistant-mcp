@@ -11,15 +11,10 @@ const MOCK_RATE_LIMIT_WINDOW = 100; // 100ms instead of 15 minutes
 describe("Security Module", () => {
   beforeEach(() => {
     process.env.JWT_SECRET = validSecret;
-    // Reset failed attempts map
-    (TokenManager as any).failedAttempts = new Map();
-    // Mock the security config
-    (TokenManager as any).SECURITY_CONFIG = {
-      ...(TokenManager as any).SECURITY_CONFIG,
-      LOCKOUT_DURATION: MOCK_RATE_LIMIT_WINDOW,
-      MAX_FAILED_ATTEMPTS: 5,
-      MAX_TOKEN_AGE: 30 * 24 * 60 * 60 * 1000, // 30 days
-    };
+    // Reset failed attempts map. `TokenManager.failedAttempts` is a getter
+    // returning the live Map; mutate via .clear() rather than reassigning
+    // (which would throw because the property has no setter).
+    TokenManager.failedAttempts.clear();
   });
 
   describe("TokenManager", () => {
@@ -106,8 +101,7 @@ describe("Security Module", () => {
 
   describe("Rate Limiting", () => {
     beforeEach(() => {
-      // Reset failed attempts before each test
-      (TokenManager as any).failedAttempts = new Map();
+      TokenManager.failedAttempts.clear();
     });
 
     it("should track failed attempts by IP", () => {
@@ -128,58 +122,59 @@ describe("Security Module", () => {
       expect(attempts.get(ip2).lastAttempt).toBeGreaterThan(0);
     });
 
-    it("should handle rate limiting for failed attempts", async () => {
+    it("should handle rate limiting for failed attempts", () => {
       const invalidToken = "x".repeat(64);
       const uniqueIp = "10.0.0.1";
 
-      // Make multiple failed attempts
+      // Source semantics: isRateLimited() runs BEFORE recordFailedAttempt(),
+      // so the first MAX_FAILED_ATTEMPTS calls all hit the verify path and
+      // get "Invalid token signature"; the (MAX+1)th call sees count=MAX and
+      // returns the rate-limit error instead. With MAX_FAILED_ATTEMPTS=5,
+      // attempts 1-5 fail with the signature error and #6 is rate limited.
       for (let i = 0; i < 5; i++) {
         const result = TokenManager.validateToken(invalidToken, uniqueIp);
         expect(result.valid).toBe(false);
-        if (i < 4) {
-          expect(result.error).toBe("Invalid token signature");
-        } else {
-          expect(result.error).toBe("Too many failed attempts. Please try again later.");
-        }
+        expect(result.error).toBe("Invalid token signature");
       }
 
-      // Next attempt should be rate limited
-      const result = TokenManager.validateToken(invalidToken, uniqueIp);
-      expect(result.valid).toBe(false);
-      expect(result.error).toBe("Too many failed attempts. Please try again later.");
+      const sixth = TokenManager.validateToken(invalidToken, uniqueIp);
+      expect(sixth.valid).toBe(false);
+      expect(sixth.error).toBe("Too many failed attempts. Please try again later.");
 
-      // Wait for rate limit window to expire
-      await new Promise((resolve) => setTimeout(resolve, MOCK_RATE_LIMIT_WINDOW + 50));
+      // The lockout window is the production 15 minutes — we can't wait that
+      // out in a unit test, so simulate elapsed time by aging the entry.
+      const record = TokenManager.failedAttempts.get(uniqueIp)!;
+      record.lastAttempt = Date.now() - (15 * 60 * 1000 + 1000);
 
-      // After window expires, should get normal error again
+      // After window expires, should get the normal verify error again.
       const finalResult = TokenManager.validateToken(invalidToken, uniqueIp);
       expect(finalResult.valid).toBe(false);
       expect(finalResult.error).toBe("Invalid token signature");
     });
 
-    it("should reset rate limits after window expires", async () => {
+    it("should reset rate limits after window expires", () => {
       const invalidToken = "x".repeat(64);
       const uniqueIp = "172.16.0.1";
 
-      // Make some failed attempts
+      // Make some failed attempts (still under the limit).
       for (let i = 0; i < 3; i++) {
         const result = TokenManager.validateToken(invalidToken, uniqueIp);
         expect(result.valid).toBe(false);
         expect(result.error).toBe("Invalid token signature");
       }
 
-      // Wait for rate limit window to expire
-      await new Promise((resolve) => setTimeout(resolve, MOCK_RATE_LIMIT_WINDOW + 50));
+      // Age the entry past the lockout window — `isRateLimited` also
+      // deletes-on-expiry, so the next attempt starts a fresh count.
+      const record = TokenManager.failedAttempts.get(uniqueIp)!;
+      record.lastAttempt = Date.now() - (15 * 60 * 1000 + 1000);
 
-      // After window expires, should get normal error
       const result = TokenManager.validateToken(invalidToken, uniqueIp);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Invalid token signature");
 
-      // Should have one new attempt recorded
-      const attempts = (TokenManager as any).failedAttempts;
-      expect(attempts.has(uniqueIp)).toBe(true);
-      expect(attempts.get(uniqueIp).count).toBe(1);
+      // Counter should have reset and recorded one fresh attempt.
+      expect(TokenManager.failedAttempts.has(uniqueIp)).toBe(true);
+      expect(TokenManager.failedAttempts.get(uniqueIp)!.count).toBe(1);
     });
   });
 });

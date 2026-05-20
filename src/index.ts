@@ -265,8 +265,12 @@ async function main(): Promise<void> {
   });
 }
 
-// Run the main function
-main().catch((error) => {
-  logger.error("Error starting MCP Server:", error);
-  process.exit(1);
-});
+// Run the main function only when this module is the entry point.
+// Guarded so test files can `import('./src/index')` without triggering startup
+// (and the process.exit on startup failure that would silently kill the runner).
+if (import.meta.main) {
+  main().catch((error) => {
+    logger.error("Error starting MCP Server:", error);
+    process.exit(1);
+  });
+}

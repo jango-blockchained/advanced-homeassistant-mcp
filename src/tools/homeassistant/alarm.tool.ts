@@ -142,7 +142,10 @@ async function execute(params: AlarmControlInput): Promise<string> {
       }
 
       default:
-        return JSON.stringify({ success: false, error: `Unknown action: ${action}` });
+        // `action` narrows to never after the exhaustive switch; cast to
+        // string so the template literal is valid at runtime if a non-enum
+        // value somehow slips through (e.g. an unchecked JSON-RPC payload).
+        return JSON.stringify({ success: false, error: `Unknown action: ${String(action)}` });
     }
   } catch (error) {
     logger.error("Error in alarm control tool:", error);

@@ -70,12 +70,12 @@ export class ValidationDemoTool extends BaseTool<ValidationDemoParams, Validatio
   /**
    * Execute the validation demo tool
    */
-  async execute(params: ValidationDemoParams): Promise<ValidationDemoResult> {
+  execute(params: ValidationDemoParams): Promise<ValidationDemoResult> {
     // Get all field names that were validated
     const fieldsValidated = Object.keys(params);
 
     // Process the validated data (in a real tool, this would do something useful)
-    return {
+    return Promise.resolve({
       valid: true,
       message: "All parameters successfully validated",
       validatedData: params,
@@ -83,6 +83,6 @@ export class ValidationDemoTool extends BaseTool<ValidationDemoParams, Validatio
         fieldsValidated,
         timestamp: new Date().toISOString(),
       },
-    };
+    });
   }
 }

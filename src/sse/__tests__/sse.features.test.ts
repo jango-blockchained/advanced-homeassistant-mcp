@@ -9,6 +9,12 @@ describe("SSE Core Features", () => {
   const TEST_IP = "127.0.0.1";
   const validToken = "valid_token_that_meets_minimum_length_requirement_123456";
   let validateTokenMock: Mock<(token: string, ip?: string) => { valid: boolean; error?: string }>;
+  // Capture the real impl so afterEach can restore it. Otherwise the
+  // assignment to TokenManager.validateToken below leaks across files in
+  // the same bun process and breaks security tests downstream.
+  // Bound to TokenManager so the static method's internal `this`-using
+  // helpers stay wired up after restoration.
+  const originalValidateToken = TokenManager.validateToken.bind(TokenManager);
 
   beforeEach(() => {
     sseManager = new SSEManager({
@@ -26,7 +32,7 @@ describe("SSE Core Features", () => {
   });
 
   afterEach(() => {
-    validateTokenMock.mockReset();
+    TokenManager.validateToken = originalValidateToken;
   });
 
   function createTestClient(
@@ -66,7 +72,7 @@ describe("SSE Core Features", () => {
       // Verify initial state was sent
       const sendMock = client.send as Mock<(data: string) => void>;
       expect(sendMock.mock.calls.length).toBe(1);
-      const sentData = JSON.parse(sendMock.mock.calls[0]?.[0]);
+      const sentData = JSON.parse(sendMock.mock.calls[0]?.[0] ?? "");
       expect(sentData.type).toBe("state_changed");
       expect(sentData.data.entity_id).toBe(entityId);
       expect(sentData.data.state).toBe("off");
@@ -116,7 +122,7 @@ describe("SSE Core Features", () => {
       expect(sendMock.mock.calls.length).toBe(states.length);
 
       // Verify last state
-      const lastSentData = JSON.parse(sendMock.mock.calls[2]?.[0]);
+      const lastSentData = JSON.parse(sendMock.mock.calls[2]?.[0] ?? "");
       expect(lastSentData.data.state).toBe("on");
       expect(lastSentData.data.attributes.brightness).toBe(50);
     });
@@ -173,7 +179,7 @@ describe("SSE Core Features", () => {
       const sendMock = client.send as Mock<(data: string) => void>;
       expect(sendMock.mock.calls.length).toBeGreaterThanOrEqual(1);
 
-      const pingData = JSON.parse(sendMock.mock.calls[0]?.[0]);
+      const pingData = JSON.parse(sendMock.mock.calls[0]?.[0] ?? "");
       expect(pingData.type).toBe("ping");
       expect(pingData.timestamp).toBeTruthy();
     });

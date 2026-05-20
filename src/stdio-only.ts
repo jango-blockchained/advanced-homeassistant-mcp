@@ -35,5 +35,7 @@ async function main(): Promise<void> {
   }
 }
 
-// Run the server
-main();
+// Run the server. main() catches and exits on its own, so a floating
+// rejection isn't possible — `void` marks the call as intentionally
+// not-awaited (this is the entry point).
+void main();

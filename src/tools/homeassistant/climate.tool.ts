@@ -146,7 +146,7 @@ async function executeClimateControlLogic(params: ClimateControlParams): Promise
   switch (params.action) {
     case "list": {
       const devices = await haClimateService.getClimateDevices();
-      return JSON.stringify({ devices });
+      return JSON.stringify({ success: true, devices });
     }
 
     case "get": {
@@ -157,7 +157,7 @@ async function executeClimateControlLogic(params: ClimateControlParams): Promise
       if (!deviceDetails) {
         throw new Error(`Climate entity_id '${params.entity_id}' not found.`);
       }
-      return JSON.stringify(deviceDetails);
+      return JSON.stringify({ success: true, ...deviceDetails });
     }
 
     case "set_hvac_mode": {
@@ -174,7 +174,7 @@ async function executeClimateControlLogic(params: ClimateControlParams): Promise
         );
       }
       deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
-      return JSON.stringify({ status: "success", state: deviceDetails });
+      return JSON.stringify({ success: true, state: deviceDetails });
     }
 
     case "set_temperature": {
@@ -211,7 +211,7 @@ async function executeClimateControlLogic(params: ClimateControlParams): Promise
         );
       }
       deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
-      return JSON.stringify({ status: "success", state: deviceDetails });
+      return JSON.stringify({ success: true, state: deviceDetails });
     }
 
     case "set_fan_mode": {
@@ -228,7 +228,7 @@ async function executeClimateControlLogic(params: ClimateControlParams): Promise
         );
       }
       deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
-      return JSON.stringify({ status: "success", state: deviceDetails });
+      return JSON.stringify({ success: true, state: deviceDetails });
     }
 
     default:

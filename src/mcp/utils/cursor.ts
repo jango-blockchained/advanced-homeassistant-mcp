@@ -34,8 +34,10 @@ function extractParametersFromZod(schema: z.ZodType<any>): Record<string, any> {
     return {};
   }
 
-  const shape = (schema as any)._def.shape();
-  const params: Record<string, any> = {};
+  // _def.shape() is `any`-typed in zod's d.ts; pin to a typed record so
+  // iteration produces ZodType values (not any).
+  const shape = (schema as z.ZodObject<z.ZodRawShape>)._def.shape() as Record<string, z.ZodType<unknown>>;
+  const params: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(shape)) {
     const isRequired = !(value instanceof z.ZodOptional);

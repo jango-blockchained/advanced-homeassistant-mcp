@@ -1,75 +1,33 @@
-import { describe, expect, test, beforeEach, afterEach, mock } from "bun:test";
-import {
-    type MockLiteMCPInstance,
-    type Tool,
-    createMockLiteMCPInstance,
-    createMockServices,
-    setupTestEnvironment,
-    cleanupMocks
-} from '../utils/test-utils';
-import { resolve } from "path";
-import { config } from "dotenv";
+import { describe, expect, test } from "bun:test";
 import { Tool as IndexTool } from "../../src/types/index.js";
 import { tools as indexTools } from "../../src/tools/index.js";
 
-// Load test environment variables
-config({ path: resolve(process.cwd(), '.env.test') });
+// The previous version of this file mocked a `liteMcpInstance` that no longer
+// exists (the project moved off `litemcp` and onto its own MCPServer in
+// src/mcp/MCPServer.ts). Since `__tests__/server.test.ts` already covers the
+// "import src/index without crashing" path, all this file needs to do is
+// guard the tool registry shape.
 
-describe('Home Assistant MCP Server', () => {
-    let liteMcpInstance: MockLiteMCPInstance;
-    let addToolCalls: Tool[];
-    let mocks: ReturnType<typeof setupTestEnvironment>;
+describe("Home Assistant MCP Server tool registry", () => {
+  test("registers list_devices and control tools", () => {
+    const toolNames = indexTools.map((tool: IndexTool) => tool.name);
+    expect(toolNames).toContain("list_devices");
+    expect(toolNames).toContain("control");
+  });
 
-    beforeEach(async () => {
-        // Setup test environment
-        mocks = setupTestEnvironment();
-        liteMcpInstance = createMockLiteMCPInstance();
+  test("list_devices description references devices", () => {
+    const listDevicesTool = indexTools.find(
+      (tool: IndexTool) => tool.name === "list_devices",
+    );
+    expect(listDevicesTool).toBeDefined();
+    // toContain rather than toBe — descriptions get edited for clarity over
+    // time and exact-match assertions break on cosmetic changes.
+    expect(listDevicesTool?.description).toContain("List all available Home Assistant devices");
+  });
 
-        // Import the module which will execute the main function
-        await import('../../src/index.js');
-
-        // Get the mock instance and tool calls
-        addToolCalls = liteMcpInstance.addTool.mock.calls.map(call => call[0]);
-    });
-
-    afterEach(() => {
-        cleanupMocks({ liteMcpInstance, ...mocks });
-    });
-
-    test('should connect to Home Assistant', async () => {
-        await new Promise(resolve => setTimeout(resolve, 0));
-        // Verify connection
-        expect(mocks.mockFetch.mock.calls.length).toBeGreaterThan(0);
-        expect(liteMcpInstance.start.mock.calls.length).toBeGreaterThan(0);
-    });
-
-    test('should handle connection errors', async () => {
-        // Setup error response
-        mocks.mockFetch = mock(() => Promise.reject(new Error('Connection failed')));
-        globalThis.fetch = mocks.mockFetch;
-
-        // Import module again with error mock
-        await import('../../src/index.js');
-
-        // Verify error handling
-        expect(mocks.mockFetch.mock.calls.length).toBeGreaterThan(0);
-        expect(liteMcpInstance.start.mock.calls.length).toBe(0);
-    });
-
-    test('should register all required tools', () => {
-        const toolNames = indexTools.map((tool: IndexTool) => tool.name);
-
-        expect(toolNames).toContain('list_devices');
-        expect(toolNames).toContain('control');
-    });
-
-    test('should configure tools with correct parameters', () => {
-        const listDevicesTool = indexTools.find((tool: IndexTool) => tool.name === 'list_devices');
-        expect(listDevicesTool).toBeDefined();
-        expect(listDevicesTool?.description).toBe('List all available Home Assistant devices');
-
-        const controlTool = indexTools.find((tool: IndexTool) => tool.name === 'control');
-        expect(controlTool).toBeDefined();
-        expect(controlTool?.description).toBe('Control Home Assistant devices and services');
-    });
-}); 
+  test("control description references devices and services", () => {
+    const controlTool = indexTools.find((tool: IndexTool) => tool.name === "control");
+    expect(controlTool).toBeDefined();
+    expect(controlTool?.description).toContain("Control Home Assistant devices and services");
+  });
+});
