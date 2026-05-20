@@ -24,10 +24,15 @@
 
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 
+// Mock global fetch. Normalizes the wide `string | URL | Request` input
+// type so the mock can match against a string regardless of caller form.
+const toUrlString = (u: string | URL | Request): string =>
+  typeof u === "string" ? u : u instanceof URL ? u.href : u.url;
+
 // Mock global fetch
 const createMockFetch = () => {
   return mock((url: string | URL | Request, init?: RequestInit) => {
-    const urlString = typeof url === "string" ? url : url.toString();
+    const urlString = toUrlString(url);
     
     // Mock Home Assistant API endpoint
     if (urlString.includes("/api/") && !urlString.includes("/api/tts_get_url") && !urlString.includes("/api/services")) {
@@ -372,7 +377,7 @@ describe("TextToSpeech Service", () => {
 
     test("should handle playback errors", async () => {
       const errorFetch = mock((url: string | URL | Request) => {
-        const urlString = typeof url === "string" ? url : url.toString();
+        const urlString = toUrlString(url);
         
         if (urlString.includes("play_media")) {
           return Promise.resolve({
@@ -396,7 +401,7 @@ describe("TextToSpeech Service", () => {
 
     test("should emit playback_error event on failure", async () => {
       const errorFetch = mock((url: string | URL | Request) => {
-        const urlString = typeof url === "string" ? url : url.toString();
+        const urlString = toUrlString(url);
         
         if (urlString.includes("play_media")) {
           return Promise.resolve({
@@ -491,7 +496,7 @@ describe("TextToSpeech Service", () => {
 
     test("should handle provider fetch errors gracefully", async () => {
       const errorFetch = mock((url: string | URL | Request) => {
-        const urlString = typeof url === "string" ? url : url.toString();
+        const urlString = toUrlString(url);
         
         if (urlString.includes("/api/services")) {
           return Promise.resolve({

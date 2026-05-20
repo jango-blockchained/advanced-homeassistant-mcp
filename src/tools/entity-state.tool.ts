@@ -50,7 +50,9 @@ async function executeEntityStateLogic(params: EntityStateParams): Promise<strin
     return JSON.stringify(result);
   } catch (error) {
     if (error instanceof UserError) throw error;
-    logger.error(`Failed to get entity state: ${error}`);
+    logger.error(
+      `Failed to get entity state: ${error instanceof Error ? error.message : String(error)}`,
+    );
     throw new UserError(`Failed to get state for '${params.entity_id}'`);
   }
 }

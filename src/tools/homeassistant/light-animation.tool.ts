@@ -39,7 +39,7 @@ export const lightAnimationTool: Tool = {
     try {
       for (let i = 0; i < loops; i++) {
         for (const step of sequence) {
-          const serviceData: any = { entity_id };
+          const serviceData: Record<string, unknown> = { entity_id };
 
           if (step.rgb_color) serviceData.rgb_color = step.rgb_color;
           if (step.brightness !== undefined) serviceData.brightness = step.brightness;

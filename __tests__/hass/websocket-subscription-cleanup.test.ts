@@ -1,174 +1,175 @@
 /**
- * Tests for WebSocket subscription cleanup fix
- * Verifies that event listeners are properly removed on unsubscribe
+ * Tests for HomeAssistantWebSocketClient subscription lifecycle.
+ *
+ * Verifies the subscribe/unsubscribe path in src/hass/websocket-client.ts:
+ * the subscription map gains an entry on successful subscribe, and loses it
+ * after the unsubscribe callback runs (and the corresponding result arrives).
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { EventEmitter } from 'events';
-import { WebSocketClient } from '../../src/hass/websocket-client';
-import type { SubscriptionUnsubscriber } from '../../src/hass/types';
+import { describe, expect, test, beforeEach, mock } from "bun:test";
+import { EventEmitter } from "events";
 
-describe('WebSocketClient Subscription Cleanup', () => {
-  let wsClient: WebSocketClient;
-  let mockWs: EventEmitter & { send?: jest.Mock };
-  let messageId: number;
+class FakeSocket extends EventEmitter {
+  send = mock((_: string) => undefined);
+  close = mock(() => undefined);
+  readyState = 1;
 
+  // Convenience: deliver a frame as if it came from the server.
+  deliver(message: object): void {
+    this.emit("message", Buffer.from(JSON.stringify(message)));
+  }
+}
+
+// Track every constructed socket; tests use the most recent one. Pushing
+// `this` into a module-scope array keeps eslint's no-this-alias rule happy
+// (vs. the more obvious `lastSocket = this` capture pattern).
+const sockets: FakeSocket[] = [];
+class TrackedSocket extends FakeSocket {
+  constructor(_url: string) {
+    super();
+    sockets.push(this);
+  }
+}
+const lastSocket = (): FakeSocket => {
+  const s = sockets.at(-1);
+  if (!s) throw new Error("no socket constructed yet");
+  return s;
+};
+
+// `void` rather than `await` — the factory is sync so the actual return is
+// void, but the union return type would otherwise trip the floating-promise
+// lint. Bun hoists mock.module to before static imports.
+void mock.module("ws", () => ({
+  default: TrackedSocket,
+  WebSocket: TrackedSocket,
+}));
+
+import { HomeAssistantWebSocketClient } from "../../src/hass/websocket-client";
+
+interface SubscriptionsBag {
+  subscriptions: Map<number, (data: unknown) => void>;
+  pendingRequests: Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>;
+}
+
+interface ServerFrame {
+  id: number;
+  type?: string;
+  event_type?: string;
+}
+
+// Read the most recent JSON frame the source sent over the socket.
+const lastSentFrame = (): ServerFrame => {
+  const lastArgs = lastSocket().send.mock.calls.at(-1);
+  if (!lastArgs) throw new Error("no send call recorded");
+  return JSON.parse(lastArgs[0]) as ServerFrame;
+};
+
+async function connectClient(): Promise<{
+  client: InstanceType<typeof HomeAssistantWebSocketClient>;
+  socket: FakeSocket;
+  bag: SubscriptionsBag;
+}> {
+  const client = new HomeAssistantWebSocketClient("ws://localhost:8123/api/websocket", "tok");
+  const connectPromise = client.connect();
+  // Source flow: connect() opens the socket, then authenticate() registers a
+  // one-shot message handler and sends the auth frame. We replay auth_ok.
+  // The socket is created synchronously in `new WebSocket(url)`.
+  // The "open" event triggers authenticate().
+  lastSocket().emit("open");
+  // authenticate() synchronously calls socket.send and registers a listener.
+  lastSocket().deliver({ type: "auth_ok" });
+  await connectPromise;
+  // The class-internal Maps are private; cast for direct inspection in tests.
+  const bag = client as unknown as SubscriptionsBag;
+  return { client, socket: lastSocket(), bag };
+}
+
+describe("HomeAssistantWebSocketClient subscription cleanup", () => {
   beforeEach(() => {
-    messageId = 1;
-    mockWs = new EventEmitter();
-    mockWs.send = jest.fn();
-
-    // Mock WebSocket client with proper initialization
-    wsClient = Object.create(WebSocketClient.prototype);
-    wsClient.ws = mockWs;
-    wsClient.messageId = messageId;
-    wsClient.subscriptions = new Map();
-    wsClient.authenticated = true;
-    wsClient.eventBus = new EventEmitter();
+    sockets.length = 0;
   });
 
-  afterEach(() => {
-    if (wsClient?.ws) {
-      mockWs.removeAllListeners();
-    }
-  });
+  test("subscribe records the subscription in the internal map", async () => {
+    const { client, socket, bag } = await connectClient();
+    const callback = mock((_: unknown) => undefined);
 
-  it('should track subscription by ID', () => {
-    const subscriptionId = 1;
-    const handler = jest.fn();
+    const unsubscribe = client.subscribe(callback);
+    // The subscribe() call sends `{type:"subscribe_events", event_type:"state_changed"}`
+    // and resolves on a result frame containing { id }.
+    const subscribeFrame = lastSentFrame();
+    expect(subscribeFrame).toMatchObject({ type: "subscribe_events", event_type: "state_changed" });
+    socket.deliver({ id: subscribeFrame.id, success: true, result: { id: 42 } });
 
-    // Simulate subscription tracking
-    wsClient.subscriptions.set(subscriptionId, handler);
+    // Yield so the .then() in subscribe() runs and registers the subscription.
+    await new Promise((r) => setImmediate(r));
+    expect(bag.subscriptions.has(42)).toBe(true);
 
-    expect(wsClient.subscriptions.has(subscriptionId)).toBe(true);
-    expect(wsClient.subscriptions.get(subscriptionId)).toBe(handler);
-  });
+    // Sanity: an event for that subscription id reaches the callback.
+    socket.deliver({ id: 42, type: "event", event: { entity_id: "light.x" } });
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith({ entity_id: "light.x" });
 
-  it('should create unsubscribe function that removes listener', async () => {
-    const subscriptionId = 2;
-    const handler = jest.fn();
-    const unsubscribeHandler = jest.fn();
-
-    wsClient.subscriptions.set(subscriptionId, unsubscribeHandler);
-
-    // Simulate the unsubscribe closure
-    const unsubscribe = () => {
-      wsClient.ws.send(JSON.stringify({
-        id: ++wsClient.messageId,
-        type: 'unsubscribe',
-        subscription: subscriptionId
-      }));
-      wsClient.subscriptions.delete(subscriptionId);
-    };
-
-    // Call unsubscribe
     unsubscribe();
-
-    // Verify subscription was removed
-    expect(wsClient.subscriptions.has(subscriptionId)).toBe(false);
-    expect(mockWs.send).toHaveBeenCalledWith(
-      expect.stringContaining(`"subscription":${subscriptionId}`)
-    );
+    const unsubscribeFrame = lastSentFrame();
+    socket.deliver({ id: unsubscribeFrame.id, success: true });
+    await new Promise((r) => setImmediate(r));
+    expect(bag.subscriptions.has(42)).toBe(false);
   });
 
-  it('should clean up on subscription error', () => {
-    const subscriptionId = 3;
-    const handler = jest.fn();
+  test("unsubscribe still cleans up the map even if the server reports failure", async () => {
+    const { client, socket, bag } = await connectClient();
+    const unsubscribe = client.subscribe(() => undefined);
+    const subscribeFrame = lastSentFrame();
+    socket.deliver({ id: subscribeFrame.id, success: true, result: { id: 7 } });
+    await new Promise((r) => setImmediate(r));
+    expect(bag.subscriptions.has(7)).toBe(true);
 
-    wsClient.subscriptions.set(subscriptionId, handler);
-
-    // Simulate error cleanup
-    try {
-      throw new Error('Subscription failed');
-    } catch (error) {
-      wsClient.subscriptions.delete(subscriptionId);
-    }
-
-    expect(wsClient.subscriptions.has(subscriptionId)).toBe(false);
-  });
-
-  it('should handle multiple concurrent subscriptions', () => {
-    const subscriptions: number[] = [];
-
-    // Create multiple subscriptions
-    for (let i = 0; i < 10; i++) {
-      const id = i + 1;
-      const handler = jest.fn();
-      wsClient.subscriptions.set(id, handler);
-      subscriptions.push(id);
-    }
-
-    expect(wsClient.subscriptions.size).toBe(10);
-
-    // Unsubscribe from half
-    for (let i = 0; i < 5; i++) {
-      wsClient.subscriptions.delete(subscriptions[i]);
-    }
-
-    expect(wsClient.subscriptions.size).toBe(5);
-
-    // Verify remaining are correct
-    for (let i = 5; i < 10; i++) {
-      expect(wsClient.subscriptions.has(subscriptions[i])).toBe(true);
-    }
-  });
-
-  it('should not cause memory leaks with rapid subscribe/unsubscribe', () => {
-    const initialSize = wsClient.subscriptions.size;
-
-    // Rapid subscribe/unsubscribe cycles
-    for (let i = 0; i < 1000; i++) {
-      const id = i + 100;
-      wsClient.subscriptions.set(id, jest.fn());
-      wsClient.subscriptions.delete(id);
-    }
-
-    expect(wsClient.subscriptions.size).toBe(initialSize);
-  });
-
-  it('should handle unsubscribe with invalid subscription ID gracefully', () => {
-    const invalidId = 9999;
-
-    // Simulate unsubscribe attempt
-    const unsubscribe = () => {
-      if (wsClient.subscriptions.has(invalidId)) {
-        wsClient.subscriptions.delete(invalidId);
-        return true;
-      }
-      return false;
-    };
-
-    const result = unsubscribe();
-    expect(result).toBe(false);
-    expect(wsClient.subscriptions.size).toBe(0);
-  });
-
-  it('should maintain subscription map consistency', () => {
-    const subscriptions = [
-      { id: 10, handler: jest.fn() },
-      { id: 11, handler: jest.fn() },
-      { id: 12, handler: jest.fn() }
-    ];
-
-    // Add all
-    subscriptions.forEach(sub => {
-      wsClient.subscriptions.set(sub.id, sub.handler);
+    unsubscribe();
+    const unsubscribeFrame = lastSentFrame();
+    // Server returns failure — the source's catch branch must still delete locally.
+    socket.deliver({
+      id: unsubscribeFrame.id,
+      success: false,
+      error: { message: "no such subscription" },
     });
+    await new Promise((r) => setImmediate(r));
+    expect(bag.subscriptions.has(7)).toBe(false);
+  });
 
-    expect(wsClient.subscriptions.size).toBe(3);
+  test("rapid subscribe/unsubscribe cycles do not leak entries", async () => {
+    const { client, socket, bag } = await connectClient();
 
-    // Verify all are present
-    subscriptions.forEach(sub => {
-      expect(wsClient.subscriptions.has(sub.id)).toBe(true);
+    for (let i = 0; i < 50; i++) {
+      const unsubscribe = client.subscribe(() => undefined);
+      const subFrame = lastSentFrame();
+      socket.deliver({ id: subFrame.id, success: true, result: { id: 1000 + i } });
+      await new Promise((r) => setImmediate(r));
+
+      unsubscribe();
+      const unsubFrame = lastSentFrame();
+      socket.deliver({ id: unsubFrame.id, success: true });
+      await new Promise((r) => setImmediate(r));
+    }
+
+    expect(bag.subscriptions.size).toBe(0);
+  });
+
+  test("disconnect rejects all pending requests", async () => {
+    const { client, bag } = await connectClient();
+
+    // Issue a request that the server never answers.
+    const pending = client.send({ type: "ping" });
+    expect(bag.pendingRequests.size).toBe(1);
+
+    await client.disconnect();
+    // bun-types incorrectly types `expect(promise).rejects.toThrow(...)` as
+    // synchronous; awaiting it trips await-thenable. Verify the rejection
+    // shape directly via .catch instead.
+    let caught: Error | undefined;
+    await pending.catch((err: unknown) => {
+      caught = err as Error;
     });
-
-    // Remove middle one
-    wsClient.subscriptions.delete(11);
-
-    // Verify consistency
-    expect(wsClient.subscriptions.size).toBe(2);
-    expect(wsClient.subscriptions.has(10)).toBe(true);
-    expect(wsClient.subscriptions.has(11)).toBe(false);
-    expect(wsClient.subscriptions.has(12)).toBe(true);
+    expect(caught?.message).toBe("Connection closed");
+    expect(bag.pendingRequests.size).toBe(0);
   });
 });

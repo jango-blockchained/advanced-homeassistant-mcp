@@ -53,7 +53,8 @@ export class HomeAssistantWebSocketClient extends EventEmitter implements HassWe
         });
 
         this.socket.on("close", (code, reason) => {
-          logger.info(`WebSocket connection closed: ${code} - ${reason}`);
+          // `reason` is a Buffer; toString it for the log line.
+          logger.info(`WebSocket connection closed: ${code} - ${reason.toString()}`);
           this.connected = false;
           this.emit("disconnected");
         });
@@ -64,7 +65,7 @@ export class HomeAssistantWebSocketClient extends EventEmitter implements HassWe
     });
   }
 
-  async disconnect(): Promise<void> {
+  disconnect(): Promise<void> {
     if (this.socket) {
       this.socket.close();
       this.socket = null;
@@ -75,6 +76,7 @@ export class HomeAssistantWebSocketClient extends EventEmitter implements HassWe
       reject(new Error("Connection closed"));
     }
     this.pendingRequests.clear();
+    return Promise.resolve();
   }
 
   private async authenticate(): Promise<void> {
@@ -134,21 +136,32 @@ export class HomeAssistantWebSocketClient extends EventEmitter implements HassWe
     });
   }
 
-  private handleMessage(message: any): void {
+  private handleMessage(rawMessage: unknown): void {
+    // Narrow the inbound message to a structural shape so downstream
+    // accesses are type-checked rather than `any`-propagating.
+    const message = rawMessage as {
+      id?: number;
+      type?: string;
+      success?: boolean;
+      error?: { message?: string };
+      result?: unknown;
+      event?: unknown;
+    };
+
     // Handle responses to our requests
-    if (message.id && this.pendingRequests.has(message.id)) {
+    if (message.id !== undefined && this.pendingRequests.has(message.id)) {
       const { resolve, reject } = this.pendingRequests.get(message.id)!;
       this.pendingRequests.delete(message.id);
 
       if (message.success === false) {
-        reject(new Error(message.error?.message || "Request failed"));
+        reject(new Error(message.error?.message ?? "Request failed"));
       } else {
         resolve(message.result);
       }
     }
 
     // Handle subscriptions
-    if (message.type === "event") {
+    if (message.type === "event" && message.id !== undefined) {
       const subscription = this.subscriptions.get(message.id);
       if (subscription) {
         subscription(message.event);

@@ -134,7 +134,7 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<s
   switch (params.action) {
     case "list": {
       const lights = await haLightsService.getLights();
-      return JSON.stringify({ lights });
+      return JSON.stringify({ success: true, lights });
     }
 
     case "get": {
@@ -145,7 +145,7 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<s
       if (!lightDetails) {
         throw new UserError(`Light entity_id '${params.entity_id}' not found.`);
       }
-      return JSON.stringify(lightDetails);
+      return JSON.stringify({ success: true, ...lightDetails });
     }
 
     case "turn_on": {
@@ -164,7 +164,7 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<s
         throw new UserError(`Failed to turn on light '${params.entity_id}'. Entity not found?`);
       }
       lightDetails = await haLightsService.getLight(params.entity_id); // Get updated state
-      return JSON.stringify({ status: "success", state: lightDetails });
+      return JSON.stringify({ success: true, state: lightDetails });
     }
 
     case "turn_off": {
@@ -176,7 +176,7 @@ async function executeLightsControlLogic(params: LightsControlParams): Promise<s
         throw new UserError(`Failed to turn off light '${params.entity_id}'. Entity not found?`);
       }
       lightDetails = await haLightsService.getLight(params.entity_id); // Get updated state
-      return JSON.stringify({ status: "success", state: lightDetails });
+      return JSON.stringify({ success: true, state: lightDetails });
     }
 
     default:

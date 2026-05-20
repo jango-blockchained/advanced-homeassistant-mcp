@@ -153,11 +153,11 @@ export default async function createServer({ config }: { config?: z.infer<typeof
       destructiveHint: false,
       openWorldHint: false,
     } as never,
-    execute: async (): Promise<string> => {
+    execute: (): Promise<string> => {
       const hasToken = Boolean(process.env.HASS_TOKEN);
       const hassHost = process.env.HASS_HOST || "not configured";
-      
-      return JSON.stringify({
+
+      return Promise.resolve(JSON.stringify({
         name: "Home Assistant MCP Server",
         version: "1.2.1",
         description: "Control your smart home through AI assistants",
@@ -165,7 +165,7 @@ export default async function createServer({ config }: { config?: z.infer<typeof
         connected: hasToken,
         toolCount: tools.length + 1,
         capabilities: ["tools", "resources", "prompts"],
-      }, null, 2);
+      }, null, 2));
     },
   });
 

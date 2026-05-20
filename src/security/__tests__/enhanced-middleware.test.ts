@@ -1,84 +1,95 @@
-import { expect, test, describe, beforeEach, afterEach } from "bun:test";
+/**
+ * Tests for src/security/enhanced-middleware.ts.
+ *
+ * The previous tests were written against a different API surface
+ * (`applySecurityHeaders(req)`, `checkRateLimit(ip, isAuth)`, `rateLimitStore`)
+ * that doesn't exist on the current `SecurityMiddleware` class. The class
+ * keeps everything `private static`, so we reach in via `(SM as any).method`
+ * to exercise the same behaviors against the real signatures.
+ */
+
+import { expect, test, describe, beforeEach } from "bun:test";
 import { SecurityMiddleware } from "../enhanced-middleware";
+import type { Request, Response } from "express";
+
+interface SecurityMiddlewareInternal {
+  validateRequest: (req: Request) => void;
+  sanitizeInput: (input: unknown) => unknown;
+  applySecurityHeaders: (res: Response) => void;
+  checkRateLimit: (req: Request) => void;
+  requestCounts: Map<string, { count: number; resetTime: number }>;
+  authRequestCounts: Map<string, { count: number; resetTime: number }>;
+}
+const SM = SecurityMiddleware as unknown as SecurityMiddlewareInternal;
 
 describe("Enhanced Security Middleware", () => {
   describe("Security Headers", () => {
-    test("applies security headers correctly", () => {
-      const request = new Request("http://localhost");
-      SecurityMiddleware.applySecurityHeaders(request);
+    test("sets the expected headers on the response", () => {
+      const headers: Record<string, string> = {};
+      const fakeRes = {
+        removeHeader: () => undefined,
+        setHeader: (name: string, value: string) => {
+          headers[name] = value;
+        },
+      } as unknown as Response;
 
-      expect(request.headers.get("content-security-policy")).toBeDefined();
-      expect(request.headers.get("x-frame-options")).toBe("DENY");
-      expect(request.headers.get("strict-transport-security")).toBeDefined();
-      expect(request.headers.get("x-xss-protection")).toBe("1; mode=block");
+      SM.applySecurityHeaders(fakeRes);
+
+      expect(headers["X-Frame-Options"]).toBe("DENY");
+      expect(headers["X-XSS-Protection"]).toBe("1; mode=block");
+      expect(headers["Strict-Transport-Security"]).toBeDefined();
+      expect(headers["Content-Security-Policy"]).toContain("default-src 'self'");
     });
   });
 
   describe("Request Validation", () => {
-    test("validates request size", async () => {
-      const largeBody = "x".repeat(2 * 1024 * 1024); // 2MB
-      const request = new Request("http://localhost", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "content-length": largeBody.length.toString(),
-        },
-        body: JSON.stringify({ data: largeBody }),
-      });
-
-      await expect(SecurityMiddleware.validateRequest(request)).rejects.toThrow(
-        "Request body too large",
-      );
+    test("rejects URLs over MAX_URL_LENGTH", () => {
+      const longUrl = "/" + "x".repeat(3000);
+      const req = { originalUrl: longUrl, method: "GET", headers: {} } as unknown as Request;
+      expect(() => SM.validateRequest(req)).toThrow("URL too long");
     });
 
-    test("validates URL length", async () => {
-      const longUrl = "http://localhost/" + "x".repeat(3000);
-      const request = new Request(longUrl);
-
-      await expect(SecurityMiddleware.validateRequest(request)).rejects.toThrow("URL too long");
+    test("rejects POST without application/json content-type", () => {
+      const req = {
+        originalUrl: "/x",
+        method: "POST",
+        headers: { "content-type": "text/plain" },
+      } as unknown as Request;
+      expect(() => SM.validateRequest(req)).toThrow("Content-Type must be application/json");
     });
 
-    test("validates and sanitizes POST request body", async () => {
-      const request = new Request("http://localhost", {
+    test("accepts a well-formed POST", () => {
+      const req = {
+        originalUrl: "/x",
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          name: '<script>alert("xss")</script>Hello',
-          age: 25,
-        }),
-      });
-
-      await SecurityMiddleware.validateRequest(request);
-      const body = await request.json();
-      expect(body.name).not.toContain("<script>");
-      expect(body.age).toBe(25);
+        headers: { "content-type": "application/json" },
+      } as unknown as Request;
+      expect(() => SM.validateRequest(req)).not.toThrow();
     });
   });
 
   describe("Input Sanitization", () => {
-    test("sanitizes string input", () => {
-      const input = '<script>alert("xss")</script>Hello<img src="x" onerror="alert(1)">';
-      const sanitized = SecurityMiddleware.sanitizeInput(input);
+    test("strips tags from a string", () => {
+      const sanitized = SM.sanitizeInput(
+        '<script>alert("xss")</script>Hello<img src="x" onerror="alert(1)">',
+      );
       expect(sanitized).toBe("Hello");
     });
 
-    test("sanitizes nested object input", () => {
-      const input = {
+    test("recurses into nested objects", () => {
+      const sanitized = SM.sanitizeInput({
         name: '<script>alert("xss")</script>John',
-        details: {
-          bio: '<img src="x" onerror="alert(1)">Web Developer',
-        },
-      };
-      const sanitized = SecurityMiddleware.sanitizeInput(input) as any;
+        details: { bio: '<img src="x" onerror="alert(1)">Web Developer' },
+      }) as { name: string; details: { bio: string } };
       expect(sanitized.name).toBe("John");
       expect(sanitized.details.bio).toBe("Web Developer");
     });
 
-    test("sanitizes array input", () => {
-      const input = ["<script>alert(1)</script>Hello", '<img src="x" onerror="alert(1)">World'];
-      const sanitized = SecurityMiddleware.sanitizeInput(input) as string[];
+    test("recurses into arrays", () => {
+      const sanitized = SM.sanitizeInput([
+        "<script>alert(1)</script>Hello",
+        '<img src="x" onerror="alert(1)">World',
+      ]) as string[];
       expect(sanitized[0]).toBe("Hello");
       expect(sanitized[1]).toBe("World");
     });
@@ -86,51 +97,43 @@ describe("Enhanced Security Middleware", () => {
 
   describe("Rate Limiting", () => {
     beforeEach(() => {
-      // Reset rate limit stores before each test
-      (SecurityMiddleware as any).rateLimitStore.clear();
-      (SecurityMiddleware as any).authLimitStore.clear();
+      SM.requestCounts.clear();
+      SM.authRequestCounts.clear();
     });
 
-    test("enforces regular rate limits", () => {
-      const ip = "127.0.0.1";
+    function reqFor(ip: string, path = "/whatever"): Request {
+      return { ip, path, socket: { remoteAddress: ip } } as unknown as Request;
+    }
 
-      // Should allow up to 100 requests
-      for (let i = 0; i < 100; i++) {
-        expect(() => SecurityMiddleware.checkRateLimit(ip, false)).not.toThrow();
+    test("regular requests block at the configured ceiling", () => {
+      const ip = "10.0.0.1";
+      // SECURITY_CONFIG.RATE_LIMIT.max = 50; first 50 succeed, 51st throws.
+      for (let i = 0; i < 50; i++) {
+        expect(() => SM.checkRateLimit(reqFor(ip))).not.toThrow();
       }
-
-      // Should block the 101st request
-      expect(() => SecurityMiddleware.checkRateLimit(ip, false)).toThrow("Too many requests");
+      expect(() => SM.checkRateLimit(reqFor(ip))).toThrow("Too many requests");
     });
 
-    test("enforces stricter auth rate limits", () => {
-      const ip = "127.0.0.1";
-
-      // Should allow up to 5 auth requests
-      for (let i = 0; i < 5; i++) {
-        expect(() => SecurityMiddleware.checkRateLimit(ip, true)).not.toThrow();
+    test("auth-prefixed requests use the stricter ceiling", () => {
+      const ip = "10.0.0.2";
+      // AUTH_RATE_LIMIT.max = 3; the 4th throws with the auth-specific message.
+      for (let i = 0; i < 3; i++) {
+        expect(() => SM.checkRateLimit(reqFor(ip, "/auth/login"))).not.toThrow();
       }
-
-      // Should block the 6th auth request
-      expect(() => SecurityMiddleware.checkRateLimit(ip, true)).toThrow(
+      expect(() => SM.checkRateLimit(reqFor(ip, "/auth/login"))).toThrow(
         "Too many authentication requests",
       );
     });
 
-    test("resets rate limits after window expires", async () => {
-      const ip = "127.0.0.1";
-
-      // Make max requests
-      for (let i = 0; i < 100; i++) {
-        SecurityMiddleware.checkRateLimit(ip, false);
+    test("expired window resets the count", () => {
+      const ip = "10.0.0.3";
+      for (let i = 0; i < 50; i++) {
+        SM.checkRateLimit(reqFor(ip));
       }
-
-      // Wait for rate limit window to expire
-      const store = (SecurityMiddleware as any).rateLimitStore.get(ip);
-      store.resetTime = Date.now() - 1000; // Set reset time to the past
-
-      // Should allow requests again
-      expect(() => SecurityMiddleware.checkRateLimit(ip, false)).not.toThrow();
+      // Force the window to look expired.
+      const record = SM.requestCounts.get(ip)!;
+      record.resetTime = Date.now() - 1000;
+      expect(() => SM.checkRateLimit(reqFor(ip))).not.toThrow();
     });
   });
 });

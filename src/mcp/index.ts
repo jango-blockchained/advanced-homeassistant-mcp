@@ -111,23 +111,29 @@ export function createClaudeFunctions(tools: ToolDefinition[]): any[] {
 /**
  * Utility function to create Cursor-compatible tool definitions
  */
-export function createCursorTools(tools: ToolDefinition[]): any[] {
-  return tools.map((tool) => ({
-    name: tool.name,
-    description: tool.description,
-    parameters: Object.entries((tool as any).parameters?.properties || {}).reduce(
-      (acc, [key, value]) => {
-        const param = value as any;
+interface JsonSchemaParameters {
+  properties?: Record<string, { type?: string; description?: string }>;
+  required?: string[];
+}
+
+export function createCursorTools(tools: ToolDefinition[]): unknown[] {
+  return tools.map((tool) => {
+    const params = (tool as unknown as { parameters?: JsonSchemaParameters }).parameters ?? {};
+    const properties = params.properties ?? {};
+    const required = params.required ?? [];
+    return {
+      name: tool.name,
+      description: tool.description,
+      parameters: Object.entries(properties).reduce<Record<string, unknown>>((acc, [key, value]) => {
         acc[key] = {
-          type: param.type || "string",
-          description: param.description || "",
-          required: ((tool as any).parameters?.required || []).includes(key),
+          type: value.type ?? "string",
+          description: value.description ?? "",
+          required: required.includes(key),
         };
         return acc;
-      },
-      {} as Record<string, any>,
-    ),
-  }));
+      }, {}),
+    };
+  });
 }
 
 /**

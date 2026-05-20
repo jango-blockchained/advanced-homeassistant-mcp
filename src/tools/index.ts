@@ -37,6 +37,7 @@ import { entityStateTool } from "./entity-state.tool";
 import { searchEntitiesTool } from "./search-entities.tool";
 import { errorLogTool } from "./error-log.tool";
 import { dashboardTool } from "./dashboard.tool";
+import { renderTemplateTool } from "./template.tool";
 
 // Tool category types
 export enum ToolCategory {
@@ -106,6 +107,8 @@ export const tools: Tool[] = [
   errorLogTool,
   // Dashboard management
   dashboardTool,
+  // Template evaluation
+  renderTemplateTool,
 ];
 
 // Function to get a tool by name
@@ -162,4 +165,6 @@ export {
   errorLogTool,
   // Dashboard management
   dashboardTool,
+  // Template evaluation
+  renderTemplateTool,
 };

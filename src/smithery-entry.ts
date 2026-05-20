@@ -80,16 +80,17 @@ function getToolAnnotations(toolName: string): ToolAnnotations {
 function zodSchemaToJson(schema: z.ZodType): Record<string, unknown> {
   // Simple conversion for basic types
   if (schema instanceof z.ZodObject) {
-    const shape = schema.shape;
+    // schema.shape is typed `any` from zod's d.ts; pin it to the actual
+    // shape (record of ZodType) so iteration produces typed values.
+    const shape = schema.shape as Record<string, z.ZodType>;
     const properties: Record<string, unknown> = {};
     const required: string[] = [];
 
     for (const [key, value] of Object.entries(shape)) {
-      const zodValue = value as z.ZodType;
-      properties[key] = zodSchemaToJson(zodValue);
-      
+      properties[key] = zodSchemaToJson(value);
+
       // Check if not optional
-      if (!(zodValue instanceof z.ZodOptional) && !(zodValue instanceof z.ZodDefault)) {
+      if (!(value instanceof z.ZodOptional) && !(value instanceof z.ZodDefault)) {
         required.push(key);
       }
     }
@@ -116,7 +117,7 @@ function zodSchemaToJson(schema: z.ZodType): Record<string, unknown> {
   if (schema instanceof z.ZodArray) {
     return {
       type: "array",
-      items: zodSchemaToJson(schema.element),
+      items: zodSchemaToJson(schema.element as z.ZodType),
       description: schema.description,
     };
   }
@@ -130,11 +131,11 @@ function zodSchemaToJson(schema: z.ZodType): Record<string, unknown> {
   }
 
   if (schema instanceof z.ZodOptional) {
-    return zodSchemaToJson(schema.unwrap());
+    return zodSchemaToJson(schema.unwrap() as z.ZodType);
   }
 
   if (schema instanceof z.ZodDefault) {
-    const inner = zodSchemaToJson(schema.removeDefault());
+    const inner = zodSchemaToJson(schema.removeDefault() as z.ZodType);
     return { ...inner, default: schema._def.defaultValue() };
   }
 
@@ -161,7 +162,11 @@ export default function createServer({ config }: { config?: ServerConfig } = {})
     process.env.DEBUG = "true";
   }
 
-  // Dynamically import the SDK to avoid bundling issues
+  // Dynamically import the SDK to avoid bundling issues. Use eslint-disable
+  // because the SDK is CJS-only and ESM `import` would force bundlers to
+  // pull in the SDK at build-time, which is exactly what this entry point
+  // is structured to avoid.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
   const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
 
   // Create the MCP server using the official SDK
@@ -231,7 +236,7 @@ export default function createServer({ config }: { config?: ServerConfig } = {})
       properties: {},
       additionalProperties: false,
     },
-    async () => {
+    () => {
       const hasToken = Boolean(process.env.HASS_TOKEN);
       const hassHost = process.env.HASS_HOST || "not configured";
 

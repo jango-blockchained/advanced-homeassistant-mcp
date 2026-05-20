@@ -81,6 +81,7 @@ async function executeListDevicesLogic(params: ListDevicesParams): Promise<strin
     logger.debug(`Found ${devices.length} devices matching criteria`);
 
     const response = {
+      success: true,
       devices,
       total_count: devices.length,
       filters_applied: {

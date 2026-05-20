@@ -63,7 +63,7 @@ export class ContextAnalyzer {
     ];
   }
 
-  async analyze(intent: AIIntent, context: AIContext): Promise<ContextAnalysis> {
+  analyze(intent: AIIntent, context: AIContext): Promise<ContextAnalysis> {
     let totalConfidence = 0;
     let relevantParams: Record<string, any> = {};
     let applicableRules = 0;
@@ -85,10 +85,10 @@ export class ContextAnalyzer {
     // Calculate normalized confidence
     const confidence = applicableRules > 0 ? totalConfidence / applicableRules : 0.5; // Default confidence if no rules apply
 
-    return {
+    return Promise.resolve({
       confidence,
       relevant_params: relevantParams,
-    };
+    });
   }
 
   private getTimeOfDay(date: Date): string {
@@ -100,32 +100,33 @@ export class ContextAnalyzer {
     return "night";
   }
 
-  async updateContextRules(newRules: ContextRule[]): Promise<void> {
+  updateContextRules(newRules: ContextRule[]): Promise<void> {
     this.contextRules = [...this.contextRules, ...newRules];
+    return Promise.resolve();
   }
 
-  async validateContext(context: AIContext): Promise<boolean> {
+  validateContext(context: AIContext): Promise<boolean> {
     // Validate required context fields
     if (!context.timestamp || !context.user_id || !context.session_id) {
-      return false;
+      return Promise.resolve(false);
     }
 
     // Validate timestamp format
     const timestamp = new Date(context.timestamp);
     if (isNaN(timestamp.getTime())) {
-      return false;
+      return Promise.resolve(false);
     }
 
     // Validate previous actions array
     if (!Array.isArray(context.previous_actions)) {
-      return false;
+      return Promise.resolve(false);
     }
 
     // Validate environment state
     if (typeof context.environment_state !== "object" || context.environment_state === null) {
-      return false;
+      return Promise.resolve(false);
     }
 
-    return true;
+    return Promise.resolve(true);
   }
 }

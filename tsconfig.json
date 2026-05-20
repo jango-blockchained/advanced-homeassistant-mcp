@@ -53,6 +53,7 @@
     "src/**/*",
     "test/**/*",
     "__tests__/**/*",
+    "scripts/**/*.ts",
     "*.d.ts"
   ],
   "exclude": [

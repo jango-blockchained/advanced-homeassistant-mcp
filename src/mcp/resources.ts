@@ -109,7 +109,7 @@ type ResourceContent =
 /**
  * List all available resources
  */
-export async function listResources(): Promise<MCPResource[]> {
+export function listResources(): Promise<MCPResource[]> {
   try {
     // Use safe version during initialization - don't fail if no token
     // Just return static list of resources - we don't need to fetch states for this
@@ -209,10 +209,10 @@ export async function listResources(): Promise<MCPResource[]> {
       },
     ];
 
-    return resources;
+    return Promise.resolve(resources);
   } catch (error) {
     logger.error("Failed to list resources:", error);
-    return [];
+    return Promise.resolve([]);
   }
 }
 
@@ -235,11 +235,11 @@ export async function getResource(uri: string): Promise<MCPResourceContent | nul
     let content: ResourceContent | null = null;
 
     if (category === "devices") {
-      content = await getDeviceResource(type, states);
+      content = getDeviceResource(type, states);
     } else if (category === "config") {
-      content = await getConfigResource(type, states);
+      content = getConfigResource(type, states);
     } else if (category === "summary") {
-      content = await getSummaryResource(type, states);
+      content = getSummaryResource(type, states);
     } else {
       throw new Error(`Unknown resource category: ${category}`);
     }
@@ -259,10 +259,10 @@ export async function getResource(uri: string): Promise<MCPResourceContent | nul
   }
 }
 
-async function getDeviceResource(
+function getDeviceResource(
   type: string,
   states: HassEntity[],
-): Promise<DeviceResourceContent | null> {
+): DeviceResourceContent | null {
   const filterMap: Record<string, string> = {
     all: "",
     lights: "light.",
@@ -297,10 +297,10 @@ async function getDeviceResource(
   };
 }
 
-async function getConfigResource(
+function getConfigResource(
   type: string,
   states: HassEntity[],
-): Promise<AreaResourceContent | AutomationResourceContent | SceneResourceContent | null> {
+): AreaResourceContent | AutomationResourceContent | SceneResourceContent | null {
   if (type === "areas") {
     // Group devices by area
     const areas: Record<string, Array<{ entity_id: string; name: string; domain: string }>> = {};
@@ -349,10 +349,10 @@ async function getConfigResource(
   return null;
 }
 
-async function getSummaryResource(
+function getSummaryResource(
   type: string,
   states: HassEntity[],
-): Promise<DashboardResourceContent | null> {
+): DashboardResourceContent | null {
   if (type === "dashboard") {
     const lights = states.filter((s) => s.entity_id.startsWith("light."));
     const climate = states.filter((s) => s.entity_id.startsWith("climate."));

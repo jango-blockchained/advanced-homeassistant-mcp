@@ -10,7 +10,7 @@ import { BaseTransport } from "../transport.js";
 import { logger } from "../../utils/logger.js";
 import { MCPServer } from "../MCPServer.js";
 import type { MCPRequest, MCPResponse, ToolExecutionResult } from "../types.js";
-import { JSONRPCError } from "../utils/error.js";
+import { JSONRPCError, type JSONRPCErrorBase } from "../utils/error.js";
 
 /**
  * StdioTransport options
@@ -57,8 +57,8 @@ export class StdioTransport extends BaseTransport {
   /**
    * Start the transport and setup stdin/stdout handlers
    */
-  public async start(): Promise<void> {
-    if (this.isStarted) return;
+  public start(): Promise<void> {
+    if (this.isStarted) return Promise.resolve();
 
     if (!this.silent) {
       logger.info("Starting stdio transport");
@@ -78,6 +78,8 @@ export class StdioTransport extends BaseTransport {
 
     // Send available tools notification
     this.sendAvailableTools();
+
+    return Promise.resolve();
   }
 
   /**
@@ -182,7 +184,10 @@ export class StdioTransport extends BaseTransport {
               if (openBraces === 0) {
                 // We have a complete JSON object
                 const jsonStr = buffer.substring(startIndex, i + 1);
-                this.handleJsonRequest(jsonStr);
+                // Fire-and-forget: handleJsonRequest writes the response
+                // to stdout itself; we just want it scheduled. `void`
+                // marks the promise as intentionally not-awaited.
+                void this.handleJsonRequest(jsonStr);
 
                 // Remove the processed part from the buffer
                 buffer = buffer.substring(i + 1);
@@ -220,7 +225,12 @@ export class StdioTransport extends BaseTransport {
    */
   private async handleJsonRequest(jsonStr: string): Promise<void> {
     try {
-      const request = JSON.parse(jsonStr);
+      const request = JSON.parse(jsonStr) as {
+        jsonrpc?: string;
+        id?: string | number | null;
+        method?: string;
+        params?: Record<string, unknown>;
+      };
 
       if (this.debug) {
         logger.debug(`Received request: ${jsonStr}`);
@@ -228,16 +238,16 @@ export class StdioTransport extends BaseTransport {
 
       if (!request.jsonrpc || request.jsonrpc !== "2.0") {
         return this.sendErrorResponse(
-          request.id,
+          request.id ?? null,
           new JSONRPCError.InvalidRequest("Invalid JSON-RPC 2.0 request"),
         );
       }
 
       const mcpRequest: MCPRequest = {
         jsonrpc: request.jsonrpc,
-        id: request.id,
-        method: request.method,
-        params: request.params || {},
+        id: request.id ?? null,
+        method: request.method ?? "",
+        params: request.params ?? {},
       };
 
       if (!this.server) {
@@ -268,7 +278,7 @@ export class StdioTransport extends BaseTransport {
   /**
    * Send a JSON-RPC error response
    */
-  private sendErrorResponse(id: string | number | null, error: JSONRPCError.JSONRPCError): void {
+  private sendErrorResponse(id: string | number | null, error: JSONRPCErrorBase): void {
     const response = {
       jsonrpc: "2.0",
       id: id,
@@ -314,13 +324,14 @@ export class StdioTransport extends BaseTransport {
   /**
    * Stop the transport
    */
-  public async stop(): Promise<void> {
-    if (!this.isStarted) return;
+  public stop(): Promise<void> {
+    if (!this.isStarted) return Promise.resolve();
 
     if (!this.silent) {
       logger.info("Stopping stdio transport");
     }
 
     this.isStarted = false;
+    return Promise.resolve();
   }
 }
