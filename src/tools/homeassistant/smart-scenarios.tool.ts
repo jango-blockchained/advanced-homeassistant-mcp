@@ -574,8 +574,9 @@ async function executeSmartScenariosRead(params: SmartScenariosReadParams): Prom
       2,
     );
   } catch (error) {
-    logger.error(`smart_scenarios read failed: ${error}`);
-    throw new UserError(error instanceof Error ? error.message : String(error));
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`smart_scenarios read failed: ${message}`);
+    throw new UserError(message);
   }
 }
 
@@ -592,8 +593,9 @@ async function executeSmartScenariosActivate(params: SmartScenariosParams): Prom
     }
     throw new UserError(`Unknown apply action: ${(params as { action: string }).action}`);
   } catch (error) {
-    logger.error(`smart_scenarios activate failed: ${error}`);
-    throw new UserError(error instanceof Error ? error.message : String(error));
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`smart_scenarios activate failed: ${message}`);
+    throw new UserError(message);
   }
 }
 
