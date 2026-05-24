@@ -198,8 +198,8 @@ const _automationConfigSchema = z
   .passthrough()
   .describe("Automation configuration (required for create and update)");
 
-export const automationConfigTool: Tool = {
-  name: "automation_config",
+export const automationConfigModifyTool: Tool = {
+  name: "automation_config_modify",
   description:
     "Advanced automation configuration and management - create, update, duplicate, and delete automations",
   annotations: {

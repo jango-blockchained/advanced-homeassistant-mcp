@@ -19,16 +19,18 @@ const LightAnimationParamsSchema = z.object({
 
 type LightAnimationParams = z.infer<typeof LightAnimationParamsSchema>;
 
-export const lightAnimationTool: Tool = {
-  name: "light_animation",
+export const lightAnimationActivateTool: Tool = {
+  name: "light_animation_activate",
   description:
     "Execute custom light animation sequences (e.g., police lights, alerts) on any RGB light.",
   parameters: LightAnimationParamsSchema,
   annotations: {
     title: "Light Animation",
     description: "Run custom animation sequences on lights",
+    readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: false,
+    openWorldHint: true,
   },
   execute: async (params: LightAnimationParams) => {
     const { entity_id, sequence, loops } = params;

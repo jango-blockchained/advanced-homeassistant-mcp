@@ -16,19 +16,21 @@ import { MCPContext } from "../../mcp/types.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
 
-// Define the schema for maintenance tool parameters
+// Define the schema for maintenance tool parameters.
+// Read-only: all currently-implemented actions analyze state without modifying it.
+// `cleanup_orphaned_entities` (was a no-op stub) and `find_unused_automations` (was a
+// "not implemented" throw) were removed; resurrect them as a `maintenance_modify` tool
+// when they actually do something.
 const maintenanceSchema = z.object({
   action: z
     .enum([
       "find_orphaned_devices",
       "analyze_light_usage",
       "analyze_energy_consumption",
-      "cleanup_orphaned_entities",
       "device_health_check",
-      "find_unused_automations",
       "find_unavailable_entities",
     ])
-    .describe("The maintenance action to perform"),
+    .describe("The maintenance analysis to perform"),
   days: z
     .number()
     .min(1)
@@ -36,11 +38,6 @@ const maintenanceSchema = z.object({
     .optional()
     .default(30)
     .describe("Number of days to analyze for usage patterns"),
-  cleanup: z
-    .boolean()
-    .optional()
-    .default(false)
-    .describe("Actually perform cleanup (default: false, only report)"),
   entity_filter: z
     .string()
     .optional()
@@ -495,51 +492,24 @@ async function executeMaintenanceLogic(params: MaintenanceParams): Promise<strin
       );
     }
 
-    case "cleanup_orphaned_entities": {
-      if (!params.cleanup) {
-        throw new UserError(
-          "Cleanup not enabled. Set 'cleanup: true' to actually remove entities. " +
-            "Run 'find_orphaned_devices' first to see what would be removed.",
-        );
-      }
-      // For now, just return what would be cleaned up
-      const orphaned = await maintenanceService.findOrphanedDevices();
-      return JSON.stringify(
-        {
-          action: params.action,
-          warning:
-            "Automatic cleanup not yet implemented. Please remove entities manually through Home Assistant UI.",
-          entities_to_remove: orphaned,
-        },
-        null,
-        2,
-      );
-    }
-
-    case "find_unused_automations": {
-      throw new UserError(
-        "Finding unused automations requires automation history analysis. This feature is planned for a future update.",
-      );
-    }
-
     default:
       // params.action narrows to never after the exhaustive switch.
-      throw new UserError(`Unknown action: ${String(params.action)}`);
+      throw new UserError(`Unknown action: ${String((params as { action: string }).action)}`);
   }
 }
 
-// Export the tool
+// Export the tool — all currently-implemented actions are read-only analyses.
 export const maintenanceTool: Tool = {
   name: "maintenance",
   description:
-    "Perform maintenance tasks: find orphaned devices, analyze light usage and energy consumption, device health checks",
+    "Analyze Home Assistant health: find orphaned/unavailable devices, analyze light usage and energy consumption, run device health checks. All actions are read-only — no entities are removed or modified.",
   annotations: {
     title: "System Maintenance",
-    description: "Monitor and maintain Home Assistant system health - identify issues, unused devices, and optimization opportunities",
-    readOnlyHint: false,
-    destructiveHint: true,
+    description: "Read-only analysis of system health and optimization opportunities",
+    readOnlyHint: true,
+    destructiveHint: false,
     idempotentHint: true,
-    openWorldHint: false,
+    openWorldHint: true,
   },
   parameters: maintenanceSchema,
   execute: executeMaintenanceLogic,

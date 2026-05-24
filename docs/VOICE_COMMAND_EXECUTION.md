@@ -27,7 +27,7 @@ Pattern-based natural language parser for voice transcriptions.
 
 **Limitations:**
 - Fixed patterns, less flexible with variations
-- **Recommendation:** Use `voice_command_ai_parser` for complex commands
+- **Recommendation:** Use `voice_command_ai_parser_activate` for complex commands
 
 ---
 
@@ -171,7 +171,7 @@ Fast-Whisper (speech-to-text)
    │ Command Parsing (Choose one)        │
    ├─────────────────────────────────────┤
    │ 1. voice_command_parser (fast)      │
-   │ 2. voice_command_ai_parser (smart)  │
+   │ 2. voice_command_ai_parser_activate (smart)  │
    └─────────────────────────────────────┘
       ↓
    Parsed Command
@@ -184,7 +184,7 @@ Fast-Whisper (speech-to-text)
    ├─ Updates session context
    └─ Confidence score
       ↓
-voice_command_executor
+voice_command_executor_activate
    ├─ Resolves entity ID: bedroom light → light.bedroom
    ├─ Calls Home Assistant: light.turn_on
    ├─ Returns: success/failure
@@ -279,7 +279,7 @@ curl -X POST http://localhost:7123/api/tools/call \
 curl -X POST http://localhost:7123/api/tools/call \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "voice_command_executor",
+    "name": "voice_command_executor_activate",
     "arguments": {
       "intent": "set_temperature",
       "action": "set_temperature",
@@ -292,7 +292,7 @@ curl -X POST http://localhost:7123/api/tools/call \
 curl -X POST http://localhost:7123/api/tools/call \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "voice_command_ai_parser",
+    "name": "voice_command_ai_parser_activate",
     "arguments": {
       "transcription": "it'\''s cold, make it warmer please",
       "context": {

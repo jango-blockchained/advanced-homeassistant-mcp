@@ -673,7 +673,7 @@ When using with AI assistants, you can use natural language:
 # Via HTTP
 curl -X POST http://localhost:3000/api/tools/call \
   -H "Content-Type: application/json" \
-  -d '{"tool": "lights_control", "params": {"action": "turn_on", "entity_id": "light.living_room"}}'
+  -d '{"tool": "lights_activate", "params": {"action": "turn_on", "entity_id": "light.living_room"}}'
 
 # Via WebSocket
 ws://localhost:3000/api/ws
@@ -687,7 +687,7 @@ ws://localhost:3000/api/ws
   "id": 1,
   "method": "tools/call",
   "params": {
-    "name": "lights_control",
+    "name": "lights_activate",
     "arguments": {
       "action": "turn_on",
       "entity_id": "light.living_room",

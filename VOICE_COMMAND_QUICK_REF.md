@@ -57,7 +57,7 @@ input: {
 ### 2. AI Parser (Optional - requires ANTHROPIC_API_KEY)
 ```python
 # Intelligent, context-aware parsing
-tool: "voice_command_ai_parser"
+tool: "voice_command_ai_parser_activate"
 input: {
   "transcription": "make it warmer",
   "context": {
@@ -72,7 +72,7 @@ input: {
 ### 3. Command Executor
 ```python
 # Execute parsed commands
-tool: "voice_command_executor"
+tool: "voice_command_executor_activate"
 input: {
   "intent": "turn_on",
   "action": "turn_on",
@@ -274,7 +274,7 @@ curl -X POST http://localhost:7123/api/tools/call \
 curl -X POST http://localhost:7123/api/tools/call \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "voice_command_ai_parser",
+    "name": "voice_command_ai_parser_activate",
     "arguments": {
       "transcription": "it is too cold, make it warmer",
       "context": {
@@ -290,7 +290,7 @@ curl -X POST http://localhost:7123/api/tools/call \
 curl -X POST http://localhost:7123/api/tools/call \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "voice_command_executor",
+    "name": "voice_command_executor_activate",
     "arguments": {
       "intent": "set_temperature",
       "action": "set_temperature",

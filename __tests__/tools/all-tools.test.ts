@@ -52,40 +52,58 @@ describe("Comprehensive Tool Suite Tests", () => {
         // regressions.
         const expectedTools = [
             "addon",
-            "alarm_control",
+            "addon_modify",
+            "alarms",
+            "alarms_activate",
             "animation_control",
+            "animation_control_activate",
             "automation",
-            "automation_config",
-            "climate_control",
-            "control",
-            "cover_control",
+            "automation_activate",
+            "automation_config_modify",
+            "automation_modify",
+            "climate",
+            "climate_activate",
+            "control_activate",
+            "covers",
+            "covers_activate",
             "dashboard",
-            "fan_control",
+            "dashboard_modify",
+            "fans",
+            "fans_activate",
             "get_entity_state",
             "get_error_log",
             "get_history",
             "get_sse_stats",
-            "light_animation",
-            "light_scenario",
-            "light_showcase",
-            "lights_control",
+            "light_animation_activate",
+            "light_scenario_activate",
+            "light_showcase_activate",
+            "lights",
+            "lights_activate",
             "list_devices",
-            "lock_control",
+            "locks",
+            "locks_activate",
             "maintenance",
-            "media_player_control",
-            "notify",
+            "media_players",
+            "media_players_activate",
+            "notify_activate",
             "package",
+            "package_modify",
             "render_template",
             "scene",
+            "scene_activate",
             "search_entities",
             "smart_scenarios",
+            "smart_scenarios_activate",
             "subscribe_events",
-            "switch_control",
-            "todo_control",
+            "switches",
+            "switches_activate",
+            "todo",
+            "todo_modify",
             "trace",
-            "vacuum_control",
-            "voice_command_ai_parser",
-            "voice_command_executor",
+            "vacuums",
+            "vacuums_activate",
+            "voice_command_ai_parser_activate",
+            "voice_command_executor_activate",
             "voice_command_parser",
         ].sort();
 
@@ -115,6 +133,20 @@ describe("Comprehensive Tool Suite Tests", () => {
             const toolNames = tools.map((t) => t.name).sort();
             expect(toolNames).toEqual(expectedTools);
         });
+
+        test("read-only tools end with no suffix; mutators end with _modify or _activate", () => {
+            for (const tool of tools) {
+                const ro = tool.annotations?.readOnlyHint === true;
+                const isModify = tool.name.endsWith("_modify");
+                const isActivate = tool.name.endsWith("_activate");
+                if (ro) {
+                    expect(isModify).toBe(false);
+                    expect(isActivate).toBe(false);
+                } else {
+                    expect(isModify || isActivate).toBe(true);
+                }
+            }
+        });
     });
 
     describe("Control Tool", () => {
@@ -122,7 +154,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const controlTool = tools.find((t) => t.name === "control");
+            const controlTool = tools.find((t) => t.name === "control_activate");
             expect(controlTool).toBeDefined();
 
             if (!controlTool) throw new Error("control tool not found");
@@ -137,7 +169,7 @@ describe("Comprehensive Tool Suite Tests", () => {
         });
 
         test("should handle missing entity_id and area_id", async () => {
-            const controlTool = tools.find((t) => t.name === "control");
+            const controlTool = tools.find((t) => t.name === "control_activate");
             expect(controlTool).toBeDefined();
 
             if (!controlTool) throw new Error("control tool not found");
@@ -152,7 +184,7 @@ describe("Comprehensive Tool Suite Tests", () => {
         });
 
         test("should reject unsupported domains", async () => {
-            const controlTool = tools.find((t) => t.name === "control");
+            const controlTool = tools.find((t) => t.name === "control_activate");
             expect(controlTool).toBeDefined();
 
             if (!controlTool) throw new Error("control tool not found");
@@ -171,7 +203,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const controlTool = tools.find((t) => t.name === "control");
+            const controlTool = tools.find((t) => t.name === "control_activate");
             expect(controlTool).toBeDefined();
 
             if (!controlTool) throw new Error("control tool not found");
@@ -313,10 +345,10 @@ describe("Comprehensive Tool Suite Tests", () => {
             );
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const addonTool = tools.find((t) => t.name === "addon");
+            const addonTool = tools.find((t) => t.name === "addon_modify");
             expect(addonTool).toBeDefined();
 
-            if (!addonTool) throw new Error("addon tool not found");
+            if (!addonTool) throw new Error("addon_modify tool not found");
 
             const result: unknown = await addonTool.execute({
                 action: "install",
@@ -357,10 +389,10 @@ describe("Comprehensive Tool Suite Tests", () => {
         });
 
         test("should require repository for install action", async () => {
-            const packageTool = tools.find((t) => t.name === "package");
+            const packageTool = tools.find((t) => t.name === "package_modify");
             expect(packageTool).toBeDefined();
 
-            if (!packageTool) throw new Error("package tool not found");
+            if (!packageTool) throw new Error("package_modify tool not found");
 
             const result: unknown = await packageTool.execute({
                 action: "install",
@@ -375,10 +407,10 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const packageTool = tools.find((t) => t.name === "package");
+            const packageTool = tools.find((t) => t.name === "package_modify");
             expect(packageTool).toBeDefined();
 
-            if (!packageTool) throw new Error("package tool not found");
+            if (!packageTool) throw new Error("package_modify tool not found");
 
             const result: unknown = await packageTool.execute({
                 action: "install",
@@ -395,7 +427,7 @@ describe("Comprehensive Tool Suite Tests", () => {
     describe("Automation Config Tool", () => {
         test("should require config for create action", async () => {
             const automationConfigTool = tools.find(
-                (t) => t.name === "automation_config"
+                (t) => t.name === "automation_config_modify"
             );
             expect(automationConfigTool).toBeDefined();
 
@@ -432,7 +464,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
             const automationConfigTool = tools.find(
-                (t) => t.name === "automation_config"
+                (t) => t.name === "automation_config_modify"
             );
             expect(automationConfigTool).toBeDefined();
 
@@ -538,7 +570,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const lightsTool = tools.find((t) => t.name === "lights_control");
+            const lightsTool = tools.find((t) => t.name === "lights_activate");
             expect(lightsTool).toBeDefined();
 
             if (!lightsTool) throw new Error("lights tool not found");
@@ -556,7 +588,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const lightsTool = tools.find((t) => t.name === "lights_control");
+            const lightsTool = tools.find((t) => t.name === "lights_activate");
             expect(lightsTool).toBeDefined();
 
             if (!lightsTool) throw new Error("lights tool not found");
@@ -584,7 +616,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             );
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const lightsTool = tools.find((t) => t.name === "lights_control");
+            const lightsTool = tools.find((t) => t.name === "lights");
             expect(lightsTool).toBeDefined();
 
             if (!lightsTool) throw new Error("lights tool not found");
@@ -599,7 +631,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const lightsTool = tools.find((t) => t.name === "lights_control");
+            const lightsTool = tools.find((t) => t.name === "lights_activate");
             expect(lightsTool).toBeDefined();
 
             if (!lightsTool) throw new Error("lights tool not found");
@@ -620,7 +652,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const climateTool = tools.find((t) => t.name === "climate_control");
+            const climateTool = tools.find((t) => t.name === "climate_activate");
             expect(climateTool).toBeDefined();
 
             if (!climateTool) throw new Error("climate tool not found");
@@ -639,7 +671,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const climateTool = tools.find((t) => t.name === "climate_control");
+            const climateTool = tools.find((t) => t.name === "climate_activate");
             expect(climateTool).toBeDefined();
 
             if (!climateTool) throw new Error("climate tool not found");
@@ -668,7 +700,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             );
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const climateTool = tools.find((t) => t.name === "climate_control");
+            const climateTool = tools.find((t) => t.name === "climate");
             expect(climateTool).toBeDefined();
 
             if (!climateTool) throw new Error("climate tool not found");
@@ -685,7 +717,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const coverTool = tools.find((t) => t.name === "cover_control");
+            const coverTool = tools.find((t) => t.name === "covers_activate");
             expect(coverTool).toBeDefined();
 
             if (!coverTool) throw new Error("cover tool not found");
@@ -703,7 +735,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const coverTool = tools.find((t) => t.name === "cover_control");
+            const coverTool = tools.find((t) => t.name === "covers_activate");
             expect(coverTool).toBeDefined();
 
             if (!coverTool) throw new Error("cover tool not found");
@@ -721,7 +753,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const coverTool = tools.find((t) => t.name === "cover_control");
+            const coverTool = tools.find((t) => t.name === "covers_activate");
             expect(coverTool).toBeDefined();
 
             if (!coverTool) throw new Error("cover tool not found");
@@ -742,7 +774,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const fanTool = tools.find((t) => t.name === "fan_control");
+            const fanTool = tools.find((t) => t.name === "fans_activate");
             expect(fanTool).toBeDefined();
 
             if (!fanTool) throw new Error("fan tool not found");
@@ -760,7 +792,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const fanTool = tools.find((t) => t.name === "fan_control");
+            const fanTool = tools.find((t) => t.name === "fans_activate");
             expect(fanTool).toBeDefined();
 
             if (!fanTool) throw new Error("fan tool not found");
@@ -789,10 +821,10 @@ describe("Comprehensive Tool Suite Tests", () => {
             );
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const fanTool = tools.find((t) => t.name === "fan_control");
+            const fanTool = tools.find((t) => t.name === "fans");
             expect(fanTool).toBeDefined();
 
-            if (!fanTool) throw new Error("fan tool not found");
+            if (!fanTool) throw new Error("fans tool not found");
 
             const result: unknown = await fanTool.execute({ action: "list" });
 
@@ -806,7 +838,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const lockTool = tools.find((t) => t.name === "lock_control");
+            const lockTool = tools.find((t) => t.name === "locks_activate");
             expect(lockTool).toBeDefined();
 
             if (!lockTool) throw new Error("lock tool not found");
@@ -824,7 +856,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const lockTool = tools.find((t) => t.name === "lock_control");
+            const lockTool = tools.find((t) => t.name === "locks_activate");
             expect(lockTool).toBeDefined();
 
             if (!lockTool) throw new Error("lock tool not found");
@@ -853,10 +885,10 @@ describe("Comprehensive Tool Suite Tests", () => {
             );
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const lockTool = tools.find((t) => t.name === "lock_control");
+            const lockTool = tools.find((t) => t.name === "locks");
             expect(lockTool).toBeDefined();
 
-            if (!lockTool) throw new Error("lock tool not found");
+            if (!lockTool) throw new Error("locks tool not found");
 
             const result: unknown = await lockTool.execute({ action: "list" });
 
@@ -870,7 +902,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const vacuumTool = tools.find((t) => t.name === "vacuum_control");
+            const vacuumTool = tools.find((t) => t.name === "vacuums_activate");
             expect(vacuumTool).toBeDefined();
 
             if (!vacuumTool) throw new Error("vacuum tool not found");
@@ -888,7 +920,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const vacuumTool = tools.find((t) => t.name === "vacuum_control");
+            const vacuumTool = tools.find((t) => t.name === "vacuums_activate");
             expect(vacuumTool).toBeDefined();
 
             if (!vacuumTool) throw new Error("vacuum tool not found");
@@ -916,10 +948,10 @@ describe("Comprehensive Tool Suite Tests", () => {
             );
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const vacuumTool = tools.find((t) => t.name === "vacuum_control");
+            const vacuumTool = tools.find((t) => t.name === "vacuums");
             expect(vacuumTool).toBeDefined();
 
-            if (!vacuumTool) throw new Error("vacuum tool not found");
+            if (!vacuumTool) throw new Error("vacuums tool not found");
 
             const result: unknown = await vacuumTool.execute({ action: "list" });
 
@@ -934,7 +966,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
             const mediaPlayerTool = tools.find(
-                (t) => t.name === "media_player_control"
+                (t) => t.name === "media_players_activate"
             );
             expect(mediaPlayerTool).toBeDefined();
 
@@ -955,7 +987,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
             const mediaPlayerTool = tools.find(
-                (t) => t.name === "media_player_control"
+                (t) => t.name === "media_players_activate"
             );
             expect(mediaPlayerTool).toBeDefined();
 
@@ -986,12 +1018,12 @@ describe("Comprehensive Tool Suite Tests", () => {
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
             const mediaPlayerTool = tools.find(
-                (t) => t.name === "media_player_control"
+                (t) => t.name === "media_players"
             );
             expect(mediaPlayerTool).toBeDefined();
 
             if (!mediaPlayerTool)
-                throw new Error("media_player tool not found");
+                throw new Error("media_players tool not found");
 
             const result: unknown = await mediaPlayerTool.execute({ action: "list" });
 
@@ -1005,7 +1037,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const alarmTool = tools.find((t) => t.name === "alarm_control");
+            const alarmTool = tools.find((t) => t.name === "alarms_activate");
             expect(alarmTool).toBeDefined();
 
             if (!alarmTool) throw new Error("alarm_control tool not found");
@@ -1023,7 +1055,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const alarmTool = tools.find((t) => t.name === "alarm_control");
+            const alarmTool = tools.find((t) => t.name === "alarms_activate");
             expect(alarmTool).toBeDefined();
 
             if (!alarmTool) throw new Error("alarm_control tool not found");
@@ -1052,10 +1084,10 @@ describe("Comprehensive Tool Suite Tests", () => {
             );
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const alarmTool = tools.find((t) => t.name === "alarm_control");
+            const alarmTool = tools.find((t) => t.name === "alarms");
             expect(alarmTool).toBeDefined();
 
-            if (!alarmTool) throw new Error("alarm_control tool not found");
+            if (!alarmTool) throw new Error("alarms tool not found");
 
             const result: unknown = await alarmTool.execute({ action: "list" });
 
@@ -1094,13 +1126,12 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const automationTool = tools.find((t) => t.name === "automation");
+            const automationTool = tools.find((t) => t.name === "automation_modify");
             expect(automationTool).toBeDefined();
 
-            if (!automationTool) throw new Error("automation tool not found");
+            if (!automationTool) throw new Error("automation_modify tool not found");
 
             const result: unknown = await automationTool.execute({
-                action: "toggle",
                 automation_id: "automation.test",
             });
 
@@ -1139,10 +1170,10 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const sceneTool = tools.find((t) => t.name === "scene");
+            const sceneTool = tools.find((t) => t.name === "scene_activate");
             expect(sceneTool).toBeDefined();
 
-            if (!sceneTool) throw new Error("scene tool not found");
+            if (!sceneTool) throw new Error("scene_activate tool not found");
 
             const result: unknown = await sceneTool.execute({
                 action: "activate",
@@ -1159,7 +1190,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const notifyTool = tools.find((t) => t.name === "notify");
+            const notifyTool = tools.find((t) => t.name === "notify_activate");
             expect(notifyTool).toBeDefined();
 
             if (!notifyTool) throw new Error("notify tool not found");
@@ -1177,7 +1208,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             mocks.mockFetch = mock(() => Promise.resolve(createMockResponse({})));
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
-            const notifyTool = tools.find((t) => t.name === "notify");
+            const notifyTool = tools.find((t) => t.name === "notify_activate");
             expect(notifyTool).toBeDefined();
 
             if (!notifyTool) throw new Error("notify tool not found");
@@ -1249,7 +1280,7 @@ describe("Comprehensive Tool Suite Tests", () => {
             globalThis.fetch = mocks.mockFetch as unknown as typeof fetch;
 
             // Test a few tools for error handling
-            const controlTool = tools.find((t) => t.name === "control");
+            const controlTool = tools.find((t) => t.name === "control_activate");
             if (!controlTool) throw new Error("control tool not found");
 
             const result: unknown = await controlTool.execute({

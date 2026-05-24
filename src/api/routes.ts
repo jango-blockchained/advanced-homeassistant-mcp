@@ -76,7 +76,7 @@ router.get("/list_devices", middleware.authenticate, async (req, res) => {
 // Device control endpoint
 router.post("/control", middleware.authenticate, async (req, res) => {
   try {
-    const tool = tools.find((t: Tool) => t.name === "control");
+    const tool = tools.find((t: Tool) => t.name === "control_activate");
     if (!tool) {
       res.status(404).json({
         success: false,

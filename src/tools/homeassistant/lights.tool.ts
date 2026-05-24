@@ -1,20 +1,18 @@
 /**
- * Lights Control Tool for Home Assistant (fastmcp format)
+ * Lights tools for Home Assistant
  *
- * This tool allows controlling lights in Home Assistant through the MCP.
- * It supports turning lights on/off, changing brightness, color, and color temperature.
+ * Split into:
+ * - `lights` (read-only): list, get
+ * - `lights_activate`: turn_on, turn_off (with brightness/color/etc.)
  */
 
 import { z } from "zod";
 import { UserError } from "fastmcp";
 import { logger } from "../../utils/logger.js";
-// Re-import BaseTool and MCPContext for the class definition
 
-import { MCPContext } from "../../mcp/types.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
 
-// Real Home Assistant API service
 class HomeAssistantLightsService {
   async getLights(): Promise<Record<string, unknown>[]> {
     try {
@@ -72,115 +70,101 @@ class HomeAssistantLightsService {
   }
 }
 
-// Singleton instance
 const haLightsService = new HomeAssistantLightsService();
 
-// Define the schema for our tool parameters using Zod
-const lightsControlSchema = z.object({
-  action: z.enum(["list", "get", "turn_on", "turn_off"]).describe("The action to perform"),
-  entity_id: z
-    .string()
-    .optional()
-    .describe("The entity ID of the light to control (required for get, turn_on, turn_off)"),
-  brightness: z.number().min(0).max(255).optional().describe("Brightness level (0-255)"),
+const lightsReadSchema = z.object({
+  action: z.enum(["list", "get"]).describe("Read action to perform"),
+  entity_id: z.string().optional().describe("Light entity_id (required for 'get')"),
+});
+
+const lightsActivateSchema = z.object({
+  action: z.enum(["turn_on", "turn_off"]).describe("Activation action"),
+  entity_id: z.string().describe("Light entity_id"),
+  brightness: z.number().min(0).max(255).optional().describe("Brightness 0-255 (turn_on)"),
   color_temp: z
     .number()
     .min(153)
     .max(500)
     .optional()
-    .describe("Color temperature in Mireds (153-500)"),
+    .describe("Color temperature in Mireds (turn_on)"),
   rgb_color: z
     .array(z.number().min(0).max(255))
     .length(3)
     .optional()
-    .describe("RGB color as [r, g, b] (0-255 each)"),
-  effect: z
-    .string()
-    .optional()
-    .describe("Light effect (e.g., 'colorloop', 'random') - requires device support"),
-  transition: z.number().min(0).optional().describe("Transition time in seconds"),
+    .describe("RGB color [r,g,b] (turn_on)"),
+  effect: z.string().optional().describe("Light effect (turn_on)"),
+  transition: z.number().min(0).optional().describe("Transition seconds (turn_on)"),
 });
 
-// Infer the type from the schema
-type LightsControlParams = z.infer<typeof lightsControlSchema>;
+type LightsReadParams = z.infer<typeof lightsReadSchema>;
+type LightsActivateParams = z.infer<typeof lightsActivateSchema>;
 
-// Define the tool using the Tool interface
-export const lightsControlTool: Tool = {
-  name: "lights_control",
-  description:
-    "Control lights in Home Assistant. Supports listing all lights, getting state of a specific light, turning lights on with optional brightness/color settings, and turning lights off.",
-  parameters: lightsControlSchema,
-  execute: executeLightsControlLogic,
+async function executeLightsRead(params: LightsReadParams): Promise<string> {
+  if (params.action === "list") {
+    const lights = await haLightsService.getLights();
+    return JSON.stringify({ success: true, lights });
+  }
+  if (params.entity_id == null) {
+    throw new UserError("entity_id is required for 'get' action");
+  }
+  const lightDetails = await haLightsService.getLight(params.entity_id);
+  if (!lightDetails) {
+    throw new UserError(`Light entity_id '${params.entity_id}' not found.`);
+  }
+  return JSON.stringify({ success: true, ...lightDetails });
+}
+
+async function executeLightsActivate(params: LightsActivateParams): Promise<string> {
+  if (params.action === "turn_on") {
+    const attributes: Record<string, unknown> = {};
+    if (params.brightness !== undefined) attributes.brightness = params.brightness;
+    if (params.color_temp !== undefined) attributes.color_temp = params.color_temp;
+    if (params.rgb_color !== undefined) attributes.rgb_color = params.rgb_color;
+    if (params.effect !== undefined) attributes.effect = params.effect;
+    if (params.transition !== undefined) attributes.transition = params.transition;
+    const success = await haLightsService.turnOn(params.entity_id, attributes);
+    if (!success) {
+      throw new UserError(`Failed to turn on light '${params.entity_id}'.`);
+    }
+    const lightDetails = await haLightsService.getLight(params.entity_id);
+    return JSON.stringify({ success: true, state: lightDetails });
+  }
+
+  // turn_off
+  const success = await haLightsService.turnOff(params.entity_id);
+  if (!success) {
+    throw new UserError(`Failed to turn off light '${params.entity_id}'.`);
+  }
+  const lightDetails = await haLightsService.getLight(params.entity_id);
+  return JSON.stringify({ success: true, state: lightDetails });
+}
+
+export const lightsTool: Tool = {
+  name: "lights",
+  description: "List all lights or get the state of a specific light.",
   annotations: {
-    title: "Lights Control",
-    description: "Manage lighting in your home - turn on/off, adjust brightness, change colors",
+    title: "Lights Inventory",
+    description: "Read-only access to light entities",
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  },
+  parameters: lightsReadSchema,
+  execute: executeLightsRead,
+};
+
+export const lightsActivateTool: Tool = {
+  name: "lights_activate",
+  description: "Turn lights on (with optional brightness/color/effect) or off.",
+  annotations: {
+    title: "Lights Activate",
+    description: "Actuate lights — turn on/off, set brightness and color",
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: true,
     openWorldHint: true,
   },
+  parameters: lightsActivateSchema,
+  execute: executeLightsActivate,
 };
-
-// No need for the class wrapper anymore
-// export class LightsControlTool extends BaseTool { ... }
-
-// --- Shared Execution Logic ---
-// Extracted logic to be used by both fastmcp object and BaseTool class
-async function executeLightsControlLogic(params: LightsControlParams): Promise<string> {
-  let attributes: Record<string, unknown>;
-  let success: boolean;
-  let lightDetails: Record<string, unknown> | null;
-
-  switch (params.action) {
-    case "list": {
-      const lights = await haLightsService.getLights();
-      return JSON.stringify({ success: true, lights });
-    }
-
-    case "get": {
-      if (params.entity_id == null) {
-        throw new UserError("entity_id is required for 'get' action");
-      }
-      lightDetails = await haLightsService.getLight(params.entity_id);
-      if (!lightDetails) {
-        throw new UserError(`Light entity_id '${params.entity_id}' not found.`);
-      }
-      return JSON.stringify({ success: true, ...lightDetails });
-    }
-
-    case "turn_on": {
-      if (params.entity_id == null) {
-        throw new UserError("entity_id is required for 'turn_on' action");
-      }
-      attributes = {};
-      if (params.brightness !== undefined) attributes.brightness = params.brightness;
-      if (params.color_temp !== undefined) attributes.color_temp = params.color_temp;
-      if (params.rgb_color !== undefined) attributes.rgb_color = params.rgb_color;
-      if (params.effect !== undefined) attributes.effect = params.effect;
-      if (params.transition !== undefined) attributes.transition = params.transition;
-
-      success = await haLightsService.turnOn(params.entity_id, attributes);
-      if (!success) {
-        throw new UserError(`Failed to turn on light '${params.entity_id}'. Entity not found?`);
-      }
-      lightDetails = await haLightsService.getLight(params.entity_id); // Get updated state
-      return JSON.stringify({ success: true, state: lightDetails });
-    }
-
-    case "turn_off": {
-      if (params.entity_id == null) {
-        throw new UserError("entity_id is required for 'turn_off' action");
-      }
-      success = await haLightsService.turnOff(params.entity_id);
-      if (!success) {
-        throw new UserError(`Failed to turn off light '${params.entity_id}'. Entity not found?`);
-      }
-      lightDetails = await haLightsService.getLight(params.entity_id); // Get updated state
-      return JSON.stringify({ success: true, state: lightDetails });
-    }
-
-    default:
-      // Should be unreachable due to Zod validation
-      throw new UserError(`Unknown action: ${String(params.action)}`);
-  }
-}

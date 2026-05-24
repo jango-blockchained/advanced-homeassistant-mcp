@@ -1,8 +1,9 @@
 /**
- * Fan Control Tool for Home Assistant
+ * Fan tools for Home Assistant
  *
- * This tool allows controlling fans in Home Assistant.
- * Supports turning on/off, speed control, direction, and oscillation.
+ * Split into:
+ * - `fans` (read-only): list, get
+ * - `fans_activate`: turn_on/off/toggle, set_percentage, set_preset_mode, oscillate, set_direction
  */
 
 import { z } from "zod";
@@ -10,7 +11,6 @@ import { logger } from "../../utils/logger.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
 
-// Real Home Assistant API service
 class HomeAssistantFanService {
   async getFans(): Promise<Record<string, unknown>[]> {
     try {
@@ -51,8 +51,7 @@ class HomeAssistantFanService {
   ): Promise<boolean> {
     try {
       const hass = await get_hass();
-      const serviceData = { entity_id, ...data };
-      await hass.callService("fan", service, serviceData);
+      await hass.callService("fan", service, { entity_id, ...data });
       return true;
     } catch (error) {
       logger.error(`Failed to call service ${service} on ${entity_id}:`, error);
@@ -61,15 +60,16 @@ class HomeAssistantFanService {
   }
 }
 
-// Singleton instance
 const haFanService = new HomeAssistantFanService();
 
-// Define the schema for our tool parameters using Zod
-const fanControlSchema = z.object({
+const fansReadSchema = z.object({
+  action: z.enum(["list", "get"]).describe("Read action"),
+  entity_id: z.string().optional().describe("Fan entity_id (required for 'get')"),
+});
+
+const fansActivateSchema = z.object({
   action: z
     .enum([
-      "list",
-      "get",
       "turn_on",
       "turn_off",
       "toggle",
@@ -78,66 +78,39 @@ const fanControlSchema = z.object({
       "oscillate",
       "set_direction",
     ])
-    .describe("The action to perform"),
-  entity_id: z.string().optional().describe("The entity ID of the fan (required for most actions)"),
-  percentage: z
-    .number()
-    .min(0)
-    .max(100)
-    .optional()
-    .describe("Speed percentage between 0 and 100 (for set_percentage)"),
-  preset_mode: z
-    .string()
-    .optional()
-    .describe("Preset mode name like 'auto', 'smart', 'eco' (for set_preset_mode)"),
-  oscillating: z.boolean().optional().describe("Whether to oscillate (for oscillate action)"),
-  direction: z
-    .enum(["forward", "reverse"])
-    .optional()
-    .describe("Fan direction (for set_direction)"),
+    .describe("Activation action"),
+  entity_id: z.string().describe("Fan entity_id"),
+  percentage: z.number().min(0).max(100).optional().describe("Speed percentage 0-100"),
+  preset_mode: z.string().optional().describe("Preset mode like 'auto', 'smart', 'eco'"),
+  oscillating: z.boolean().optional().describe("Whether to oscillate"),
+  direction: z.enum(["forward", "reverse"]).optional().describe("Fan direction"),
 });
 
-type FanControlInput = z.infer<typeof fanControlSchema>;
+type FansReadParams = z.infer<typeof fansReadSchema>;
+type FansActivateParams = z.infer<typeof fansActivateSchema>;
 
-// Main tool execution function
-async function execute(params: FanControlInput): Promise<string> {
+async function executeFansRead(params: FansReadParams): Promise<string> {
+  if (params.action === "list") {
+    const fans = await haFanService.getFans();
+    return JSON.stringify({ success: true, fans, count: fans.length }, null, 2);
+  }
+  if (!params.entity_id) {
+    return JSON.stringify({ success: false, error: "entity_id is required for get action" });
+  }
+  const fan = await haFanService.getFan(params.entity_id);
+  if (!fan) {
+    return JSON.stringify({ success: false, error: `Fan ${params.entity_id} not found` });
+  }
+  return JSON.stringify({ success: true, fan }, null, 2);
+}
+
+async function executeFansActivate(params: FansActivateParams): Promise<string> {
   const { action, entity_id, percentage, preset_mode, oscillating, direction } = params;
-
   try {
     switch (action) {
-      case "list": {
-        const fans = await haFanService.getFans();
-        return JSON.stringify(
-          {
-            success: true,
-            fans: fans,
-            count: fans.length,
-          },
-          null,
-          2,
-        );
-      }
-
-      case "get": {
-        if (!entity_id) {
-          return JSON.stringify({ success: false, error: "entity_id is required for get action" });
-        }
-        const fan = await haFanService.getFan(entity_id);
-        if (!fan) {
-          return JSON.stringify({ success: false, error: `Fan ${entity_id} not found` });
-        }
-        return JSON.stringify({ success: true, fan: fan }, null, 2);
-      }
-
       case "turn_on":
       case "turn_off":
       case "toggle": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: `entity_id is required for ${action} action`,
-          });
-        }
         const success = await haFanService.callService(action, entity_id);
         return JSON.stringify({
           success,
@@ -146,14 +119,7 @@ async function execute(params: FanControlInput): Promise<string> {
             : `Failed to execute ${action} on ${entity_id}`,
         });
       }
-
       case "set_percentage": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: "entity_id is required for set_percentage action",
-          });
-        }
         if (percentage === undefined) {
           return JSON.stringify({
             success: false,
@@ -168,14 +134,7 @@ async function execute(params: FanControlInput): Promise<string> {
             : `Failed to set fan speed on ${entity_id}`,
         });
       }
-
       case "set_preset_mode": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: "entity_id is required for set_preset_mode action",
-          });
-        }
         if (!preset_mode) {
           return JSON.stringify({
             success: false,
@@ -192,14 +151,7 @@ async function execute(params: FanControlInput): Promise<string> {
             : `Failed to set preset mode on ${entity_id}`,
         });
       }
-
       case "oscillate": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: "entity_id is required for oscillate action",
-          });
-        }
         if (oscillating === undefined) {
           return JSON.stringify({
             success: false,
@@ -214,14 +166,7 @@ async function execute(params: FanControlInput): Promise<string> {
             : `Failed to set oscillation on ${entity_id}`,
         });
       }
-
       case "set_direction": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: "entity_id is required for set_direction action",
-          });
-        }
         if (!direction) {
           return JSON.stringify({
             success: false,
@@ -236,14 +181,9 @@ async function execute(params: FanControlInput): Promise<string> {
             : `Failed to set fan direction on ${entity_id}`,
         });
       }
-
-      default:
-        // `action` narrows to never after the exhaustive switch; cast to
-        // string for the runtime-fallback message.
-        return JSON.stringify({ success: false, error: `Unknown action: ${String(action)}` });
     }
   } catch (error) {
-    logger.error("Error in fan control tool:", error);
+    logger.error("Error in fan activate tool:", error);
     return JSON.stringify({
       success: false,
       error: error instanceof Error ? error.message : "Unknown error occurred",
@@ -251,19 +191,33 @@ async function execute(params: FanControlInput): Promise<string> {
   }
 }
 
-// Export the tool object
-export const fanControlTool: Tool = {
-  name: "fan_control",
-  description:
-    "Control fans in Home Assistant. Supports turning on/off, speed control via percentage, preset modes, oscillation, and direction control. Actions include: list (get all fans), get (get specific fan info), turn_on, turn_off, toggle, set_percentage, set_preset_mode, oscillate, and set_direction.",
+export const fansTool: Tool = {
+  name: "fans",
+  description: "List all fans or get the state of a specific fan.",
   annotations: {
-    title: "Fan Control",
-    description: "Control fans - turn on/off, adjust speed, oscillation, and direction",
+    title: "Fans Inventory",
+    description: "Read-only access to fan entities",
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  },
+  parameters: fansReadSchema,
+  execute: executeFansRead,
+};
+
+export const fansActivateTool: Tool = {
+  name: "fans_activate",
+  description:
+    "Control fans: turn on/off/toggle, set speed percentage, preset mode, oscillation, direction.",
+  annotations: {
+    title: "Fans Activate",
+    description: "Actuate fans",
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: true,
     openWorldHint: true,
   },
-  parameters: fanControlSchema,
-  execute,
+  parameters: fansActivateSchema,
+  execute: executeFansActivate,
 };

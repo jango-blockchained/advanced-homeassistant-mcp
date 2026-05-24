@@ -12,7 +12,7 @@ describe("Home Assistant MCP Server tool registry", () => {
   test("registers list_devices and control tools", () => {
     const toolNames = indexTools.map((tool: IndexTool) => tool.name);
     expect(toolNames).toContain("list_devices");
-    expect(toolNames).toContain("control");
+    expect(toolNames).toContain("control_activate");
   });
 
   test("list_devices description references devices", () => {
@@ -26,7 +26,7 @@ describe("Home Assistant MCP Server tool registry", () => {
   });
 
   test("control description references devices and services", () => {
-    const controlTool = indexTools.find((tool: IndexTool) => tool.name === "control");
+    const controlTool = indexTools.find((tool: IndexTool) => tool.name === "control_activate");
     expect(controlTool).toBeDefined();
     expect(controlTool?.description).toContain("Control Home Assistant devices and services");
   });

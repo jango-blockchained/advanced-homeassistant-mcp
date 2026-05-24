@@ -59,7 +59,7 @@ describe('Home Assistant MCP Server', () => {
             const toolNames = tools.map(tool => tool.name);
 
             expect(toolNames).toContain('list_devices');
-            expect(toolNames).toContain('control');
+            expect(toolNames).toContain('control_activate');
         });
 
         test('should configure tools with correct parameters', () => {
@@ -67,7 +67,7 @@ describe('Home Assistant MCP Server', () => {
             expect(listDevicesTool).toBeDefined();
             expect(listDevicesTool?.parameters).toBeDefined();
 
-            const controlTool = tools.find(tool => tool.name === 'control');
+            const controlTool = tools.find(tool => tool.name === 'control_activate');
             expect(controlTool).toBeDefined();
             expect(controlTool?.parameters).toBeDefined();
         });
@@ -99,7 +99,7 @@ describe('Home Assistant MCP Server', () => {
         });
 
         test('should execute control tool', async () => {
-            const controlTool = tools.find(tool => tool.name === 'control');
+            const controlTool = tools.find(tool => tool.name === 'control_activate');
             expect(controlTool).toBeDefined();
 
             mockFetch = createMockFetch({ success: true });

@@ -17,8 +17,9 @@ interface SceneActivateResult {
 }
 
 const sceneTool = tools.find((t) => t.name === "scene")!;
+const sceneActivateTool = tools.find((t) => t.name === "scene_activate")!;
 
-describe("scene tool", () => {
+describe("scene tool (read-only list)", () => {
   beforeEach(async () => {
     globalThis.fetch = mock(() =>
       Promise.resolve(createMockResponse({})),
@@ -56,12 +57,25 @@ describe("scene tool", () => {
     expect(result.scenes?.[0]?.entity_id).toBe("scene.movie_night");
     expect(result.scenes?.[0]?.name).toBe("Movie night");
   });
+});
+
+describe("scene_activate tool", () => {
+  beforeEach(() => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(createMockResponse({})),
+    ) as unknown as typeof fetch;
+  });
+
+  test("the tool is registered", () => {
+    expect(sceneActivateTool).toBeDefined();
+    expect(sceneActivateTool.name).toBe("scene_activate");
+  });
 
   test("activate calls scene.turn_on with the scene entity_id", async () => {
     const fetchMock = mock(() => Promise.resolve(createMockResponse({})));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-    const raw = await sceneTool.execute({
+    const raw = await sceneActivateTool.execute({
       action: "activate",
       scene_id: "scene.movie_night",
     });
@@ -76,10 +90,8 @@ describe("scene tool", () => {
     expect(JSON.parse(init.body as string)).toEqual({ entity_id: "scene.movie_night" });
   });
 
-  test("activate without scene_id surfaces success:false", async () => {
-    const raw = await sceneTool.execute({ action: "activate" });
-    const result = JSON.parse(raw as string) as SceneActivateResult;
-    expect(result.success).toBe(false);
-    expect(result.message?.toLowerCase()).toContain("scene id is required");
+  test("schema requires scene_id (enforced at the transport layer by Zod)", () => {
+    const shape = (sceneActivateTool.parameters as { shape?: Record<string, unknown> }).shape;
+    expect(shape?.scene_id).toBeDefined();
   });
 });
