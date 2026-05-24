@@ -34,17 +34,19 @@ const animationActivateSchema = z.object({
 type AnimationReadParams = z.infer<typeof animationReadSchema>;
 type AnimationActivateParams = z.infer<typeof animationActivateSchema>;
 
-async function executeAnimationRead(_params: AnimationReadParams): Promise<string> {
+function executeAnimationRead(_params: AnimationReadParams): Promise<string> {
   const manager = AnimationManager.getInstance();
   const active = manager.listAnimations();
-  return JSON.stringify(
-    {
-      success: true,
-      running_count: active.length,
-      animations: active,
-    },
-    null,
-    2,
+  return Promise.resolve(
+    JSON.stringify(
+      {
+        success: true,
+        running_count: active.length,
+        animations: active,
+      },
+      null,
+      2,
+    ),
   );
 }
 
