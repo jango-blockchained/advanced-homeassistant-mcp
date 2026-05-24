@@ -1,8 +1,9 @@
 /**
- * Alarm Control Panel Tool for Home Assistant
+ * Alarm Control Panel tools for Home Assistant
  *
- * This tool allows controlling alarm systems in Home Assistant.
- * Supports arming (away/home/night), disarming, and triggering alarms.
+ * Split into:
+ * - `alarms` (read-only): list, get
+ * - `alarms_activate`: arm_*, disarm, trigger (destructive — sounds the alarm or disarms security)
  */
 
 import { z } from "zod";
@@ -10,7 +11,6 @@ import { logger } from "../../utils/logger.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
 
-// Real Home Assistant API service
 class HomeAssistantAlarmService {
   async getAlarms(): Promise<Record<string, unknown>[]> {
     try {
@@ -51,8 +51,7 @@ class HomeAssistantAlarmService {
   ): Promise<boolean> {
     try {
       const hass = await get_hass();
-      const serviceData = { entity_id, ...data };
-      await hass.callService("alarm_control_panel", service, serviceData);
+      await hass.callService("alarm_control_panel", service, { entity_id, ...data });
       return true;
     } catch (error) {
       logger.error(`Failed to call service ${service} on ${entity_id}:`, error);
@@ -61,15 +60,16 @@ class HomeAssistantAlarmService {
   }
 }
 
-// Singleton instance
 const haAlarmService = new HomeAssistantAlarmService();
 
-// Define the schema for our tool parameters using Zod
-const alarmControlSchema = z.object({
+const alarmsReadSchema = z.object({
+  action: z.enum(["list", "get"]).describe("Read action"),
+  entity_id: z.string().optional().describe("Alarm entity_id (required for 'get')"),
+});
+
+const alarmsActivateSchema = z.object({
   action: z
     .enum([
-      "list",
-      "get",
       "alarm_disarm",
       "alarm_arm_home",
       "alarm_arm_away",
@@ -78,77 +78,41 @@ const alarmControlSchema = z.object({
       "alarm_arm_custom_bypass",
       "alarm_trigger",
     ])
-    .describe("The action to perform"),
-  entity_id: z
-    .string()
-    .optional()
-    .describe("The entity ID of the alarm (required for most actions)"),
-  code: z.string().optional().describe("Optional security code for the alarm system"),
+    .describe("Activation action"),
+  entity_id: z.string().describe("Alarm entity_id"),
+  code: z.string().optional().describe("Optional security code"),
 });
 
-type AlarmControlInput = z.infer<typeof alarmControlSchema>;
+type AlarmsReadParams = z.infer<typeof alarmsReadSchema>;
+type AlarmsActivateParams = z.infer<typeof alarmsActivateSchema>;
 
-// Main tool execution function
-async function execute(params: AlarmControlInput): Promise<string> {
-  const { action, entity_id, code } = params;
+async function executeAlarmsRead(params: AlarmsReadParams): Promise<string> {
+  if (params.action === "list") {
+    const alarms = await haAlarmService.getAlarms();
+    return JSON.stringify({ success: true, alarms, count: alarms.length }, null, 2);
+  }
+  if (!params.entity_id) {
+    return JSON.stringify({ success: false, error: "entity_id is required for get action" });
+  }
+  const alarm = await haAlarmService.getAlarm(params.entity_id);
+  if (!alarm) {
+    return JSON.stringify({ success: false, error: `Alarm ${params.entity_id} not found` });
+  }
+  return JSON.stringify({ success: true, alarm }, null, 2);
+}
 
+async function executeAlarmsActivate(params: AlarmsActivateParams): Promise<string> {
   try {
-    switch (action) {
-      case "list": {
-        const alarms = await haAlarmService.getAlarms();
-        return JSON.stringify(
-          {
-            success: true,
-            alarms: alarms,
-            count: alarms.length,
-          },
-          null,
-          2,
-        );
-      }
-
-      case "get": {
-        if (!entity_id) {
-          return JSON.stringify({ success: false, error: "entity_id is required for get action" });
-        }
-        const alarm = await haAlarmService.getAlarm(entity_id);
-        if (!alarm) {
-          return JSON.stringify({ success: false, error: `Alarm ${entity_id} not found` });
-        }
-        return JSON.stringify({ success: true, alarm: alarm }, null, 2);
-      }
-
-      case "alarm_disarm":
-      case "alarm_arm_home":
-      case "alarm_arm_away":
-      case "alarm_arm_night":
-      case "alarm_arm_vacation":
-      case "alarm_arm_custom_bypass":
-      case "alarm_trigger": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: `entity_id is required for ${action} action`,
-          });
-        }
-        const serviceData = code ? { code } : {};
-        const success = await haAlarmService.callService(action, entity_id, serviceData);
-        return JSON.stringify({
-          success,
-          message: success
-            ? `Successfully executed ${action} on ${entity_id}`
-            : `Failed to execute ${action} on ${entity_id}`,
-        });
-      }
-
-      default:
-        // `action` narrows to never after the exhaustive switch; cast to
-        // string so the template literal is valid at runtime if a non-enum
-        // value somehow slips through (e.g. an unchecked JSON-RPC payload).
-        return JSON.stringify({ success: false, error: `Unknown action: ${String(action)}` });
-    }
+    const serviceData = params.code ? { code: params.code } : {};
+    const success = await haAlarmService.callService(params.action, params.entity_id, serviceData);
+    return JSON.stringify({
+      success,
+      message: success
+        ? `Successfully executed ${params.action} on ${params.entity_id}`
+        : `Failed to execute ${params.action} on ${params.entity_id}`,
+    });
   } catch (error) {
-    logger.error("Error in alarm control tool:", error);
+    logger.error("Error in alarm activate tool:", error);
     return JSON.stringify({
       success: false,
       error: error instanceof Error ? error.message : "Unknown error occurred",
@@ -156,19 +120,33 @@ async function execute(params: AlarmControlInput): Promise<string> {
   }
 }
 
-// Export the tool object
-export const alarmControlTool: Tool = {
-  name: "alarm_control",
-  description:
-    "Control alarm systems in Home Assistant. Supports arming in different modes (home, away, night, vacation, custom bypass), disarming, and triggering alarms. Some systems may require a security code. Actions include: list (get all alarms), get (get specific alarm info), alarm_disarm, alarm_arm_home, alarm_arm_away, alarm_arm_night, alarm_arm_vacation, alarm_arm_custom_bypass, and alarm_trigger.",
+export const alarmsTool: Tool = {
+  name: "alarms",
+  description: "List all alarm panels or get the state of a specific alarm panel.",
   annotations: {
-    title: "Alarm Control",
-    description: "Manage security alarms - arm in different modes, disarm, and check status",
+    title: "Alarms Inventory",
+    description: "Read-only access to alarm panel entities",
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  },
+  parameters: alarmsReadSchema,
+  execute: executeAlarmsRead,
+};
+
+export const alarmsActivateTool: Tool = {
+  name: "alarms_activate",
+  description:
+    "Arm in various modes (home, away, night, vacation, custom bypass), disarm, or trigger an alarm. Security-sensitive operations.",
+  annotations: {
+    title: "Alarms Activate",
+    description: "Arm/disarm/trigger security alarms (security-sensitive)",
     readOnlyHint: false,
     destructiveHint: true,
     idempotentHint: false,
     openWorldHint: true,
   },
-  parameters: alarmControlSchema,
-  execute,
+  parameters: alarmsActivateSchema,
+  execute: executeAlarmsActivate,
 };

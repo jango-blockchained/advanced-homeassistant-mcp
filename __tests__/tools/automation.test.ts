@@ -13,12 +13,14 @@ interface AutomationResult {
 }
 
 const automationTool = tools.find((t) => t.name === "automation")!;
+const automationModifyTool = tools.find((t) => t.name === "automation_modify")!;
+const automationActivateTool = tools.find((t) => t.name === "automation_activate")!;
 
 function parseResult(result: unknown): AutomationResult {
   return JSON.parse(result as string) as AutomationResult;
 }
 
-describe("automation tool", () => {
+describe("automation tool (read-only)", () => {
   beforeEach(async () => {
     // Default fetch mock just returns an empty success body. Individual tests
     // override `globalThis.fetch` for the call shapes they actually exercise.
@@ -57,14 +59,21 @@ describe("automation tool", () => {
     expect(result.automations?.[0]?.entity_id).toBe("automation.morning_lights");
     expect(result.automations?.[0]?.name).toBe("Morning lights");
   });
+});
+
+describe("automation_modify tool (toggle)", () => {
+  beforeEach(() => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(createMockResponse({})),
+    ) as unknown as typeof fetch;
+  });
 
   test("toggle calls the automation/toggle service for the given entity", async () => {
     const fetchMock = mock(() => Promise.resolve(createMockResponse({})));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
     const result = parseResult(
-      await automationTool.execute({
-        action: "toggle",
+      await automationModifyTool.execute({
         automation_id: "automation.morning_lights",
       }),
     );
@@ -81,13 +90,25 @@ describe("automation tool", () => {
     expect(JSON.parse(init.body as string)).toEqual({ entity_id: "automation.morning_lights" });
   });
 
+  test("schema requires automation_id (enforced at the transport layer by Zod)", () => {
+    const shape = (automationModifyTool.parameters as { shape?: Record<string, unknown> }).shape;
+    expect(shape?.automation_id).toBeDefined();
+  });
+});
+
+describe("automation_activate tool (trigger)", () => {
+  beforeEach(() => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(createMockResponse({})),
+    ) as unknown as typeof fetch;
+  });
+
   test("trigger calls the automation/trigger service for the given entity", async () => {
     const fetchMock = mock(() => Promise.resolve(createMockResponse({})));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
     const result = parseResult(
-      await automationTool.execute({
-        action: "trigger",
+      await automationActivateTool.execute({
         automation_id: "automation.morning_lights",
       }),
     );
@@ -98,9 +119,8 @@ describe("automation tool", () => {
     expect(triggerCalls[0]?.[0]).toContain("/api/services/automation/trigger");
   });
 
-  test("toggle/trigger without automation_id returns success:false with a clear message", async () => {
-    const result = parseResult(await automationTool.execute({ action: "toggle" }));
-    expect(result.success).toBe(false);
-    expect(result.message).toContain("Automation ID is required");
+  test("schema requires automation_id (enforced at the transport layer by Zod)", () => {
+    const shape = (automationActivateTool.parameters as { shape?: Record<string, unknown> }).shape;
+    expect(shape?.automation_id).toBeDefined();
   });
 });

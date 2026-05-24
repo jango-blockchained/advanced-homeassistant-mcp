@@ -51,7 +51,7 @@ router.post("/control", async (req, res) => {
       });
     }
 
-    const tool = tools.find((t) => t.name === "control");
+    const tool = tools.find((t) => t.name === "control_activate");
     if (!tool) {
       return res.status(404).json({
         success: false,

@@ -58,8 +58,8 @@ async function executeNotifyLogic(params: NotifyParams): Promise<string> {
 }
 
 // Tool object export (for FastMCP)
-export const notifyTool: Tool = {
-  name: "notify",
+export const notifyActivateTool: Tool = {
+  name: "notify_activate",
   description: "Send notifications through Home Assistant",
   annotations: {
     title: "Notify",

@@ -36,7 +36,7 @@ export const MCP_SCHEMA = {
       },
     },
     {
-      name: "control",
+      name: "control_activate",
       description: "Control Home Assistant entities (lights, climate, etc.)",
       parameters: {
         type: "object",
@@ -107,7 +107,7 @@ export const MCP_SCHEMA = {
       },
     },
     {
-      name: "automation_config",
+      name: "automation_config_modify",
       description: "Manage Home Assistant automations",
       parameters: {
         type: "object",
@@ -137,8 +137,8 @@ export const MCP_SCHEMA = {
       },
     },
     {
-      name: "addon_management",
-      description: "Manage Home Assistant add-ons",
+      name: "addon_modify",
+      description: "Manage Home Assistant add-ons (install, uninstall, start, stop, restart)",
       parameters: {
         type: "object",
         properties: {
@@ -153,8 +153,8 @@ export const MCP_SCHEMA = {
       },
     },
     {
-      name: "package_management",
-      description: "Manage HACS packages",
+      name: "package_modify",
+      description: "Manage HACS packages (install, uninstall, update)",
       parameters: {
         type: "object",
         properties: {
@@ -173,8 +173,8 @@ export const MCP_SCHEMA = {
       },
     },
     {
-      name: "scene_control",
-      description: "Manage and activate scenes",
+      name: "scene_activate",
+      description: "Activate a Home Assistant scene",
       parameters: {
         type: "object",
         properties: {
@@ -188,7 +188,7 @@ export const MCP_SCHEMA = {
       },
     },
     {
-      name: "notify",
+      name: "notify_activate",
       description: "Send notifications through Home Assistant",
       parameters: {
         type: "object",
@@ -205,7 +205,7 @@ export const MCP_SCHEMA = {
       },
     },
     {
-      name: "history",
+      name: "get_history",
       description: "Retrieve historical data for entities",
       parameters: {
         type: "object",

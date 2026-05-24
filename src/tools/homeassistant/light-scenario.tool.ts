@@ -19,15 +19,17 @@ const LightScenarioParamsSchema = z.object({
 
 type LightScenarioParams = z.infer<typeof LightScenarioParamsSchema>;
 
-export const lightScenarioTool: Tool = {
-    name: "light_scenario",
+export const lightScenarioActivateTool: Tool = {
+    name: "light_scenario_activate",
     description: "Apply ambient lighting moods (Chill, Nightly, Focus, etc.) to a specific area or light.",
     parameters: LightScenarioParamsSchema,
     annotations: {
         title: "Light Scenarios",
         description: "Set the mood of a room with one command",
+        readOnlyHint: false,
         destructiveHint: false,
         idempotentHint: true,
+        openWorldHint: true,
     },
     execute: async (params: LightScenarioParams) => {
         const { target, mood } = params;

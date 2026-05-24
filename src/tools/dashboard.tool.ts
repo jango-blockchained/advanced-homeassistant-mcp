@@ -1,9 +1,11 @@
 /**
- * Dashboard Management Tool for Home Assistant
+ * Dashboard Management Tools for Home Assistant
  *
- * List, view, edit, and import/export Lovelace dashboard configurations.
+ * Split into:
+ * - `dashboard` (read-only): list, get_config, export_yaml
+ * - `dashboard_modify`: update_config, import_yaml (both replace entire dashboard config)
+ *
  * Uses the WebSocket API since Lovelace endpoints are not available via REST.
- * Supports JSON and YAML formats for dashboard configs.
  */
 
 import { z } from "zod";
@@ -13,27 +15,33 @@ import { logger } from "../utils/logger.js";
 import { get_hass_ws } from "../hass/websocket-manager.js";
 import { Tool } from "../types/index.js";
 
-const dashboardSchema = z.object({
-  action: z
-    .enum(["list", "get_config", "update_config", "export_yaml", "import_yaml"])
-    .describe("Action to perform on dashboards"),
+const dashboardReadSchema = z.object({
+  action: z.enum(["list", "get_config", "export_yaml"]).describe("Read action to perform"),
   url_path: z
     .string()
     .optional()
     .describe(
-      "Dashboard URL path (omit for the default dashboard). Use the 'list' action to discover available dashboards.",
+      "Dashboard URL path (omit for the default dashboard). Use 'list' to discover available dashboards.",
     ),
+});
+
+const dashboardModifySchema = z.object({
+  action: z
+    .enum(["update_config", "import_yaml"])
+    .describe("Modify action — replaces entire dashboard config"),
+  url_path: z.string().optional().describe("Dashboard URL path (omit for default)"),
   config: z
     .record(z.string(), z.unknown())
     .optional()
-    .describe("Dashboard configuration object (required for update_config action)"),
+    .describe("Dashboard configuration object (required for update_config)"),
   yaml_content: z
     .string()
     .optional()
-    .describe("YAML string of dashboard configuration (required for import_yaml action)"),
+    .describe("YAML string of dashboard configuration (required for import_yaml)"),
 });
 
-type DashboardParams = z.infer<typeof dashboardSchema>;
+type DashboardReadParams = z.infer<typeof dashboardReadSchema>;
+type DashboardModifyParams = z.infer<typeof dashboardModifySchema>;
 
 async function fetchDashboardConfig(urlPath?: string): Promise<Record<string, unknown>> {
   const hass = await get_hass_ws();
@@ -59,7 +67,7 @@ async function saveDashboardConfig(
   await hass.send(msg);
 }
 
-async function executeDashboard(params: DashboardParams): Promise<string> {
+async function executeDashboardRead(params: DashboardReadParams): Promise<string> {
   try {
     switch (params.action) {
       case "list": {
@@ -67,58 +75,51 @@ async function executeDashboard(params: DashboardParams): Promise<string> {
         const dashboards = await hass.send({ type: "lovelace/dashboards/list" });
         return JSON.stringify({ dashboards });
       }
-
       case "get_config": {
         const config = await fetchDashboardConfig(params.url_path);
         return JSON.stringify(config, null, 2);
       }
+      case "export_yaml": {
+        const config = await fetchDashboardConfig(params.url_path);
+        const yaml = yamlStringify(config);
+        return JSON.stringify({ yaml });
+      }
+    }
+  } catch (error) {
+    if (error instanceof UserError) throw error;
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`Dashboard read failed: ${message}`);
+    throw new UserError(`Dashboard read failed: ${message}`);
+  }
+}
 
+async function executeDashboardModify(params: DashboardModifyParams): Promise<string> {
+  try {
+    switch (params.action) {
       case "update_config": {
         if (!params.config) {
-          throw new UserError(
-            "The 'config' parameter is required for update_config action",
-          );
+          throw new UserError("The 'config' parameter is required for update_config action");
         }
-
         await saveDashboardConfig(params.config, params.url_path);
         return JSON.stringify({
           success: true,
           message: `Dashboard ${params.url_path ?? "default"} config updated`,
         });
       }
-
-      case "export_yaml": {
-        const config = await fetchDashboardConfig(params.url_path);
-        const yaml = yamlStringify(config);
-        return JSON.stringify({ yaml });
-      }
-
       case "import_yaml": {
         if (!params.yaml_content) {
-          throw new UserError(
-            "The 'yaml_content' parameter is required for import_yaml action",
-          );
+          throw new UserError("The 'yaml_content' parameter is required for import_yaml action");
         }
-
         let config: unknown;
         try {
           config = yamlParse(params.yaml_content);
         } catch (parseError) {
-          throw new UserError(
-            `Invalid YAML: ${(parseError as Error).message}`,
-          );
+          throw new UserError(`Invalid YAML: ${(parseError as Error).message}`);
         }
-
         if (config == null || typeof config !== "object" || Array.isArray(config)) {
-          throw new UserError(
-            "YAML must parse to an object (the dashboard configuration)",
-          );
+          throw new UserError("YAML must parse to an object (the dashboard configuration)");
         }
-
-        await saveDashboardConfig(
-          config as Record<string, unknown>,
-          params.url_path,
-        );
+        await saveDashboardConfig(config as Record<string, unknown>, params.url_path);
         return JSON.stringify({
           success: true,
           message: `Dashboard ${params.url_path ?? "default"} config imported from YAML`,
@@ -128,22 +129,37 @@ async function executeDashboard(params: DashboardParams): Promise<string> {
   } catch (error) {
     if (error instanceof UserError) throw error;
     const message = error instanceof Error ? error.message : String(error);
-    logger.error(`Dashboard operation failed: ${message}`);
-    throw new UserError(`Dashboard operation failed: ${message}`);
+    logger.error(`Dashboard modify failed: ${message}`);
+    throw new UserError(`Dashboard modify failed: ${message}`);
   }
 }
 
 export const dashboardTool: Tool = {
   name: "dashboard",
   description:
-    "Manage Home Assistant Lovelace dashboards. List all dashboards, get or update their configuration, and import/export configs as YAML. Note: update_config and import_yaml replace the entire dashboard config — always get the current config first, modify it, then update.",
-  parameters: dashboardSchema,
-  execute: executeDashboard,
+    "List Home Assistant Lovelace dashboards or read a dashboard's configuration (JSON or YAML export).",
+  parameters: dashboardReadSchema,
+  execute: executeDashboardRead,
   annotations: {
-    title: "Dashboard Management",
+    title: "Dashboard Inventory",
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  },
+};
+
+export const dashboardModifyTool: Tool = {
+  name: "dashboard_modify",
+  description:
+    "Replace a Home Assistant Lovelace dashboard's configuration (from a JSON object or YAML string). Both actions overwrite the entire dashboard config — always read first, then modify, then update.",
+  parameters: dashboardModifySchema,
+  execute: executeDashboardModify,
+  annotations: {
+    title: "Dashboard Modify",
     readOnlyHint: false,
     destructiveHint: true,
-    idempotentHint: false,
+    idempotentHint: true,
     openWorldHint: true,
   },
 };

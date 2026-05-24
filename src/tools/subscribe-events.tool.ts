@@ -14,8 +14,8 @@ export const subscribeEventsTool: Tool = {
       "Stream real-time Home Assistant events for entity state changes and system events",
     readOnlyHint: true,
     destructiveHint: false,
-    idempotentHint: true,
-    openWorldHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
   },
   parameters: z.object({
     token: z.string().describe("Authentication token (required)"),
