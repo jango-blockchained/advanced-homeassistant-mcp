@@ -65,45 +65,83 @@ jobs:
           fi
           echo "Commit range: $RANGE"
 
-          # Pull all commit subjects + bodies in the range.
-          # Filter out our own bump-and-tag commits so a previous
-          # run's `chore(release): bump version to X` doesn't get
-          # counted as a fresh source change on the next run.
-          COMMITS=$(git log "$RANGE" --pretty=format:"%H%n%s%n%b%n---END---" \
-            | grep -vE "^(chore\(release\): bump version to |---END---)" \
-            | awk 'BEGIN{p=1} /^---END---$/{p=1; next} p{print} /^---END---$/{p=0}')
-          # The above awk keeps blank lines between commits but
-          # trims the trailing separator. Simpler: just split on
-          # the separator after grep.
-          COMMITS=$(git log "$RANGE" --pretty=format:"%s%n%b" \
-            | grep -vE "^chore\(release\): bump version to ")
-          echo "=== Filtered commits ==="
-          echo "$COMMITS"
-          echo "======================="
-
-          # Decide bump: major > minor > patch > none.
-          # Breaking-change markers we recognise:
-          #   - "BREAKING CHANGE:" or "BREAKING-CHANGE:" in the body
-          #   - "!" after the type/scope in the subject, e.g.
-          #     "feat(api)!: rename foo" or "fix!: drop legacy"
+          # Walk commits one at a time, checking the conventional
+          # commit markers in the subject and body separately.
+          # The previous version of this script dumped every
+          # commit's body into a single string and regex-matched
+          # against it, which meant a commit body that documents
+          # the rules (and contains literal "feat(api)!:" or
+          # "BREAKING CHANGE:" text) was misread as a real
+          # breaking change. This version anchors the check to
+          # the subject (must start at column 0 with a real
+          # conventional-commit type) and the body footer (must
+          # be at the start of a line per the CC spec).
           BUMP="none"
-          if [ -n "$COMMITS" ]; then
-            if echo "$COMMITS" | grep -qE "^(BREAKING[ -]CHANGE:|^.*[a-z]+(\([^)]+\))?!: )"; then
-              BUMP="major"
-            elif echo "$COMMITS" | grep -qE "^(feat|feat\([^)]+\)):" ; then
-              BUMP="minor"
-            elif echo "$COMMITS" | grep -qE "^(fix|fix\([^)]+\)):" ; then
-              BUMP="patch"
-            elif echo "$COMMITS" | grep -qE "^(perf|perf\([^)]+\)):" ; then
-              BUMP="patch"
-            else
-              # All commits are chore/docs/ci/style/refactor/test/build
-              # -> no release-worthy change.
-              BUMP="none"
+          HAS_COMMITS=0
+
+          while IFS= read -r COMMIT_HASH; do
+            # Skip empty lines (defensive).
+            [ -z "$COMMIT_HASH" ] && continue
+            HAS_COMMITS=1
+
+            # Read subject and body for this commit, separated
+            # by a NUL byte. `-z` on the read consumes the
+            # terminator. The leading -n1 on the body read makes
+            # sure we only get THIS commit's body, not the next.
+            SUBJECT=$(git log -1 --format='%s' "$COMMIT_HASH")
+            BODY=$(git log -1 --format='%b' "$COMMIT_HASH")
+
+            # Skip our own release commits so a previous run's
+            # bump doesn't get counted as a fresh source change.
+            if echo "$SUBJECT" | grep -qE "^chore\(release\): bump version to "; then
+              echo "Skipping own release commit: $COMMIT_HASH"
+              continue
             fi
-          else
+
+            echo "--- $COMMIT_HASH"
+            echo "  Subject: $SUBJECT"
+            if [ -n "$BODY" ]; then
+              echo "  Body:    $BODY"
+            fi
+
+            # Major markers: subject with !, or body footer with
+            # BREAKING CHANGE / BREAKING-CHANGE.
+            if echo "$SUBJECT" | grep -qE "^[a-z]+(\([^)]+\))?!: "; then
+              BUMP="major"
+              echo "  -> major (subject !)"
+              break
+            fi
+            if printf '%s\n' "$BODY" | grep -qE "^BREAKING[ -]CHANGE: "; then
+              BUMP="major"
+              echo "  -> major (body footer)"
+              break
+            fi
+
+            # Track the highest non-major bump in the range.
+            # Major wins over everything; minor wins over patch.
+            if [ "$BUMP" = "none" ] || [ "$BUMP" = "patch" ]; then
+              if echo "$SUBJECT" | grep -qE "^(feat|feat\([^)]+\)): "; then
+                BUMP="minor"
+                echo "  -> minor"
+              elif echo "$SUBJECT" | grep -qE "^(fix|fix\([^)]+\)): "; then
+                if [ "$BUMP" = "none" ]; then
+                  BUMP="patch"
+                  echo "  -> patch"
+                fi
+              elif echo "$SUBJECT" | grep -qE "^(perf|perf\([^)]+\)): "; then
+                if [ "$BUMP" = "none" ]; then
+                  BUMP="patch"
+                  echo "  -> patch"
+                fi
+              fi
+            fi
+          done < <(git log "$RANGE" --format='%H')
+
+          if [ "$HAS_COMMITS" = "0" ]; then
             BUMP="none"
           fi
+          echo "======================="
+          echo "Final BUMP: $BUMP"
 
           if [ "$BUMP" = "none" ]; then
             echo "No release-worthy commits. Skipping."
