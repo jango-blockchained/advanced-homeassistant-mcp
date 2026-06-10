@@ -86,33 +86,47 @@ export class HomeAssistantWebSocketClient extends EventEmitter implements HassWe
     };
 
     return new Promise((resolve, reject) => {
+      // Use a settled flag so the handler can only settle the promise
+      // once, regardless of which path runs (success, invalid, parse error,
+      // or timeout). This prevents the listener leak that occurred when a
+      // non-JSON message was received during the auth window: the handler
+      // was added via .on() and the only removeListener calls were inside
+      // the success/invalid branches.
+      let settled = false;
+      const settle = (cb: () => void) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutHandle);
+        this.socket?.removeListener("message", authHandler);
+        cb();
+      };
+
       const authHandler = (data: Buffer) => {
         try {
           const message = JSON.parse(data.toString());
           if (message.type === "auth_ok") {
             this.connected = true;
             this.emit("connected");
-            this.socket?.removeListener("message", authHandler);
-            resolve();
+            settle(resolve);
           } else if (message.type === "auth_invalid") {
-            this.socket?.removeListener("message", authHandler);
-            reject(new Error("Authentication failed"));
+            settle(() => reject(new Error("Authentication failed")));
           }
         } catch (error) {
           logger.error("Failed to parse auth message:", error);
+          // Do NOT settle on parse error — the next real auth response
+          // will still arrive. Only the timeout or terminal auth_* messages
+          // settle the promise.
         }
       };
+
+      const timeoutHandle = setTimeout(() => {
+        settle(() => reject(new Error("Authentication timeout")));
+      }, 10000);
 
       this.socket?.on("message", authHandler);
 
       // Send auth message
       this.socket?.send(JSON.stringify(authMessage));
-
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        this.socket?.removeListener("message", authHandler);
-        reject(new Error("Authentication timeout"));
-      }, 10000);
     });
   }
 
@@ -125,13 +139,30 @@ export class HomeAssistantWebSocketClient extends EventEmitter implements HassWe
     const fullMessage = { id, ...message };
 
     return new Promise((resolve, reject) => {
-      this.pendingRequests.set(id, { resolve, reject });
+      // Store the timeout handle in the pending entry so we can clear it
+      // on resolve/reject. Previously the timer was never cleared, so even
+      // a 100ms request held the 30s timer reference (and kept the event
+      // loop alive on disconnect, since disconnect rejected the pending
+      // promise but the timer was still scheduled).
+      let timeoutHandle: NodeJS.Timeout | undefined;
+      const entry = {
+        resolve: (value: any) => {
+          if (timeoutHandle) clearTimeout(timeoutHandle);
+          resolve(value);
+        },
+        reject: (err: any) => {
+          if (timeoutHandle) clearTimeout(timeoutHandle);
+          reject(err);
+        },
+      };
+      this.pendingRequests.set(id, entry);
       this.socket!.send(JSON.stringify(fullMessage));
 
-      // Timeout after 30 seconds
-      setTimeout(() => {
-        this.pendingRequests.delete(id);
-        reject(new Error("Request timeout"));
+      timeoutHandle = setTimeout(() => {
+        if (this.pendingRequests.has(id)) {
+          this.pendingRequests.delete(id);
+          reject(new Error("Request timeout"));
+        }
       }, 30000);
     });
   }
