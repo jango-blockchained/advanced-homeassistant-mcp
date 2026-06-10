@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { sseManager } from "../sse/index.js";
 import { TokenManager } from "../security/index.js";
 import { middleware } from "../middleware/index.js";
+import { logger } from "../utils/logger.js";
 
 const router = Router();
 
@@ -47,6 +48,8 @@ router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
       id: clientId,
       ip: clientIp,
       connectedAt: new Date(),
+      connectionTime: 0, // Updated by SSE manager on add
+      lastActivity: new Date(),
       send: (data: string) => {
         res.write(`data: ${data}\n\n`);
       },
@@ -67,23 +70,27 @@ router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
     // Handle client disconnect
     req.on("close", () => {
       sseManager.removeClient(clientId);
-      console.log(`Client ${clientId} disconnected at ${new Date().toISOString()}`);
+      logger.info(`Client ${clientId} disconnected at ${new Date().toISOString()}`);
     });
 
     // Handle errors
     req.on("error", (error) => {
-      console.error(`SSE Error for client ${clientId}:`, error);
+      logger.error(`SSE Error for client ${clientId}:`, error);
       const errorMessage = JSON.stringify({
         type: "error",
         message: "Connection error",
         timestamp: new Date().toISOString(),
       });
-      res.write(`data: ${errorMessage}\n\n`);
+      // Guard against writing to an already-ended response (race
+      // between req.on("close") and the actual socket close).
+      if (!res.writableEnded) {
+        res.write(`data: ${errorMessage}\n\n`);
+      }
       sseManager.removeClient(clientId);
       res.end();
     });
   } catch (error) {
-    console.error("SSE Setup Error:", error);
+    logger.error("SSE Setup Error:", error);
     res.status(500).json({
       success: false,
       message: "Internal Server Error",

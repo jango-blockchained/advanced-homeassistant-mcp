@@ -2,13 +2,16 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { Tool, SSEParams } from "../types/index";
 import { sseManager } from "../sse/index";
+import { logger } from "../utils/logger";
 
 export const subscribeEventsTool: Tool = {
   name: "subscribe_events",
-  description: "Subscribe to Home Assistant events via Server-Sent Events (SSE) - monitor real-time device and system state changes",
+  description:
+    "Subscribe to Home Assistant events via Server-Sent Events (SSE) - monitor real-time device and system state changes",
   annotations: {
     title: "Event Subscription",
-    description: "Stream real-time Home Assistant events for entity state changes and system events",
+    description:
+      "Stream real-time Home Assistant events for entity state changes and system events",
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
@@ -54,7 +57,7 @@ export const subscribeEventsTool: Tool = {
 
     // Subscribe to specific events if provided
     if (params.events?.length) {
-      console.log(`Client ${clientId} subscribing to events:`, params.events);
+      logger.info(`Client ${clientId} subscribing to events:`, params.events);
       for (const eventType of params.events) {
         sseManager.subscribeToEvent(clientId, eventType);
       }
@@ -62,13 +65,13 @@ export const subscribeEventsTool: Tool = {
 
     // Subscribe to specific entity if provided
     if (params.entity_id) {
-      console.log(`Client ${clientId} subscribing to entity:`, params.entity_id);
+      logger.info(`Client ${clientId} subscribing to entity:`, params.entity_id);
       sseManager.subscribeToEntity(clientId, params.entity_id);
     }
 
     // Subscribe to domain if provided
     if (params.domain) {
-      console.log(`Client ${clientId} subscribing to domain:`, params.domain);
+      logger.info(`Client ${clientId} subscribing to domain:`, params.domain);
       sseManager.subscribeToDomain(clientId, params.domain);
     }
 

@@ -23,7 +23,15 @@ export function loadEnvironmentVariables(): void {
   // Get the environment-specific file name
   const envSpecificFile = ENV_FILE_MAPPING[nodeEnv];
   if (!envSpecificFile) {
-    console.warn(`Unknown NODE_ENV value: ${nodeEnv}. Using .env.dev as fallback.`);
+    // Boot-time informational message — written to stderr (won't pollute
+    // stdout which is reserved for the stdio MCP transport). Per
+    // AGENTS.md, use the winston logger; but at this point in
+    // startup the logger may not be configured, so we use stderr
+    // directly as a safe fallback. The winston logger takes over
+    // for application-level logging.
+    process.stderr.write(
+      `[loadEnv] Unknown NODE_ENV value: ${nodeEnv}. Using .env.dev as fallback.\n`,
+    );
   }
 
   const envFile = envSpecificFile || ".env.dev";
@@ -33,12 +41,14 @@ export function loadEnvironmentVariables(): void {
   try {
     if (fs.existsSync(envPath)) {
       dotenvConfig({ path: envPath });
-      console.log(`Loaded environment variables from ${envFile}`);
+      process.stderr.write(`[loadEnv] Loaded environment variables from ${envFile}\n`);
     } else {
-      console.warn(`Environment-specific file ${envFile} not found.`);
+      process.stderr.write(`[loadEnv] Environment-specific file ${envFile} not found.\n`);
     }
   } catch (error) {
-    console.warn(`Error checking environment file ${envFile}:`, error);
+    process.stderr.write(
+      `[loadEnv] Error checking environment file ${envFile}: ${String(error)}\n`,
+    );
   }
 
   // Finally, check if there is a generic .env file present
@@ -47,10 +57,10 @@ export function loadEnvironmentVariables(): void {
   try {
     if (fs.existsSync(genericEnvPath)) {
       dotenvConfig({ path: genericEnvPath, override: true });
-      console.log("Loaded and overrode with generic .env file");
+      process.stderr.write("[loadEnv] Loaded and overrode with generic .env file\n");
     }
   } catch (error) {
-    console.warn(`Error checking generic .env file:`, error);
+    process.stderr.write(`[loadEnv] Error checking generic .env file: ${String(error)}\n`);
   }
 }
 

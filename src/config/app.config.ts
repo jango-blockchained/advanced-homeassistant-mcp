@@ -116,7 +116,7 @@ if (!isSmitheryScan && !isDiscoveryMode) {
 
 // Fix NODE_ENV if it's set to "1"
 if (process.env.NODE_ENV === "1") {
-  console.log('Fixing NODE_ENV from "1" to "development"');
+  process.stderr.write('[app.config] Fixing NODE_ENV from "1" to "development"\n');
   process.env.NODE_ENV = "development";
 }
 
