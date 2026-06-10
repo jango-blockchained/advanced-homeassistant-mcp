@@ -1,0 +1,178 @@
+---
+title: HTTP+WS
+description: The custom HTTP+WebSocket entry point, run standalone or in Docker, with a reverse proxy in front.
+section: Deployment
+order: 1
+---
+
+The custom HTTP entry point (`src/index.ts`) is the production stack: Express, WebSocket, JWT auth, rate limiting, and a `/mcp/ws` streaming endpoint. This page is how to run it.
+
+## Standalone
+
+Build first, then run:
+
+```bash
+bun run build:all
+PORT=4000 \
+HASS_HOST=http://your-ha-instance:8123 \
+HASS_TOKEN=your_long_lived_token \
+JWT_SECRET="$(openssl rand -base64 48)" \
+node dist/index.cjs
+```
+
+The server prints `MCP Server listening on http://0.0.0.0:4000` (or whatever `PORT` you set). Hit `GET /health` to confirm:
+
+```bash
+curl http://localhost:4000/health
+# {"status":"ok","version":"0.1.0"}
+```
+
+### Behind a reverse proxy (recommended for production)
+
+Put a Caddy, nginx, or Cloudflare Tunnel in front. The custom stack assumes TLS is terminated upstream.
+
+**Caddy**:
+
+```caddyfile
+mcp.example.com {
+  reverse_proxy localhost:4000
+}
+```
+
+**nginx** (with `real_ip` so the rate limiter sees the real client):
+
+```nginx
+server {
+  listen 443 ssl http2;
+  server_name mcp.example.com;
+
+  set_real_ip_from 10.0.0.0/8;
+  real_ip_header X-Forwarded-For;
+
+  location / {
+    proxy_pass http://127.0.0.1:4000;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+  }
+}
+```
+
+`proxy_set_header Upgrade` and `Connection: upgrade` are what enable the WebSocket upgrade at `/mcp/ws`. Without them, the `tools/call subscribe_events` call will hang.
+
+## Docker
+
+The repo includes a `Dockerfile` that builds all three entry points in a multi-stage Bun image.
+
+### Pull the prebuilt image
+
+```bash
+docker pull ghcr.io/jango-blockchained/advanced-homeassistant-mcp:latest
+```
+
+### Run
+
+```bash
+docker run -d \
+  --name homeassistant-mcp \
+  --restart unless-stopped \
+  -e HASS_HOST=http://your-ha-instance:8123 \
+  -e HASS_TOKEN=your_long_lived_token \
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
+  -e PORT=4000 \
+  -e HOST=0.0.0.0 \
+  -e LOG_LEVEL=info \
+  -p 4000:4000 \
+  -v mcp-logs:/app/logs \
+  ghcr.io/jango-blockchained/advanced-homeassistant-mcp:latest
+```
+
+The image:
+
+- Uses `oven/bun:1-slim` (Debian-slim base).
+- Runs as the unprivileged `bunjs` user (uid 1001).
+- Has `curl` installed (for the `HEALTHCHECK`).
+- Does **not** include Python or audio libraries. Speech features are opt-in via a separate compose file (see below).
+- Exposes the port from `PORT` (default 7123, the Smithery default; set to 4000 to match the rest of this page).
+
+### Health checks
+
+The image declares:
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:${PORT}/health || exit 1
+```
+
+The host orchestrator (docker compose, Kubernetes) sees this as a healthy / unhealthy state. Don't override `HEALTHCHECK` without also updating the port.
+
+### docker compose
+
+```yaml
+services:
+  mcp:
+    image: ghcr.io/jango-blockchained/advanced-homeassistant-mcp:latest
+    container_name: homeassistant-mcp
+    restart: unless-stopped
+    environment:
+      HASS_HOST: http://192.168.1.50:8123
+      HASS_TOKEN: ${HASS_TOKEN}
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 4000
+      HOST: 0.0.0.0
+      LOG_LEVEL: info
+    ports:
+      - "4000:4000"
+    volumes:
+      - mcp-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mcp-logs:
+```
+
+A `.env` file alongside holds the secrets:
+
+```env
+HASS_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+JWT_SECRET=$(openssl rand -base64 48)
+```
+
+## Ports and networking
+
+- Default port: **7123** (the Smithery default) in the Docker image, **4000** in standalone. Override with `PORT`.
+- Default host: **0.0.0.0** in Docker, **127.0.0.1** in standalone. Override with `HOST`.
+- The server binds a single port for both HTTP and WebSocket; the WS upgrade is negotiated on `/mcp/ws`.
+
+## Logs
+
+Logs are written to stdout (so `docker logs` works) **and** to `/app/logs/` (rotated by `winston-daily-rotate-file`):
+
+- `mcp-YYYY-MM-DD.log` — info level
+- `mcp-error-YYYY-MM-DD.log` — error level
+- Both files are rotated when they hit `LOG_MAX_SIZE` (default 20 MB) and pruned after `LOG_MAX_DAYS` (default 14 d).
+
+To attach to logs:
+
+```bash
+docker logs -f homeassistant-mcp
+```
+
+## Persistent state
+
+The server is **stateless** between restarts. The state cache in the HA client rebuilds on every start by reading the initial state from HA. The only persistent file is the log directory. Mount it as a volume if you want to keep logs across container restarts (the `docker run` and compose snippets above do this).
+
+## Adding speech features
+
+The `docker-compose.speech.yml` file in the repo adds a second container with the speech runtime (Porcupine for wake word, Whisper for STT). See the file for the full setup.
+
+## Next
+
+- [STDIO](/deployment/stdio/) — for editor integrations.
+- [Smithery](/deployment/smithery/) — for the public registry.

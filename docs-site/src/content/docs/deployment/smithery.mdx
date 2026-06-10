@@ -1,0 +1,96 @@
+---
+title: Smithery
+description: Publishing to Smithery, the @modelcontextprotocol/sdk-based build, and the local playground.
+section: Deployment
+order: 3
+---
+
+[Smithery](https://smithery.ai) is a public registry of MCP servers. Users install with one click from a Smithery-aware client. The server is published at [@jango-blockchained/advanced-homeassistant-mcp](https://smithery.ai/server/@jango-blockchained/advanced-homeassistant-mcp).
+
+## What Smithery wants
+
+Smithery scans the running server and asks for its tool manifest. To play nice with the scanner, the server:
+
+1. Skips `HASS_TOKEN` validation when `SMITHERY_SCAN=true` is set. The scanner doesn't have your HA credentials.
+2. Exposes the same `tools/list` response as the other entry points.
+3. Speaks the standard MCP protocol over the configured transport (HTTP for the production build, STDIO for local development).
+
+The `src/config/app.config.ts` validation function already handles `SMITHERY_SCAN`. Nothing else needs to be configured for the server to be Smithery-compatible.
+
+## The build
+
+The Smithery entry point lives at `src/smithery-sdk.ts` and uses the official `@modelcontextprotocol/sdk`. The build script:
+
+```bash
+bun run smithery:build
+```
+
+This produces `dist/smithery.js`, a single-file bundle that Smithery's container can run. Externals are kept inline (the bundle is self-contained for the Smithery sandbox).
+
+The container image is built from `Dockerfile.smithery`, which:
+
+- Uses `oven/bun:1-slim` as the base
+- Copies the prebuilt `dist/smithery.js`
+- Exposes the port from `PORT` (default 7123)
+- Sets `HOST=0.0.0.0`
+- `HEALTHCHECK` calls `GET /health` on the local port
+
+The full container path on the registry is `dist/smithery.js` inside `Dockerfile.smithery`. The published image is the one Smithery deploys to their infrastructure when a user clicks install.
+
+## Local debug
+
+Before publishing, you can run the server in a local Smithery-style playground:
+
+```bash
+npx @smithery/cli playground-stdio -- npm run start:stdio
+```
+
+This opens a Smithery-aware REPL that talks to your local STDIO server. You can:
+
+- List the tools Smithery will see (`tools/list`).
+- Call any tool with arguments.
+- See the exact JSON-RPC envelopes the scanner would record.
+
+It's the fastest way to confirm a change hasn't broken the manifest.
+
+## Publishing
+
+The repo's `.github/workflows/release.yml` (not the docs deploy) handles the version bump + npm + Docker + Smithery release flow. The short version:
+
+1. Open the repo on GitHub, go to **Actions** → **Version Bump and Release** → **Run workflow**.
+2. Pick `patch` / `minor` / `major`.
+3. The workflow:
+   - Bumps the version in `package.json`.
+   - Creates a GitHub release with the new tag.
+   - Publishes the npm package.
+   - Builds and pushes the Docker image with the new version tag (and `latest` if it was a `minor` or `major`).
+   - Updates the Smithery registry.
+
+You don't need to do anything Smithery-specific by hand.
+
+## Configuration Smithery exposes to users
+
+When a user installs the server from Smithery, the install flow asks for:
+
+- **Home Assistant URL** (e.g. `http://192.168.1.50:8123`) — passed as `HASS_HOST`.
+- **Long-lived access token** — passed as `HASS_TOKEN`.
+- Optional: a port (default 7123), a debug toggle.
+
+Smithery injects these as env vars before the server starts. The server reads them via the standard config pipeline, so the rest of the codebase is unchanged.
+
+## Differences from the custom HTTP stack
+
+| Concern        | Smithery build                              | Custom HTTP                     |
+| -------------- | ------------------------------------------- | ------------------------------- |
+| Auth           | None (Smithery handles per-user isolation)  | JWT, login endpoint, rate limit |
+| Transport      | `@modelcontextprotocol/sdk` HTTP            | Express + custom `MCPServer`    |
+| Rate limiting  | None (Smithery rate-limits at the registry) | 100 req / 15 min per IP         |
+| WebSocket      | No (HTTP only)                              | Yes (`/mcp/ws`)                 |
+| Container size | Smaller (Smithery-only deps)                | Larger (bespoke middleware)     |
+
+Pick the Smithery build if you want the registry install UX and don't need the WebSocket streaming. Pick the custom HTTP build if you're self-hosting and want the full middleware suite.
+
+## Next
+
+- [HTTP+WS](/deployment/http/) — the full custom stack.
+- [STDIO](/deployment/stdio/) — editor integrations.

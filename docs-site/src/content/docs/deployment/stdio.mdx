@@ -1,0 +1,178 @@
+---
+title: STDIO
+description: The fastmcp STDIO entry point, used by Claude Desktop, Cursor, and other editor integrations.
+section: Deployment
+order: 2
+---
+
+The STDIO entry point (`src/stdio-server.ts`) is the simplest transport. The server reads JSON-RPC envelopes from stdin, writes responses to stdout, and logs to stderr. No port, no firewall hole, no separate process management.
+
+## When to use it
+
+- You're wiring the server into Claude Desktop, Cursor, VS Code, or any editor that speaks MCP-over-STDIO.
+- The AI host runs on the same machine as the server (which is the normal case for editor integrations).
+
+For remote AI hosts (where the AI service can't shell out), use the [HTTP entry point](/deployment/http/) instead.
+
+## Standalone
+
+### bun run
+
+```bash
+HASS_HOST=http://your-ha-instance:8123 \
+HASS_TOKEN=your_long_lived_token \
+bun run start:stdio
+```
+
+This calls `bun run dist/stdio-server.mjs`. The server blocks on stdin and prints to stdout — leave it running in the terminal that the editor spawned.
+
+### node
+
+```bash
+bun run build:all
+HASS_HOST=http://your-ha-instance:8123 \
+HASS_TOKEN=your_long_lived_token \
+node dist/stdio-server.mjs
+```
+
+Useful when the editor is configured to use `node` instead of `bunx`.
+
+### npx
+
+For users who don't have Bun:
+
+```bash
+npx @jango-blockchained/homeassistant-mcp@latest
+```
+
+### bunx from GitHub
+
+For users who don't have npm access:
+
+```bash
+bunx github:jango-blockchained/advanced-homeassistant-mcp
+```
+
+## Editor configuration
+
+### Claude Desktop
+
+Add to `claude_desktop_config.json` (Settings → Developer → Edit Config):
+
+```json
+{
+  "mcpServers": {
+    "homeassistant-mcp": {
+      "command": "bunx",
+      "args": ["github:jango-blockchained/advanced-homeassistant-mcp"],
+      "env": {
+        "HASS_HOST": "http://192.168.1.50:8123",
+        "HASS_TOKEN": "your_long_lived_token"
+      }
+    }
+  }
+}
+```
+
+Or with `npx`:
+
+```json
+{
+  "mcpServers": {
+    "homeassistant-mcp": {
+      "command": "npx",
+      "args": ["-y", "@jango-blockchained/homeassistant-mcp@latest"],
+      "env": {
+        "HASS_HOST": "http://192.168.1.50:8123",
+        "HASS_TOKEN": "your_long_lived_token"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop. The server should appear in the tools panel.
+
+### Cursor
+
+`.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global):
+
+```json
+{
+  "mcpServers": {
+    "homeassistant-mcp": {
+      "command": "bunx",
+      "args": ["github:jango-blockchained/advanced-homeassistant-mcp"],
+      "env": {
+        "HASS_HOST": "http://192.168.1.50:8123",
+        "HASS_TOKEN": "your_long_lived_token"
+      }
+    }
+  }
+}
+```
+
+### VS Code + Copilot / Claude extension
+
+`.vscode/mcp.json` in the workspace:
+
+```json
+{
+  "servers": {
+    "homeassistant-mcp": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/stdio-server.mjs"],
+      "env": {
+        "HASS_HOST": "${env:HASS_HOST}",
+        "HASS_TOKEN": "${env:HASS_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+Pre-req: `bun run build:all` so `dist/stdio-server.mjs` exists.
+
+## Stdout vs stderr
+
+The STDIO server is strict about its I/O:
+
+- **stdout**: JSON-RPC responses only. Anything else corrupts the stream.
+- **stderr**: logs (info, warn, error, debug). Captured by the editor's MCP client and surfaced in the editor's logs UI.
+
+If you write a tool that logs to stdout, it'll break the transport. Always use the `winston` logger from `@/utils/logger` (which writes to stderr by default in the STDIO build).
+
+## Debugging
+
+Most editor integrations show a "MCP server log" view. To run the server in the foreground to see logs directly:
+
+```bash
+LOG_LEVEL=debug bun run start:stdio
+```
+
+To verify the JSON-RPC stream is healthy without an editor, point a `cat` pipe at it:
+
+```bash
+(echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'; sleep 1) | bun run start:stdio
+```
+
+You should see a JSON response on stdout listing all the tools.
+
+## Differences from the HTTP entry point
+
+| Behavior                  | STDIO                            | HTTP+WS                                |
+| ------------------------- | -------------------------------- | -------------------------------------- |
+| Auth                      | None (local trust)               | JWT, login endpoint, rate limit per IP |
+| Rate limiting             | None                             | 100 req / 15 min per IP (configurable) |
+| Streaming events          | JSON-RPC notifications on stdout | WebSocket on `/mcp/ws`                 |
+| Concurrent requests       | One (the editor's loop)          | Many (one per HTTP connection)         |
+| Health check              | None                             | `GET /health`                          |
+| Tool calls that take >30s | OK (no client-side timeout)      | OK (configurable server timeout)       |
+
+The tool registry is identical between the two — every tool that works in HTTP works in STDIO and vice versa. The transport is the only thing that changes.
+
+## Next
+
+- [HTTP+WS](/deployment/http/) — the production stack.
+- [Smithery](/deployment/smithery/) — public registry with one-click install.
