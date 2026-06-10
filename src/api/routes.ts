@@ -137,8 +137,14 @@ router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
       },
     };
 
-    // Add client to SSE manager
-    const sseClient = sseManager.addClient(client, token);
+    // Add client to SSE manager. The local `client` object is
+    // intentionally minimal (id, send); addClient fills in the rest
+    // (ip, connectedAt, connectionTime) at runtime. Cast through
+    // unknown to satisfy the input type without restructuring.
+    const sseClient = sseManager.addClient(
+      client as unknown as Parameters<typeof sseManager.addClient>[0],
+      token,
+    );
     if (!sseClient || !sseClient.authenticated) {
       res.write(
         `data: ${JSON.stringify({

@@ -45,8 +45,14 @@ export const subscribeEventsTool: Tool = {
       },
     };
 
-    // Add client to SSE manager with authentication
-    const sseClient = sseManager.addClient(client, params.token);
+    // Add client to SSE manager with authentication. The local
+    // `client` object is intentionally minimal (id, send); addClient
+    // fills in the rest (ip, connectedAt, connectionTime) at runtime.
+    // Cast through unknown to satisfy the input type.
+    const sseClient = sseManager.addClient(
+      client as unknown as Parameters<typeof sseManager.addClient>[0],
+      params.token,
+    );
 
     if (!sseClient || !sseClient.authenticated) {
       return Promise.resolve({

@@ -94,7 +94,9 @@ describe("Home Assistant MCP Server", () => {
       const resultString = await listDevicesTool.execute({});
       // Tools return JSON strings, so we need to parse them
       expect(typeof resultString).toBe("string");
-      const result = JSON.parse(resultString);
+      // resultString is typed `unknown` (per Tool.execute), so cast to
+      // string before JSON.parse.
+      const result = JSON.parse(resultString as string);
       expect(result).toHaveProperty("devices");
       expect(result).toHaveProperty("total_count");
       expect(result).toHaveProperty("filters_applied");

@@ -54,8 +54,19 @@ export class StreamGeneratorTool extends BaseTool {
     },
     context: MCPContext,
   ): Promise<any> {
-    // Create streaming executor from generator function
-    const streamingExecutor = this.createStreamingExecutor(this.generateItems.bind(this), context);
+    // Create streaming executor from generator function. The class
+    // extends BaseTool (untyped) so P defaults to `unknown` and
+    // createStreamingExecutor expects (params: unknown, context).
+    // Cast the bound generator to that signature; the runtime call
+    // is type-safe because zod validation in validateParams
+    // guarantees the shape.
+    const streamingExecutor = this.createStreamingExecutor(
+      this.generateItems.bind(this) as unknown as (
+        p: unknown,
+        c: MCPContext,
+      ) => AsyncGenerator<any, any, void>,
+      context,
+    );
 
     // Execute with validated parameters
     return streamingExecutor(params);
