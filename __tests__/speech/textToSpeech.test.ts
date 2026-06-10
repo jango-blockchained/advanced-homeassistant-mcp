@@ -33,9 +33,13 @@ const toUrlString = (u: string | URL | Request): string =>
 const createMockFetch = () => {
   return mock((url: string | URL | Request, init?: RequestInit) => {
     const urlString = toUrlString(url);
-    
+
     // Mock Home Assistant API endpoint
-    if (urlString.includes("/api/") && !urlString.includes("/api/tts_get_url") && !urlString.includes("/api/services")) {
+    if (
+      urlString.includes("/api/") &&
+      !urlString.includes("/api/tts_get_url") &&
+      !urlString.includes("/api/services")
+    ) {
       return Promise.resolve({
         ok: true,
         status: 200,
@@ -43,38 +47,40 @@ const createMockFetch = () => {
         json: () => Promise.resolve({ message: "Home Assistant" }),
       } as Response);
     }
-    
+
     // Mock TTS generation endpoint
     if (urlString.includes("/api/tts_get_url")) {
       return Promise.resolve({
         ok: true,
         status: 200,
         statusText: "OK",
-        json: () => Promise.resolve({ 
-          url: "https://ha.local/api/tts/audio/test_audio.mp3" 
-        }),
+        json: () =>
+          Promise.resolve({
+            url: "https://ha.local/api/tts/audio/test_audio.mp3",
+          }),
       } as Response);
     }
-    
+
     // Mock services endpoint
     if (urlString.includes("/api/services")) {
       return Promise.resolve({
         ok: true,
         status: 200,
         statusText: "OK",
-        json: () => Promise.resolve([
-          {
-            tts: "exists",
-            services: {
-              google_translate: {},
-              microsoft_tts: {},
-              openai_tts: {},
-            }
-          }
-        ]),
+        json: () =>
+          Promise.resolve([
+            {
+              tts: "exists",
+              services: {
+                google_translate: {},
+                microsoft_tts: {},
+                openai_tts: {},
+              },
+            },
+          ]),
       } as Response);
     }
-    
+
     // Mock media player service endpoint
     if (urlString.includes("/api/services/media_player/play_media")) {
       return Promise.resolve({
@@ -84,7 +90,7 @@ const createMockFetch = () => {
         json: () => Promise.resolve([]),
       } as Response);
     }
-    
+
     return Promise.resolve({
       ok: false,
       status: 404,
@@ -99,18 +105,18 @@ describe("TextToSpeech Service", () => {
   let TextToSpeechConfig: any;
   let TTSFeedback: any;
   let tts: any;
-  let mockFetch: ReturnType<typeof createMockFetch>;
+  let mockFetch: typeof fetch;
   let originalFetch: typeof global.fetch;
 
   beforeEach(async () => {
     // Dynamically import to avoid app.config issues
     const module = await import("../../src/speech/textToSpeech");
     TextToSpeech = module.TextToSpeech;
-    
+
     // Save original fetch and install mock
     originalFetch = global.fetch;
-    mockFetch = createMockFetch();
-    global.fetch = mockFetch as any;
+    mockFetch = createMockFetch() as unknown as typeof fetch;
+    global.fetch = mockFetch;
 
     const config = {
       hassHost: "https://ha.local",
@@ -119,14 +125,14 @@ describe("TextToSpeech Service", () => {
       provider: "google_translate",
       cache: true,
     };
-    
+
     tts = new TextToSpeech(config);
   });
 
   afterEach(async () => {
     // Restore original fetch
     global.fetch = originalFetch;
-    
+
     // Cleanup service
     await tts.shutdown();
   });
@@ -139,11 +145,13 @@ describe("TextToSpeech Service", () => {
 
     test("should throw error on initialization failure", async () => {
       // Create TTS with failing connection
-      const failingFetch = mock(() => Promise.resolve({
-        ok: false,
-        status: 401,
-        statusText: "Unauthorized",
-      } as Response));
+      const failingFetch = mock(() =>
+        Promise.resolve({
+          ok: false,
+          status: 401,
+          statusText: "Unauthorized",
+        } as Response),
+      );
       global.fetch = failingFetch as any;
 
       const failingTts = new TextToSpeech({
@@ -177,7 +185,7 @@ describe("TextToSpeech Service", () => {
       };
 
       const result = await tts.generateSpeech(feedback);
-      
+
       expect(result).toHaveProperty("url");
       expect(result).toHaveProperty("mediaContentId");
       expect(result).toHaveProperty("mediaContentType");
@@ -205,7 +213,7 @@ describe("TextToSpeech Service", () => {
 
     test("should emit speech_generated event", async () => {
       const eventPromise = new Promise<void>((resolve) => {
-        tts.once("speech_generated", (data) => {
+        tts.once("speech_generated", (data: any) => {
           expect(data).toHaveProperty("text");
           expect(data).toHaveProperty("language");
           expect(data).toHaveProperty("url");
@@ -225,16 +233,18 @@ describe("TextToSpeech Service", () => {
       });
 
       await expect(uninitializedTts.generateSpeech({ text: "Test" })).rejects.toThrow(
-        "TextToSpeech service not initialized"
+        "TextToSpeech service not initialized",
       );
     });
 
     test("should handle generation errors", async () => {
-      const errorFetch = mock(() => Promise.resolve({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-      } as Response));
+      const errorFetch = mock(() =>
+        Promise.resolve({
+          ok: false,
+          status: 500,
+          statusText: "Internal Server Error",
+        } as Response),
+      );
       global.fetch = errorFetch as any;
 
       const feedback = { text: "Test" };
@@ -242,15 +252,17 @@ describe("TextToSpeech Service", () => {
     });
 
     test("should emit speech_error event on failure", async () => {
-      const errorFetch = mock(() => Promise.resolve({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-      } as Response));
+      const errorFetch = mock(() =>
+        Promise.resolve({
+          ok: false,
+          status: 500,
+          statusText: "Internal Server Error",
+        } as Response),
+      );
       global.fetch = errorFetch as any;
 
       const errorPromise = new Promise<void>((resolve) => {
-        tts.once("speech_error", (data) => {
+        tts.once("speech_error", (data: any) => {
           expect(data).toHaveProperty("text");
           expect(data).toHaveProperty("error");
           resolve();
@@ -282,10 +294,10 @@ describe("TextToSpeech Service", () => {
       const result2 = await tts.generateSpeech(feedback);
 
       expect(result1.url).toBe(result2.url);
-      
+
       // Fetch should only be called once for TTS generation (not counting initialization)
-      const ttsCallCount = mockFetch.mock.calls.filter(
-        (call: any[]) => call[0]?.toString().includes("/api/tts_get_url")
+      const ttsCallCount = (mockFetch as any).mock.calls.filter((call: any[]) =>
+        call[0]?.toString().includes("/api/tts_get_url"),
       ).length;
       expect(ttsCallCount).toBe(1);
     });
@@ -347,8 +359,8 @@ describe("TextToSpeech Service", () => {
       const ttsResponse = await tts.generateSpeech({ text: "Test" });
       await tts.playAudio(ttsResponse, "media_player.living_room");
 
-      const playMediaCalls = mockFetch.mock.calls.filter(
-        (call: any[]) => call[0]?.toString().includes("play_media")
+      const playMediaCalls = (mockFetch as any).mock.calls.filter((call: any[]) =>
+        call[0]?.toString().includes("play_media"),
       );
       expect(playMediaCalls.length).toBeGreaterThan(0);
     });
@@ -362,7 +374,7 @@ describe("TextToSpeech Service", () => {
 
     test("should emit audio_playing event", async () => {
       const eventPromise = new Promise<void>((resolve) => {
-        tts.once("audio_playing", (data) => {
+        tts.once("audio_playing", (data: any) => {
           expect(data).toHaveProperty("entityId");
           expect(data).toHaveProperty("url");
           resolve();
@@ -371,14 +383,14 @@ describe("TextToSpeech Service", () => {
 
       const ttsResponse = await tts.generateSpeech({ text: "Test" });
       await tts.playAudio(ttsResponse, "media_player.bedroom");
-      
+
       await eventPromise;
     });
 
     test("should handle playback errors", async () => {
       const errorFetch = mock((url: string | URL | Request) => {
         const urlString = toUrlString(url);
-        
+
         if (urlString.includes("play_media")) {
           return Promise.resolve({
             ok: false,
@@ -386,7 +398,7 @@ describe("TextToSpeech Service", () => {
             statusText: "Entity Not Found",
           } as Response);
         }
-        
+
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -402,7 +414,7 @@ describe("TextToSpeech Service", () => {
     test("should emit playback_error event on failure", async () => {
       const errorFetch = mock((url: string | URL | Request) => {
         const urlString = toUrlString(url);
-        
+
         if (urlString.includes("play_media")) {
           return Promise.resolve({
             ok: false,
@@ -410,7 +422,7 @@ describe("TextToSpeech Service", () => {
             statusText: "Entity Not Found",
           } as Response);
         }
-        
+
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -420,14 +432,14 @@ describe("TextToSpeech Service", () => {
       global.fetch = errorFetch as any;
 
       const errorPromise = new Promise<void>((resolve) => {
-        tts.once("playback_error", (data) => {
+        tts.once("playback_error", (data: any) => {
           expect(data).toHaveProperty("error");
           resolve();
         });
       });
 
       const ttsResponse = await tts.generateSpeech({ text: "Test" });
-      
+
       try {
         await tts.playAudio(ttsResponse);
       } catch {
@@ -449,11 +461,11 @@ describe("TextToSpeech Service", () => {
         mediaPlayerId: "media_player.kitchen",
       });
 
-      const ttsCallCount = mockFetch.mock.calls.filter(
-        (call: any[]) => call[0]?.toString().includes("/api/tts_get_url")
+      const ttsCallCount = (mockFetch as any).mock.calls.filter((call: any[]) =>
+        call[0]?.toString().includes("/api/tts_get_url"),
       ).length;
-      const playCallCount = mockFetch.mock.calls.filter(
-        (call: any[]) => call[0]?.toString().includes("play_media")
+      const playCallCount = (mockFetch as any).mock.calls.filter((call: any[]) =>
+        call[0]?.toString().includes("play_media"),
       ).length;
 
       expect(ttsCallCount).toBe(1);
@@ -474,7 +486,7 @@ describe("TextToSpeech Service", () => {
 
     test("should use new language for speech generation", async () => {
       await tts.initialize();
-      
+
       tts.setLanguage("es");
       await tts.generateSpeech({ text: "Hola" });
 
@@ -489,7 +501,7 @@ describe("TextToSpeech Service", () => {
 
     test("should get available TTS providers", async () => {
       const providers = await tts.getAvailableProviders();
-      
+
       expect(Array.isArray(providers)).toBe(true);
       expect(providers.length).toBeGreaterThan(0);
     });
@@ -497,7 +509,7 @@ describe("TextToSpeech Service", () => {
     test("should handle provider fetch errors gracefully", async () => {
       const errorFetch = mock((url: string | URL | Request) => {
         const urlString = toUrlString(url);
-        
+
         if (urlString.includes("/api/services")) {
           return Promise.resolve({
             ok: false,
@@ -505,7 +517,7 @@ describe("TextToSpeech Service", () => {
             statusText: "Internal Server Error",
           } as Response);
         }
-        
+
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -515,7 +527,7 @@ describe("TextToSpeech Service", () => {
       global.fetch = errorFetch as any;
 
       const providers = await tts.getAvailableProviders();
-      
+
       // Should return default provider
       expect(providers).toContain("google_translate");
     });

@@ -38,7 +38,7 @@ void mock.module("child_process", () => ({
 const { WakeWordDetector } = await import("../../src/speech/wakeWordDetector");
 
 // Mock global fetch for Wyoming service status check
-const createMockFetch = (shouldSucceed: boolean = true) => {
+const createMockFetch = (shouldSucceed: boolean = true): typeof fetch => {
   return mock(() => {
     if (shouldSucceed) {
       return Promise.resolve({
@@ -54,11 +54,11 @@ const createMockFetch = (shouldSucceed: boolean = true) => {
         statusText: "Service Unavailable",
       } as Response);
     }
-  });
+  }) as unknown as typeof fetch;
 };
 
 describe("WakeWordDetector", () => {
-  let detector: WakeWordDetector;
+  let detector: InstanceType<typeof WakeWordDetector>;
   let originalFetch: typeof global.fetch;
 
   beforeEach(() => {
@@ -68,7 +68,7 @@ describe("WakeWordDetector", () => {
 
   afterEach(async () => {
     global.fetch = originalFetch;
-    
+
     try {
       await detector.shutdown();
     } catch {
@@ -111,7 +111,9 @@ describe("WakeWordDetector", () => {
     });
 
     test("should handle network errors during initialization", async () => {
-      global.fetch = mock(() => Promise.reject(new Error("Network error")));
+      global.fetch = mock(() =>
+        Promise.reject(new Error("Network error")),
+      ) as unknown as typeof fetch;
 
       // Should not throw - warns and continues
       await expect(detector.initialize()).resolves.toBeUndefined();
@@ -126,9 +128,9 @@ describe("WakeWordDetector", () => {
 
     test("should throw when starting detection without initialization", async () => {
       const uninitializedDetector = new WakeWordDetector();
-      
+
       await expect(uninitializedDetector.startListening()).rejects.toThrow(
-        "Wake word detector is not initialized"
+        "Wake word detector is not initialized",
       );
     });
 
@@ -171,7 +173,7 @@ describe("WakeWordDetector", () => {
     });
 
     test("should emit wake_word_detected event", (done) => {
-      detector.once("wake_word_detected", (data) => {
+      detector.once("wake_word_detected", (data: any) => {
         expect(data).toBeDefined();
         expect(data.timestamp).toBeInstanceOf(Date);
         done();
@@ -216,7 +218,7 @@ describe("WakeWordDetector", () => {
     test("should stop listening during shutdown", async () => {
       global.fetch = createMockFetch(true);
       await detector.initialize();
-      
+
       try {
         await detector.startListening();
       } catch {
@@ -238,24 +240,22 @@ describe("WakeWordDetector", () => {
 
   describe("Error Handling", () => {
     test("should handle Wyoming service timeout", async () => {
-      global.fetch = mock(() => 
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Timeout")), 100)
-        )
-      );
+      global.fetch = mock(
+        () => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 100)),
+      ) as unknown as typeof fetch;
 
       // Should not throw
       await expect(detector.initialize()).resolves.toBeUndefined();
     });
 
     test("should handle invalid Wyoming service response", async () => {
-      global.fetch = mock(() => 
+      global.fetch = mock(() =>
         Promise.resolve({
           ok: true,
           status: 200,
           json: () => Promise.reject(new Error("Invalid JSON")),
-        } as Response)
-      );
+        } as Response),
+      ) as unknown as typeof fetch;
 
       await expect(detector.initialize()).resolves.toBeUndefined();
     });
@@ -263,7 +263,7 @@ describe("WakeWordDetector", () => {
     test("should handle fetch throwing an error", async () => {
       global.fetch = mock(() => {
         throw new Error("Fetch failed");
-      });
+      }) as unknown as typeof fetch;
 
       await expect(detector.initialize()).resolves.toBeUndefined();
     });
@@ -278,9 +278,9 @@ describe("WakeWordDetector", () => {
       await customDetector.initialize();
 
       expect(mockFetch).toHaveBeenCalled();
-      
+
       // Check if the call was made to the correct URL
-      const call = mockFetch.mock.calls[0];
+      const call = (mockFetch as any).mock.calls[0];
       if (call && call.args && call.args[0]) {
         const url = call.args[0].toString();
         expect(url).toContain("192.168.1.50");
@@ -333,10 +333,11 @@ describe("WakeWordDetector", () => {
       const promises = [];
       for (let i = 0; i < 5; i++) {
         promises.push(
-          detector.startListening()
+          detector
+            .startListening()
             .catch(() => {}) // Ignore errors
             .then(() => detector.stopListening())
-            .catch(() => {}) // Ignore errors
+            .catch(() => {}), // Ignore errors
         );
       }
 
@@ -350,7 +351,7 @@ describe("WakeWordDetector", () => {
       global.fetch = createMockFetch(true);
 
       await detector.initialize();
-      
+
       try {
         await detector.startListening();
       } catch {
@@ -366,11 +367,7 @@ describe("WakeWordDetector", () => {
     test("should handle concurrent operations", async () => {
       global.fetch = createMockFetch(true);
 
-      const promises = [
-        detector.initialize(),
-        detector.initialize(),
-        detector.initialize(),
-      ];
+      const promises = [detector.initialize(), detector.initialize(), detector.initialize()];
 
       await Promise.all(promises);
 
@@ -394,12 +391,7 @@ describe("WakeWordDetector", () => {
 
   describe("Configuration", () => {
     test("should accept various host formats", () => {
-      const hosts = [
-        "localhost",
-        "127.0.0.1",
-        "192.168.1.100",
-        "wyoming.local",
-      ];
+      const hosts = ["localhost", "127.0.0.1", "192.168.1.100", "wyoming.local"];
 
       for (const host of hosts) {
         const testDetector = new WakeWordDetector(host, 10400);
