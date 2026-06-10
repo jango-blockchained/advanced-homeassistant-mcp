@@ -101,9 +101,24 @@ coverage/
 
 # Build artifacts in bin/ (only .cjs/.mjs are intentional)
 bin/*.js
-# MkDocs
+# MkDocs (legacy; removed in 2026-06 docs-site rewrite)
 site/
 .site/
+
+# Astro docs site (docs-site/)
+docs-site/dist/
+docs-site/.astro/
+docs-site/node_modules/
+
+# OpenCoder / opencode agent local working state.
+# The .opencode/ tree contains audit reports, session notes, and
+# task JSONs that the opencode agent uses to coordinate work.
+# These are local-dev artifacts and should not be shared in git.
+.opencode/
+
+# Other local-dev / agent artifacts (used during development only)
+.tmp/
+.antigravitycli/
 
 # Python
 __pycache__/

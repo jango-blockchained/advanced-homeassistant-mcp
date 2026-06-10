@@ -98,7 +98,7 @@ You'll be prompted to configure:
 - Long-lived access token
 - Optional settings (port, debug mode)
 
-See [SMITHERY_DEPLOYMENT.md](docs/SMITHERY_DEPLOYMENT.md) for detailed deployment guide.
+See the [Smithery Deployment guide](https://jango-blockchained.github.io/advanced-homeassistant-mcp/deployment/smithery) for details.
 
 ### Option 2: NPX (Quick Start)
 
@@ -387,7 +387,7 @@ RATE_LIMIT_MAX=50
   - Energy saving: Detect daytime lights, standby power
   - Generate automation configs
 
-> 📖 **See [Complete Tools Reference](docs/TOOLS_REFERENCE.md) for detailed documentation**
+> See the [Tools Reference](https://jango-blockchained.github.io/advanced-homeassistant-mcp/tools/generic-tools) for detailed documentation.
 
 ### MCP Features
 
@@ -405,7 +405,7 @@ RATE_LIMIT_MAX=50
   - Dashboard summaries with current home status
 
 - 🛠️ **24 Comprehensive Tools**: Full device control and smart automation
-  - See [Complete Tools Reference](docs/TOOLS_REFERENCE.md) for all available tools
+  - See the [Tools Reference](https://jango-blockchained.github.io/advanced-homeassistant-mcp/tools/generic-tools) for all available tools
   - Device control, automation, system management, and smart features
   - Natural language to Home Assistant API translation
 
@@ -504,7 +504,7 @@ bun test
 
 ### Releases
 
-This project uses **automated releases** to GitHub, npm, and Docker. See [AUTOMATED_RELEASES.md](docs/AUTOMATED_RELEASES.md) for details.
+This project uses **automated releases** to GitHub, npm, and Docker. See the [Release workflow docs](https://jango-blockchained.github.io/advanced-homeassistant-mcp/) for details.
 
 **Quick Release:**
 
