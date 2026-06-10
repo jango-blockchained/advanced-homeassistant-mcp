@@ -1,6 +1,7 @@
 # Dependencies
 node_modules
 dist
+dist-ts
 __pycache__/
 .mypy_cache/
 *.py[cod]
@@ -97,6 +98,9 @@ coverage/
 .bun/
 .cursorconfig
 #bun.lockb
+
+# Build artifacts in bin/ (only .cjs/.mjs are intentional)
+bin/*.js
 # MkDocs
 site/
 .site/

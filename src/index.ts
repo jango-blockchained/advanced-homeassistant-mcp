@@ -10,7 +10,7 @@ import { MCPServer } from "./mcp/MCPServer";
 import { loggingMiddleware, timeoutMiddleware } from "./mcp/middleware/index";
 import { StdioTransport } from "./mcp/transports/stdio.transport";
 import { HttpTransport } from "./mcp/transports/http.transport";
-import { APP_CONFIG } from "./config";
+import { APP_CONFIG } from "./config/app.config";
 import { logger } from "./utils/logger";
 import { openApiConfig } from "./openapi";
 import { tools } from "./tools/index";
