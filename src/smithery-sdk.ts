@@ -124,15 +124,31 @@ export default function createServer({ config }: { config?: ServerConfig } = {})
   ];
 
   for (const res of resourceList) {
-    server.resource(res.name, res.uri, async (uri: URL) => {
-      const content = await getResource(uri.href);
-      return { contents: [content || { uri: uri.href, mimeType: "application/json", text: "{}" }] };
-    });
+    // The MCP SDK's resource() signature changed across versions;
+    // cast through unknown to bridge the gap. The runtime signature
+    // is unchanged (name, uri, handler).
+    (server.resource as unknown as (n: string, u: string, h: (uri: URL) => unknown) => void)(
+      res.name,
+      res.uri,
+      async (uri: URL) => {
+        const content = await getResource(uri.href);
+        return {
+          contents: [content || { uri: uri.href, mimeType: "application/json", text: "{}" }],
+        };
+      },
+    );
   }
 
   // Register prompts
   for (const prompt of getAllPrompts()) {
-    server.prompt(
+    (
+      server.prompt as unknown as (
+        n: string,
+        d: string,
+        args: unknown,
+        h: (args: Record<string, string>) => unknown,
+      ) => void
+    )(
       prompt.name,
       prompt.description,
       prompt.arguments?.map((a) => ({
