@@ -35,11 +35,20 @@ function isStdioMode(): boolean {
 async function main(): Promise<void> {
   logger.info("Starting Home Assistant MCP Server...");
 
-  // Check if we're in stdio mode from command line
-  const useStdio = isStdioMode() || APP_CONFIG.useStdioTransport;
-
-  // Configure server
-  const EXECUTION_TIMEOUT = APP_CONFIG.executionTimeout;
+  // The new app.config.ts schema is flat (PORT, NODE_ENV, HASS_HOST, ...).
+  // Legacy config.ts properties (useStdioTransport, executionTimeout, port,
+  // corsOrigin, debugHttp) were not migrated to the new schema. Read them
+  // directly from process.env to keep the runtime behavior identical
+  // while the schema consolidation settles.
+  const useStdio =
+    isStdioMode() ||
+    process.env.USE_STDIO_TRANSPORT === "true" ||
+    (process.env.USE_STDIO_TRANSPORT ?? "").toLowerCase() === "true";
+  const useHttp = process.env.USE_HTTP_TRANSPORT !== "false"; // default ON
+  const executionTimeout = parseInt(process.env.EXECUTION_TIMEOUT ?? "30000", 10);
+  const corsOrigin = process.env.CORS_ORIGINS?.split(",") ?? ["*"];
+  const debugHttp = process.env.DEBUG === "true" || process.env.LOG_LEVEL === "debug";
+  const port = APP_CONFIG.PORT;
 
   // Get the server instance (singleton)
   const server = MCPServer.getInstance();
@@ -51,7 +60,7 @@ async function main(): Promise<void> {
 
   // Add middlewares
   server.use(loggingMiddleware);
-  server.use(timeoutMiddleware(EXECUTION_TIMEOUT));
+  server.use(timeoutMiddleware(executionTimeout));
 
   // Initialize transports
   if (useStdio) {
@@ -103,8 +112,8 @@ async function main(): Promise<void> {
   }
 
   // HTTP transport (only if not in pure stdio mode)
-  if (APP_CONFIG.useHttpTransport) {
-    logger.info("Using HTTP transport on port " + APP_CONFIG.port);
+  if (useHttp) {
+    logger.info("Using HTTP transport on port " + port);
     const app = express();
 
     // Body parser middleware with size limit
@@ -119,7 +128,7 @@ async function main(): Promise<void> {
     // CORS configuration
     app.use(
       cors({
-        origin: APP_CONFIG.corsOrigin,
+        origin: corsOrigin,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
         maxAge: 86400, // 24 hours
@@ -228,12 +237,11 @@ async function main(): Promise<void> {
     const httpTransport = new HttpTransport({
       expressApp: app,
       apiPrefix: "/api",
-      debug: APP_CONFIG.debugHttp,
+      debug: debugHttp,
     });
     server.registerTransport(httpTransport);
 
     // Start listening on the port
-    const port = APP_CONFIG.port;
     app.listen(port, () => {
       logger.info(`HTTP server listening on port ${port}`);
     });
@@ -268,7 +276,18 @@ async function main(): Promise<void> {
 // Run the main function only when this module is the entry point.
 // Guarded so test files can `import('./src/index')` without triggering startup
 // (and the process.exit on startup failure that would silently kill the runner).
-if (import.meta.main) {
+//
+// `import.meta.main` is a Bun-only feature; when the source is bundled to
+// CJS by esbuild, `import.meta` is undefined and `import.meta.main` throws.
+// We use a CJS-compatible fallback: `require.main === module` is true when
+// this file is the entry point under Node, false when it's been imported.
+const isEntryPoint =
+  // Bun: import.meta.main is true for the entry file
+  (typeof import.meta !== "undefined" && (import.meta as { main?: boolean }).main) ||
+  // Node CJS: require.main === module is true for the entry file
+  (typeof require !== "undefined" && (require as { main?: unknown }).main === module);
+
+if (isEntryPoint) {
   main().catch((error) => {
     logger.error("Error starting MCP Server:", error);
     process.exit(1);
