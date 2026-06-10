@@ -1,0 +1,163 @@
+---
+title: Testing
+description: Conventions for the test suite, coverage thresholds, and how to run a single test or the whole thing.
+section: Guides
+order: 2
+---
+
+The test suite is `bun test` (no Jest, no Vitest). It uses the test patterns from `bun:test` and lives entirely under `__tests__/`.
+
+## Run
+
+```bash
+# All tests
+bun test
+
+# A single file
+bun test __tests__/homeassistant/light-count.test.ts
+
+# A pattern
+bun test --test-name-pattern "control_light"
+```
+
+`bunfig.toml` auto-preloads `test/setup.ts` for every test, which sets `HASS_TOKEN` and `JWT_SECRET` to placeholder values so the config validation doesn't trip on missing env vars.
+
+## Layout
+
+```
+__tests__/
+├── homeassistant/         # mirrors src/tools/homeassistant/
+│   └── lights.test.ts
+├── tools/                 # mirrors src/tools/
+│   └── search-entities.test.ts
+├── integration/           # end-to-end tests
+│   └── mcp-roundtrip.test.ts
+├── mcp/
+├── security/
+├── speech/
+└── ...
+```
+
+The convention: mirror the `src/` structure. A tool at `src/tools/homeassistant/foo.tool.ts` has its test at `__tests__/homeassistant/foo.test.ts` (or `__tests__/tools/homeassistant/foo.test.ts` — match the existing convention in the file you're contributing to).
+
+## Patterns
+
+### Mocking the HA client
+
+The HA client talks to a real WebSocket on a real HA instance, which isn't available in CI. Most tests mock it. The standard pattern:
+
+```typescript
+import { describe, expect, it, mock } from "bun:test";
+
+const mockHassClient = {
+  getStates: async () => [{ entity_id: "light.living_room", state: "on" }],
+  callService: async () => ({}),
+  // ... the methods your tool actually uses
+};
+
+const makeContext = () => ({
+  hassClient: mockHassClient as any,
+  logger: {
+    info: () => {},
+    warn: () => {},
+    error: () => {},
+    debug: () => {},
+  } as any,
+  requestId: "test",
+});
+```
+
+`as any` is the common escape hatch — the `ToolContext` type is wide and you usually only need a few fields.
+
+### Testing the tool directly
+
+```typescript
+it("turns the light on at the requested brightness", async () => {
+  const tool = new ControlLightTool();
+  const result = await tool.execute(
+    { entity_id: "light.living_room", action: "turn_on", brightness: 200 },
+    makeContext(),
+  );
+  expect(result.state).toBe("on");
+});
+```
+
+No HTTP, no server, no transport. The tool's contract is: given a valid input and a context, produce a result. Test the contract.
+
+### Testing the transport
+
+For tests that exercise the full HTTP or WebSocket surface, see `__tests__/integration/`. The pattern is to boot the server in-process, hit it with `fetch` or a `WebSocket` client, and assert on the response.
+
+These tests are slower and more brittle. Use them sparingly — prefer tool-level tests for logic, integration tests for plumbing.
+
+## Coverage
+
+`bunfig.toml` declares the coverage thresholds:
+
+```toml
+[test]
+coverage = true
+coverageThreshold = {
+  statements = 0.8,
+  lines = 0.8,
+  functions = 0.8,
+  branches = 0.7,
+}
+```
+
+To see the report:
+
+```bash
+bun test --coverage
+```
+
+Open `coverage/index.html` in a browser for the line-by-line view.
+
+The thresholds are enforced in CI (see `.github/workflows/`). A PR that drops coverage below the thresholds fails the build. If you're removing a feature, also remove its tests (otherwise coverage is artificially high and the next person gets a rude surprise). If you're adding a feature, add a test.
+
+## Conventions
+
+- One `describe` per file, named after the unit under test (`describe("ControlLightTool", ...)`).
+- One `it` per behavior, with a sentence-style name (`it("returns 0 when no lights are on", ...)`).
+- Use `expect().toBe()` for primitives, `expect().toEqual()` for objects/arrays.
+- For async assertions, use `expect().resolves.toBe(...)` or `await expect(...).rejects.toThrow(...)`.
+- Don't use `done` callbacks. `bun:test` handles promises natively.
+- Cleanup with `afterEach(() => mock.restore())` if you used `mock()`.
+
+## Mocking `fetch` / `ws`
+
+The HA client uses `fetch` for some calls and `ws` for the WebSocket. To mock them:
+
+```typescript
+import { mock } from "bun:test";
+
+const originalFetch = globalThis.fetch;
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+});
+
+it("...", async () => {
+  globalThis.fetch = mock(() =>
+    Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+  ) as any;
+  // ...
+});
+```
+
+For WebSocket, prefer mocking the `HassClient` directly — the `ws` library doesn't have a clean mock surface.
+
+## Disabling tests temporarily
+
+If you need to skip a test during development (e.g. it's flaky in CI), use `it.skip(...)` or `describe.skip(...)`. Don't comment it out — `skip` is visible in the test report.
+
+## Common pitfalls
+
+- **`bunfig.toml` is read once.** If you change the preloaded `test/setup.ts`, restart `bun test`.
+- **`test/setup.ts` sets placeholder env vars.** Don't write a test that asserts on a specific token value; read from the test's own setup.
+- **Don't share state between tests.** Each test should construct its own tool instance and context. The HA client mock is cheap to recreate.
+- **The coverage report lags by one test run.** If you just added a test and the coverage report is unchanged, run `bun test --coverage` again.
+
+## Next
+
+- [Adding a Tool](/guides/adding-a-tool/) — the full contribution flow.
+- [Architecture > Tool System](/architecture/tool-system/) — what the tests are testing.

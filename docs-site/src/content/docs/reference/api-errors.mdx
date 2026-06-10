@@ -1,0 +1,113 @@
+---
+title: API Errors
+description: Every MCPErrorCode the server returns, with the meaning and how to recover.
+section: Reference
+order: 3
+---
+
+Errors are returned as JSON-RPC `error` objects with a `code`, a `message`, and (usually) a `data` field with structured detail. The codes come from `src/mcp/MCPServer.ts`:
+
+## Standard JSON-RPC codes
+
+| Code     | Name               | When                                                                                         |
+| -------- | ------------------ | -------------------------------------------------------------------------------------------- |
+| `-32700` | `PARSE_ERROR`      | The request body wasn't valid JSON.                                                          |
+| `-32600` | `INVALID_REQUEST`  | The envelope was JSON but missing required fields (`jsonrpc`, `method`, `id`).               |
+| `-32601` | `METHOD_NOT_FOUND` | The `method` is not in the server's method table.                                            |
+| `-32602` | `INVALID_PARAMS`   | The `params` failed Zod validation. The `data.issues` array lists each failed check.         |
+| `-32603` | `INTERNAL_ERROR`   | An unhandled exception in the server. The `data.stack` may be populated in development mode. |
+
+## Custom MCP codes
+
+| Code     | Name                   | When                                                                                                        |
+| -------- | ---------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `-32000` | `TOOL_EXECUTION_ERROR` | The tool was found, its input was valid, but `execute()` threw. `data.message` is the tool's error message. |
+| `-32001` | `VALIDATION_ERROR`     | A request-level validation failed (e.g. payload too large, missing required header).                        |
+| `-32002` | `RESOURCE_NOT_FOUND`   | A `resources/read` request named a resource URI that doesn't exist.                                         |
+| `-32003` | `RESOURCE_BUSY`        | A resource is locked by another in-flight request. Retry after a short delay.                               |
+| `-32004` | `TIMEOUT`              | The tool or HA client took longer than its timeout (default 30 s for tools).                                |
+| `-32005` | `CANCELED`             | The client sent `notifications/cancelled` before the request finished.                                      |
+| `-32006` | `AUTHENTICATION_ERROR` | The custom HTTP entry point saw no `Authorization` header or the JWT failed to verify.                      |
+| `-32007` | `AUTHORIZATION_ERROR`  | The JWT is valid but doesn't have the right scope for this endpoint. (Reserved; not currently used.)        |
+| `-32008` | `TRANSPORT_ERROR`      | The transport layer (HTTP, WS, STDIO) failed to read or write.                                              |
+| `-32009` | `STREAMING_ERROR`      | The streaming pipeline (SSE / WS) failed mid-stream. The client should reconnect.                           |
+
+## Worked examples
+
+### Validation error (tool input)
+
+```json
+{
+  "code": -32001,
+  "message": "Validation failed",
+  "data": {
+    "tool": "control_light",
+    "issues": [
+      {
+        "path": ["action"],
+        "message": "Invalid enum value. Expected 'turn_on' | 'turn_off' | 'toggle', received 'on'"
+      }
+    ]
+  }
+}
+```
+
+The client's job: surface the `path` + `message` to the user or retry with a corrected value.
+
+### Tool execution error (HA rejected)
+
+```json
+{
+  "code": -32000,
+  "message": "Home Assistant rejected the service call",
+  "data": {
+    "tool": "control_light",
+    "hass_code": "home_assistant_error",
+    "hass_message": "Entity light.living_room is currently unavailable"
+  }
+}
+```
+
+The `hass_code` matches the HA error type (see [Architecture > HA Client](/architecture/ha-client/)).
+
+### Authentication error
+
+```json
+{
+  "code": -32006,
+  "message": "Missing or invalid Authorization header",
+  "data": {
+    "expected": "Bearer <jwt>"
+  }
+}
+```
+
+The client should re-authenticate (see [Configuration > Authentication](/configuration/authentication/)) and retry.
+
+### Timeout
+
+```json
+{
+  "code": -32004,
+  "message": "Tool execution exceeded 30000 ms",
+  "data": {
+    "tool": "analyze_audio",
+    "timeout_ms": 30000
+  }
+}
+```
+
+If the tool is known to be slow, the client can pass `meta.timeout` to extend the per-request timeout (up to the server's `maxTimeout`, default 120 s).
+
+## Error handling checklist for clients
+
+1. **Parse the error code.** A `-32602` is a client bug (re-validate before retrying). A `-32000` is a server-side or HA-side issue (may be transient). A `-32006` means re-auth.
+2. **Surface `data.issues` for validation errors.** The Zod issues are machine-readable; you can use them to drive a form re-render.
+3. **Retry `-32003` and `-32009` with backoff.** These are transient.
+4. **Don't retry `-32000` blindly.** Look at the `hass_code` and decide.
+5. **Log `-32603` and report it.** Internal errors are bugs in the server.
+
+## Next
+
+- [Environment Variables](/reference/environment-variables/) — the config that drives error responses.
+- [MCP Protocol](/reference/mcp-protocol/) — the wire format the errors ride on.

@@ -1,0 +1,193 @@
+---
+title: MCP Protocol
+description: The JSON-RPC 2.0 surface the server speaks, with worked request/response examples.
+section: Reference
+order: 2
+---
+
+The server implements the [Model Context Protocol](https://modelcontextprotocol.io) over JSON-RPC 2.0. Whether you connect over HTTP, WebSocket, or STDIO, the wire format is the same: a JSON object with `jsonrpc`, `id`, `method`, and (usually) `params`.
+
+## Methods
+
+The server supports the core MCP methods plus a handful of extensions:
+
+| Method                    | Direction       | Notes                                                                                    |
+| ------------------------- | --------------- | ---------------------------------------------------------------------------------------- |
+| `initialize`              | client → server | Handshake. Returns `protocolVersion`, `serverInfo`, and `capabilities`.                  |
+| `tools/list`              | client → server | Returns the manifest: `name`, `description`, `inputSchema`, `annotations` for each tool. |
+| `tools/call`              | client → server | Invokes a tool. `params.name` is the tool name, `params.arguments` is the input.         |
+| `resources/list`          | client → server | Returns the cached HA state (subset of `list_devices`).                                  |
+| `resources/read`          | client → server | Reads one resource by URI.                                                               |
+| `prompts/list`            | client → server | Returns the prompt templates (morning routine, energy saving, ...).                      |
+| `prompts/get`             | client → server | Renders a prompt by name.                                                                |
+| `notifications/*`         | server → client | Streaming events (state changed, automation triggered, ...).                             |
+| `notifications/cancelled` | client → server | Cancels an in-flight request.                                                            |
+
+## `initialize` example
+
+Request:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2024-11-05",
+    "clientInfo": { "name": "claude-desktop", "version": "0.7.0" },
+    "capabilities": {}
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "protocolVersion": "2024-11-05",
+    "serverInfo": { "name": "homeassistant-mcp", "version": "0.1.0" },
+    "capabilities": { "tools": {}, "resources": {}, "prompts": {} }
+  }
+}
+```
+
+## `tools/list` example
+
+Request:
+
+```json
+{ "jsonrpc": "2.0", "id": 2, "method": "tools/list" }
+```
+
+Response (truncated):
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "tools": [
+      {
+        "name": "list_devices",
+        "description": "List Home Assistant devices, optionally filtered by domain or area.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "domain": { "type": "string" },
+            "area": { "type": "string" }
+          }
+        },
+        "annotations": { "readOnlyHint": true, "openWorldHint": true }
+      },
+      {
+        "name": "control_light",
+        "description": "Turn a light on or off, set brightness, color, or color temperature.",
+        "inputSchema": { "type": "object", "required": ["entity_id", "action"], "properties": { ... } },
+        "annotations": { "destructiveHint": true, "openWorldHint": true }
+      }
+    ]
+  }
+}
+```
+
+## `tools/call` example
+
+Request:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "control_light",
+    "arguments": {
+      "entity_id": "light.living_room",
+      "action": "turn_on",
+      "brightness": 128
+    }
+  }
+}
+```
+
+Success response:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"entity_id\":\"light.living_room\",\"state\":\"on\",\"brightness\":128}"
+      }
+    ]
+  }
+}
+```
+
+The `content` array is part of the MCP spec — every tool returns a list of content blocks, most commonly a single `text` block with a JSON string.
+
+## Error response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "error": {
+    "code": -32602,
+    "message": "Validation failed",
+    "data": {
+      "issues": [
+        { "path": ["brightness"], "message": "Expected number, got string" }
+      ]
+    }
+  }
+}
+```
+
+The `code` is one of the standard JSON-RPC codes or one of the custom `MCPErrorCode` values defined in `src/mcp/MCPServer.ts`. See [API Errors](/reference/api-errors/) for the full table.
+
+## Streaming (HTTP+WS only)
+
+Subscribe to events with `tools/call subscribe_events`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "tools/call",
+  "params": {
+    "name": "subscribe_events",
+    "arguments": {
+      "event_type": "state_changed",
+      "entity_id": "light.living_room"
+    }
+  }
+}
+```
+
+The server returns the initial `result` immediately and then pushes a `notification` for every matching event:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "notifications/state_changed",
+  "params": {
+    "entity_id": "light.living_room",
+    "old_state": { "state": "on", "attributes": { "brightness": 128 } },
+    "new_state": { "state": "off", "attributes": {} }
+  }
+}
+```
+
+To stop, send `notifications/cancelled` with the subscription id (returned in the initial result's `meta.subscriptionId`).
+
+## Next
+
+- [API Errors](/reference/api-errors/) — the `MCPErrorCode` table.
+- [Configuration > Environment](/configuration/environment/) — the env vars that shape the protocol responses.

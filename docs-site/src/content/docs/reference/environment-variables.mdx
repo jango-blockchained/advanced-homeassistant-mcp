@@ -1,0 +1,135 @@
+---
+title: Environment Variables
+description: A copy-paste-ready matrix of every env var the server reads, plus a worked example.
+section: Reference
+order: 1
+---
+
+This page is the canonical reference for the server's environment variables. The shorter [Configuration > Environment](/configuration/environment/) page is the guided tour; this is the lookup table.
+
+## Full matrix
+
+### Required
+
+| Variable     | Type   | Default                           | Validation                                                          |
+| ------------ | ------ | --------------------------------- | ------------------------------------------------------------------- |
+| `HASS_HOST`  | URL    | `http://homeassistant.local:8123` | Zod-validated; must be a valid URL.                                 |
+| `HASS_TOKEN` | string | —                                 | Required in production; skipped when `SMITHERY_SCAN=true` or empty. |
+| `JWT_SECRET` | string | —                                 | Zod `min(32)`; required by the custom HTTP entry point.             |
+
+### Server
+
+| Variable   | Type   | Default                                       |
+| ---------- | ------ | --------------------------------------------- |
+| `PORT`     | number | `4000`                                        |
+| `NODE_ENV` | enum   | `development`                                 |
+| `HOST`     | string | `127.0.0.1` (standalone) / `0.0.0.0` (Docker) |
+
+### Logging
+
+| Variable       | Type     | Default |
+| -------------- | -------- | ------- |
+| `LOG_LEVEL`    | enum     | `info`  |
+| `LOG_DIR`      | path     | `logs`  |
+| `LOG_MAX_SIZE` | size     | `20m`   |
+| `LOG_MAX_DAYS` | duration | `14d`   |
+| `LOG_COMPRESS` | boolean  | `false` |
+| `LOG_REQUESTS` | boolean  | `false` |
+
+### Rate limiting
+
+| Variable            | Type    | Default |
+| ------------------- | ------- | ------- |
+| `RATE_LIMIT_WINDOW` | minutes | `15`    |
+| `RATE_LIMIT_MAX`    | number  | `100`   |
+
+### Server-Sent Events
+
+| Variable            | Type         | Default |
+| ------------------- | ------------ | ------- |
+| `SSE_MAX_CLIENTS`   | number       | `1000`  |
+| `SSE_PING_INTERVAL` | milliseconds | `30000` |
+
+### Speech
+
+| Variable                 | Type    | Default   |
+| ------------------------ | ------- | --------- |
+| `ENABLE_SPEECH_FEATURES` | boolean | `false`   |
+| `ENABLE_WAKE_WORD`       | boolean | `false`   |
+| `ENABLE_SPEECH_TO_TEXT`  | boolean | `false`   |
+| `WHISPER_MODEL_PATH`     | path    | `/models` |
+| `WHISPER_MODEL_TYPE`     | enum    | `base`    |
+
+### Tool toggles
+
+Per-tool disable, e.g. `TOOL_TEXT_TO_SPEECH_DISABLED=true`, `TOOL_VOICE_COMMAND_PARSER_DISABLED=true`. Set to `true` to remove the tool from `tools/list`. See [Configuration > Tools](/configuration/tools/) for the pattern.
+
+## Worked example
+
+A `.env` for a LAN-only server talking to HA on the same network:
+
+```env
+# === Required ===
+HASS_HOST=http://192.168.1.50:8123
+HASS_TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOi...
+JWT_SECRET=dGhpcyBpcyBhIDUxMi1iaXQgcmFuZG9tIHZhbHVlIHVzZWQgZm9yIHRoZSBqd3QK
+
+# === Server ===
+PORT=4000
+HOST=127.0.0.1
+NODE_ENV=production
+
+# === Logging ===
+LOG_LEVEL=info
+LOG_DIR=./logs
+LOG_MAX_SIZE=20m
+LOG_MAX_DAYS=14
+LOG_COMPRESS=true
+LOG_REQUESTS=false
+
+# === Rate limiting ===
+RATE_LIMIT_WINDOW=15
+RATE_LIMIT_MAX=200
+
+# === SSE ===
+SSE_MAX_CLIENTS=50
+SSE_PING_INTERVAL=30000
+
+# === Speech (off) ===
+ENABLE_SPEECH_FEATURES=false
+```
+
+Generate `JWT_SECRET`:
+
+```bash
+openssl rand -base64 64
+```
+
+## Loading order
+
+`dotenv` is loaded by the entry points before the config schema parses. Later env vars override earlier ones, so a shell-set `HASS_HOST` beats a `.env` entry. Useful for local override during development.
+
+## Validation errors
+
+If a required var is missing or invalid, the process exits with a clear error. Example:
+
+```
+ZodError: [
+  {
+    "code": "too_small",
+    "minimum": 32,
+    "type": "string",
+    "inclusive": true,
+    "exact": false,
+    "message": "JWT_SECRET must be at least 32 characters (use a secure random value)",
+    "path": ["JWT_SECRET"]
+  }
+]
+```
+
+Fix the offending var and restart. The process won't proceed without a valid config.
+
+## Next
+
+- [MCP Protocol](/reference/mcp-protocol/) — the JSON-RPC surface the env vars wrap.
+- [API Errors](/reference/api-errors/) — what the various error codes mean.

@@ -1,0 +1,161 @@
+---
+title: Adding a Tool
+description: "Step-by-step: write a new tool, register it, add a test, and rebuild."
+section: Guides
+order: 1
+---
+
+The shortest path from "I want my AI to do X" to "X is in the tool manifest." This page walks the whole flow with a worked example: a tool that returns the count of lights currently on.
+
+## 1. Pick a file location
+
+Domain-specific tools go in `src/tools/homeassistant/`. Cross-cutting helpers go in `src/tools/`. For this example, the tool is HA-specific:
+
+```
+src/tools/homeassistant/light-count.tool.ts
+```
+
+## 2. Write the class
+
+The minimum viable tool is a class extending `BaseTool<TInput, TOutput>` with a Zod input schema, a name, a description, and an `execute()` method.
+
+```typescript
+import { z } from "zod";
+import { BaseTool } from "@/mcp/BaseTool";
+import type { ToolContext, ToolAnnotations } from "@/types";
+
+const INPUT_SCHEMA = z.object({});
+
+export class CountLightsOnTool extends BaseTool<
+  typeof INPUT_SCHEMA,
+  { count: number }
+> {
+  name = "count_lights_on";
+  description = "Count the number of light entities that are currently on.";
+  annotations: ToolAnnotations = {
+    readOnlyHint: true,
+    openWorldHint: true,
+  };
+  inputSchema = INPUT_SCHEMA;
+
+  async execute(_input, context: ToolContext) {
+    const states = await context.hassClient.getStates();
+    const on = states.filter(
+      (s) => s.entity_id.startsWith("light.") && s.state === "on",
+    );
+    return { count: on.length };
+  }
+}
+```
+
+Notes:
+
+- The class is parameterless. All state comes from `context`.
+- `BaseTool` is generic over the Zod input type and the output type. The output is whatever you want to return — keep it JSON-serializable.
+- Annotations are optional but recommended. They help the AI client decide when it's safe to call the tool.
+- `context.hassClient` is the long-lived WebSocket client; see [Architecture > HA Client](/architecture/ha-client/).
+
+## 3. Register the tool
+
+Open `src/tools/index.ts` and add the new class to the `TOOL_REGISTRY` array (the actual export name may differ — find the array of tool classes your file already exports).
+
+```typescript
+import { CountLightsOnTool } from "./homeassistant/light-count.tool";
+
+export const TOOL_REGISTRY = [
+  // ... existing tools
+  CountLightsOnTool,
+];
+```
+
+That's it. All three entry points (`src/index.ts`, `src/stdio-server.ts`, `src/http-server.ts`) iterate this list at startup, so the new tool shows up everywhere.
+
+## 4. Add a test
+
+Tests live under `__tests__/`, mirroring the source layout. The new file is `__tests__/homeassistant/light-count.test.ts` (or co-located as `__tests__/tools/...` — match the existing convention).
+
+```typescript
+import { describe, expect, it, mock } from "bun:test";
+import { CountLightsOnTool } from "@/tools/homeassistant/light-count.tool";
+import type { ToolContext } from "@/types";
+
+const makeContext = (states: any[]): ToolContext => ({
+  hassClient: {
+    getStates: async () => states,
+  } as any,
+  logger: {
+    info: () => {},
+    warn: () => {},
+    error: () => {},
+    debug: () => {},
+  } as any,
+  requestId: "test",
+});
+
+describe("CountLightsOnTool", () => {
+  it("counts only light entities in the on state", async () => {
+    const tool = new CountLightsOnTool();
+    const states = [
+      { entity_id: "light.living_room", state: "on" },
+      { entity_id: "light.bedroom", state: "off" },
+      { entity_id: "light.kitchen", state: "on" },
+      { entity_id: "switch.kettle", state: "on" }, // not a light
+    ];
+    const result = await tool.execute({}, makeContext(states));
+    expect(result.count).toBe(2);
+  });
+
+  it("handles zero lights gracefully", async () => {
+    const tool = new CountLightsOnTool();
+    const result = await tool.execute({}, makeContext([]));
+    expect(result.count).toBe(0);
+  });
+});
+```
+
+Run the tests:
+
+```bash
+bun test __tests__/homeassistant/light-count.test.ts
+```
+
+## 5. Build
+
+```bash
+bun run build:all
+```
+
+This rebuilds `dist/index.cjs`, `dist/stdio-server.mjs`, and `dist/http-server.mjs`. The new tool is now in the manifest of all three.
+
+## 6. Verify
+
+Boot the server and call `tools/list` to confirm the new tool is registered:
+
+```bash
+HASS_HOST=... HASS_TOKEN=... bun run start:stdio
+```
+
+In another terminal:
+
+```bash
+(echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'; sleep 1) \
+  | bun run start:stdio | head -1
+```
+
+Look for `"name": "count_lights_on"` in the response. If it's there, you're done.
+
+## Optional: make the tool disable-able
+
+To allow disabling the tool via an env var without rebuilding, set the `annotations.custom.disableable` flag (or just rely on the convention `TOOL_<NAME>_DISABLED=true`). The registry checks the env var and skips the tool on `tools/list`. See [Configuration > Tools](/configuration/tools/).
+
+## Common pitfalls
+
+- **Don't read `process.env` in the tool.** Use the context or the typed `APP_CONFIG`. The Zod validation won't catch a typo.
+- **Don't store state on the tool instance.** The class is instantiated once per process; a long-running tool with mutable state will confuse the rate limiter. Put caches on the `context` (which is per-request) or the `hassClient` (which is per-process and thread-safe).
+- **Don't use `console.log`.** Use the `winston` logger from `@/utils/logger`. In STDIO mode, `console.log` corrupts the JSON-RPC stream.
+- **Return JSON-serializable data only.** No functions, no `Date` objects, no `Map` / `Set`. The MCP client serializes the result as JSON.
+
+## Next
+
+- [Testing](/guides/testing/) — the project's test conventions in detail.
+- [Architecture > Tool System](/architecture/tool-system/) — the `BaseTool` contract in depth.
