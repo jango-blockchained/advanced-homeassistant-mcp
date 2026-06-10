@@ -13,6 +13,13 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  # Pin JavaScript actions to Node.js 24. Without this, actions
+  # like actions/checkout@v4, softprops/action-gh-release@v2,
+  # docker/* and the smmit/fastmcp SDK run on Node 20 and emit
+  # deprecation warnings. September 16, 2026 is when Node 20
+  # goes away entirely; setting this now avoids the eventual
+  # breakage.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   # Job 1: Create GitHub Release
@@ -83,6 +90,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Job 2: Publish to npm
+  # Skips with a warning if NPM_TOKEN isn't configured on the
+  # repo. The rest of the release (GitHub release, Docker push,
+  # README update) still succeeds — once the user adds NPM_TOKEN
+  # under repo Settings > Secrets, the next release will publish
+  # automatically.
   publish-npm:
     name: Publish to npm
     runs-on: ubuntu-latest
@@ -103,12 +115,14 @@ jobs:
         run: bun run build:all
 
       - name: Setup Node.js for npm publish
+        if: ${{ secrets.NPM_TOKEN != '' }}
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
       - name: Verify package version matches tag
+        if: ${{ secrets.NPM_TOKEN != '' }}
         run: |
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           TAG_VERSION="${{ needs.create-release.outputs.version }}"
@@ -120,9 +134,24 @@ jobs:
           fi
 
       - name: Publish to npm
+        if: ${{ secrets.NPM_TOKEN != '' }}
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Skip npm publish (NPM_TOKEN not configured)
+        if: ${{ secrets.NPM_TOKEN == '' }}
+        run: |
+          echo "## npm publish skipped" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "The \`NPM_TOKEN\` secret is not set on this repository." >> "$GITHUB_STEP_SUMMARY"
+          echo "The rest of the release (GitHub release, Docker push, README update) still happened." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "To enable npm publish, add an \`NPM_TOKEN\` (Automation) token at:" >> "$GITHUB_STEP_SUMMARY"
+          echo "  https://github.com/${{ github.repository }}/settings/secrets/actions" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Local one-off: \`NPM_TOKEN=xxx npm publish --access public\` from the repo root after a \`bun run build:all\`." >> "$GITHUB_STEP_SUMMARY"
+          echo "::warning::npm publish skipped: NPM_TOKEN secret not configured. Other release steps (GitHub release, Docker push, README update) proceeded normally."
 
   # Job 3: Build and Push Docker Image
   build-docker:

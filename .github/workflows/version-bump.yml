@@ -4,17 +4,23 @@ on:
   workflow_dispatch:
     inputs:
       version_bump:
-        description: 'Version bump type'
+        description: "Version bump type"
         required: true
         type: choice
         options:
           - patch
           - minor
           - major
-        default: 'patch'
+        default: "patch"
 
 permissions:
   contents: write
+
+# Pin JavaScript actions to Node.js 24. See release.yml for the
+# same setting and the rationale (Node 20 deprecation, hard
+# removal on September 16, 2026).
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   bump-version:
@@ -30,7 +36,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Configure Git
         run: |
@@ -43,13 +49,13 @@ jobs:
           # Get current version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "Current version: $CURRENT_VERSION"
-          
+
           # Parse version
           IFS='.' read -r -a version_parts <<< "$CURRENT_VERSION"
           major="${version_parts[0]}"
           minor="${version_parts[1]}"
           patch="${version_parts[2]}"
-          
+
           # Bump version based on input
           case "${{ inputs.version_bump }}" in
             major)
@@ -65,11 +71,11 @@ jobs:
               patch=$((patch + 1))
               ;;
           esac
-          
+
           NEW_VERSION="$major.$minor.$patch"
           echo "New version: $NEW_VERSION"
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
-          
+
           # Update package.json
           node -e "const fs=require('fs'); const pkg=JSON.parse(fs.readFileSync('package.json')); pkg.version='$NEW_VERSION'; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
 

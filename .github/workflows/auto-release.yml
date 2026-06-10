@@ -24,6 +24,12 @@ on:
 permissions:
   contents: write
 
+# Pin JavaScript actions to Node.js 24. Without this, the
+# checkout/setup-node actions run on Node 20 and emit
+# deprecation warnings (and will hard-fail September 16, 2026).
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 # Avoid two auto-release runs racing. The older run wins on
 # conflict (newer run cancels).
 concurrency:

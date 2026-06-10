@@ -13,7 +13,7 @@ COPY src ./src
 COPY tsconfig*.json ./
 
 # Build the application (compile TypeScript to JavaScript)
-RUN bun run build && bun run build:node && bun run build:stdio && bun run build:http
+RUN bun run build && bun run build:stdio && bun run build:http
 
 # Create a smaller production image
 FROM oven/bun:1-slim as runner

@@ -2,17 +2,22 @@ name: Docker Build and Push (Dev)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
-      - 'src/**'
-      - 'Dockerfile'
-      - 'package.json'
+      - "src/**"
+      - "Dockerfile"
+      - "package.json"
   # Allow manual trigger
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  # Pin JavaScript actions to Node.js 24 (see release.yml for
+  # the rationale: actions/checkout, docker/*, and others run
+  # on Node 20 by default and emit deprecation warnings; Node 20
+  # is removed from runners on September 16, 2026).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   build-and-push-dev:
@@ -54,4 +59,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max 
+          cache-to: type=gha,mode=max
