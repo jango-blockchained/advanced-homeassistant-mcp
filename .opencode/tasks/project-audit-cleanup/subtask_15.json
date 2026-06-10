@@ -1,0 +1,14 @@
+{
+  "id": "15",
+  "phase": "phase-3",
+  "title": "Remove unused devDependencies",
+  "description": "Remove: ajv (never imported), effect (never imported). Also remove @jest/globals and @types/jest if migration to bun:test is complete (verify first).",
+  "status": "pending",
+  "priority": "high",
+  "category": "dependency-cleanup",
+  "audit_refs": ["#5"],
+  "files": ["package.json"],
+  "validation": "Read package.json, confirm ajv + effect removed. Confirm @jest/globals not used (check `grep -r '@jest/globals' src/__tests__ __tests__`).",
+  "depends_on": [],
+  "parallel": false
+}

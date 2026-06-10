@@ -1,0 +1,14 @@
+{
+  "id": "27",
+  "phase": "phase-5",
+  "title": "Fix WebSocket authHandler listener leak and send() timeout leak",
+  "description": "Two critical bugs in src/hass/websocket-client.ts: (1) authHandler added to socket.on('message') but only removed in resolve/reject paths — non-JSON messages during auth leave handler attached for socket lifetime. Use socket.once semantics or a resolved flag. (2) setTimeout in send() never cleared on success — 30s timer leak per request. Store timeout handle in pendingRequests and clear on resolve/reject.",
+  "status": "pending",
+  "priority": "critical",
+  "category": "bug-fix",
+  "audit_refs": ["C9", "C10", "#1", "#2"],
+  "files": ["src/hass/websocket-client.ts"],
+  "validation": "Read file, confirm socket.once pattern, confirm clearTimeout in resolve/reject. Run existing websocket tests.",
+  "depends_on": [],
+  "parallel": false
+}

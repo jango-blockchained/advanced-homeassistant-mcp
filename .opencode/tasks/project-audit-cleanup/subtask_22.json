@@ -1,0 +1,19 @@
+{
+  "id": "22",
+  "phase": "phase-4",
+  "title": "Fix tsconfig.json module and clean up unused tsconfig files",
+  "description": "tsconfig.json:4 has module: CommonJS inconsistent with package.json:31 type:module. Change to ESNext. Also delete the unreferenced tsconfig.docker.json, tsconfig.stdio.json, tsconfig.test.json. Update Dockerfile if it references any of them (Dockerfile:35 copies tsconfig*.json — that's the glob, OK).",
+  "status": "pending",
+  "priority": "medium",
+  "category": "build-optimization",
+  "audit_refs": ["M1", "M14", "M15", "L18"],
+  "files": [
+    "tsconfig.json",
+    "tsconfig.docker.json",
+    "tsconfig.stdio.json",
+    "tsconfig.test.json"
+  ],
+  "validation": "Read tsconfig.json, confirm module: ESNext. Delete the 3 unused tsconfig.*.json files. Run `bun x tsc --noEmit` to confirm no breakage.",
+  "depends_on": [],
+  "parallel": false
+}

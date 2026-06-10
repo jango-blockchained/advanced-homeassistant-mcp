@@ -1,0 +1,14 @@
+{
+  "id": "06",
+  "phase": "phase-1",
+  "title": "Fix Dockerfile.smithery: add USER, use bun, fix externals",
+  "description": "Dockerfile.smithery: (1) no USER directive — runs as root (S3); (2) uses `npm ci` with package-lock.json while bun.lock is canonical (C7); (3) installs full devDependencies (C7, L23); (4) --external list missing dotenv, express-rate-limit (C8). Fix: use bun install --production, add USER bunjs (or similar) at end, add missing externals.",
+  "status": "pending",
+  "priority": "high",
+  "category": "install-flow",
+  "audit_refs": ["C7", "C8", "C9", "S3", "L23", "L25"],
+  "files": ["Dockerfile.smithery"],
+  "validation": "Read Dockerfile.smithery, confirm USER directive added, bun install --production used, externals list complete.",
+  "depends_on": [],
+  "parallel": false
+}

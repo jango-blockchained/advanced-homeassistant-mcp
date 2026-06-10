@@ -1,0 +1,43 @@
+{
+  "id": "11",
+  "phase": "phase-2",
+  "title": "Delete dead bin/ and scripts/ files",
+  "description": "Delete: bin/stdio-server.js (2.2MB build artifact), bin/mcp-stdio.js (replaced by .cjs), bin/test-stdio.js (unreferenced). Delete scripts: scripts/fix-env.js (9 lines), scripts/optimize-dist.js (53 lines), scripts/release.sh (hardcoded 1.2.1, used locally only — not by CI), scripts/deploy-github-pages.sh (now done by CI), scripts/integration-test.ts and scripts/benchmark.ts (unreferenced). Also delete start.sh (uses invalid --cold-start-caching flag) and stdio-start.sh (hardcoded personal path).",
+  "status": "pending",
+  "priority": "high",
+  "category": "dead-code",
+  "audit_refs": [
+    "H7",
+    "H8",
+    "H9",
+    "H10",
+    "M10",
+    "M11",
+    "L6",
+    "L7",
+    "L8",
+    "L9",
+    "M17",
+    "M18",
+    "M19",
+    "M20",
+    "#2",
+    "#27"
+  ],
+  "files": [
+    "bin/stdio-server.js",
+    "bin/mcp-stdio.js",
+    "bin/test-stdio.js",
+    "scripts/fix-env.js",
+    "scripts/optimize-dist.js",
+    "scripts/release.sh",
+    "scripts/deploy-github-pages.sh",
+    "scripts/integration-test.ts",
+    "scripts/benchmark.ts",
+    "start.sh",
+    "stdio-start.sh"
+  ],
+  "validation": "Each file removed. Verify no script references them via `grep -r 'integration-test.ts\\|optimize-dist\\|stdio-server.js\\|fix-env.js' .` (excluding .git).",
+  "depends_on": [],
+  "parallel": false
+}

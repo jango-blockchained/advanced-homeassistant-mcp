@@ -1,0 +1,14 @@
+{
+  "id": "21",
+  "phase": "phase-4",
+  "title": "Add --minify --sourcemap=inline to esbuild scripts",
+  "description": "Update build, build:node, build:stdio, build:http, build:http-simple (if not deleted) to include --minify and --sourcemap=inline. This will reduce bundle size by 2-3x. Also enable --tree-shaking where possible. After change, run `bun run build:all` and compare dist/ sizes before/after.",
+  "status": "pending",
+  "priority": "high",
+  "category": "build-optimization",
+  "audit_refs": ["H5", "#1"],
+  "files": ["package.json"],
+  "validation": "Read package.json, confirm --minify --sourcemap in all esbuild calls. Run `bun run build:all` and verify dist/ size shrunk.",
+  "depends_on": ["14", "15", "16", "18"],
+  "parallel": false
+}

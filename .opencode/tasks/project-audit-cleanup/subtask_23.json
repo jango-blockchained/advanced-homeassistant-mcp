@@ -1,0 +1,28 @@
+{
+  "id": "23",
+  "phase": "phase-4",
+  "title": "Consolidate to single VERSION constant",
+  "description": "Hardcoded version strings in 40+ files (1.0.0, 1.2.1, 1.2.3, 1.2.5) drift from real version 1.4.0. Add a single VERSION export in src/version.ts (or similar) that reads from package.json. Replace hardcoded strings in: src/index.ts, src/stdio-server.ts, src/http-server.ts, src/openapi.ts, src/mcp/MCPServer.ts, src/mcp/BaseTool.ts, src/mcp/schema.ts, src/mcp/transports/stdio.transport.ts, src/smithery-sdk.ts, every src/tools/homeassistant/*.tool.ts, every src/tools/examples/*.tool.ts, smithery.yaml.",
+  "status": "pending",
+  "priority": "medium",
+  "category": "build-optimization",
+  "audit_refs": ["H5", "H15", "M22", "#21"],
+  "files": [
+    "src/version.ts (new)",
+    "src/index.ts",
+    "src/stdio-server.ts",
+    "src/http-server.ts",
+    "src/openapi.ts",
+    "src/mcp/MCPServer.ts",
+    "src/mcp/BaseTool.ts",
+    "src/mcp/schema.ts",
+    "src/mcp/transports/stdio.transport.ts",
+    "src/smithery-sdk.ts",
+    "src/tools/homeassistant/*.tool.ts",
+    "src/tools/examples/*.tool.ts",
+    "smithery.yaml"
+  ],
+  "validation": "grep -r 'version: \"1\\.0\\.0\"\\|version: \"1\\.2' src/ smithery.yaml. Should return 0 matches after.",
+  "depends_on": [],
+  "parallel": false
+}

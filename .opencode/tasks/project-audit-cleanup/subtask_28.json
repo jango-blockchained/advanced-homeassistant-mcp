@@ -1,0 +1,20 @@
+{
+  "id": "28",
+  "phase": "phase-5",
+  "title": "Remove hardcoded JWT_SECRET defaults; throw on missing",
+  "description": "src/config/index.ts:41, src/config/app.config.ts:46, src/config/security.config.ts:56 each have weak default JWT_SECRET values. Remove defaults and throw if JWT_SECRET is missing or shorter than 32 chars. Also: (1) Don't trigger failed-attempt lockout for TokenExpiredError in src/security/index.ts:374-380. (2) Reduce token info in logs (src/hass/index.ts:18-20 to debug level).",
+  "status": "pending",
+  "priority": "critical",
+  "category": "bug-fix",
+  "audit_refs": ["C11", "C14", "C15", "#3", "#14", "#15"],
+  "files": [
+    "src/config/index.ts",
+    "src/config/app.config.ts",
+    "src/config/security.config.ts",
+    "src/security/index.ts",
+    "src/hass/index.ts"
+  ],
+  "validation": "grep -r 'default_secret_key\\|your-secret-key\\|your_jwt_secret' src/ should return 0. Start server without JWT_SECRET set, confirm throw.",
+  "depends_on": [],
+  "parallel": false
+}

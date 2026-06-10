@@ -1,0 +1,28 @@
+{
+  "id": "40",
+  "phase": "phase-5",
+  "title": "Final verification: typecheck, test, build all",
+  "description": "After all phase 5 bug fixes: (1) `bun x tsc --noEmit` — should pass with no new errors; (2) `bun test` — should pass; (3) `bun run build:all` — should succeed; (4) verify all 3 dist outputs (index.cjs, stdio-server.mjs, http-server.mjs) exist; (5) print summary of changes. Document the test/build success as final verification.",
+  "status": "pending",
+  "priority": "high",
+  "category": "bug-fix",
+  "audit_refs": ["validation"],
+  "files": ["package.json"],
+  "validation": "All 3 commands exit 0. Document any pre-existing errors that remain (and confirm they are NOT caused by this cleanup).",
+  "depends_on": [
+    "27",
+    "28",
+    "29",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39"
+  ],
+  "parallel": false
+}

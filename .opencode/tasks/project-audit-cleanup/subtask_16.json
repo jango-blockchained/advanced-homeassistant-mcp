@@ -1,0 +1,14 @@
+{
+  "id": "16",
+  "phase": "phase-3",
+  "title": "Move typescript and uuid to correct sections",
+  "description": "typescript is in dependencies (line 102) but is only used for typecheck/dev — move to devDependencies. uuid (^11.1.0) and @types/uuid are in devDependencies but are imported in src/ — move to dependencies.",
+  "status": "pending",
+  "priority": "high",
+  "category": "dependency-cleanup",
+  "audit_refs": ["H1", "#5"],
+  "files": ["package.json"],
+  "validation": "Read package.json, confirm typescript in devDependencies, uuid + @types/uuid in dependencies.",
+  "depends_on": [],
+  "parallel": false
+}

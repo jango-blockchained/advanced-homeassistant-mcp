@@ -1,0 +1,14 @@
+{
+  "id": "33",
+  "phase": "phase-5",
+  "title": "Fix SSE Manager: store intervals, add shutdown, reduce log level",
+  "description": "src/sse/index.ts:79-111, 397-407: (1) setInterval handles never stored or cleared on shutdown — prevents process exit; (2) 'Attempting to send data to client' and 'Broadcasting state change' logs at INFO level per client per change — floods logs; (3) send() may write to closed res. Fix: store interval handles, add shutdown() method, change ping/state logs to debug level, add writableEnded check before send().",
+  "status": "pending",
+  "priority": "high",
+  "category": "bug-fix",
+  "audit_refs": ["H14", "H22", "H23", "M14", "#22", "#67"],
+  "files": ["src/sse/index.ts"],
+  "validation": "Read file, confirm interval handles stored in instance, shutdown() method clears them, log level is debug. Run SSE test.",
+  "depends_on": [],
+  "parallel": false
+}

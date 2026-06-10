@@ -1,0 +1,14 @@
+{
+  "id": "18",
+  "phase": "phase-3",
+  "title": "Clean up esbuild external lists",
+  "description": "After removing 12 unused deps in #14, the esbuild --external list in build/build:node/build:stdio/build:http still references them. Update all 4 build scripts to only external the deps that are actually imported. Also remove the duplicate build:node (alias to build).",
+  "status": "pending",
+  "priority": "high",
+  "category": "dependency-cleanup",
+  "audit_refs": ["H2", "H6"],
+  "files": ["package.json"],
+  "validation": "Read package.json, confirm --external lists match actual imported deps. Confirm build:node removed (or aliased).",
+  "depends_on": ["14"],
+  "parallel": false
+}

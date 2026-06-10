@@ -1,0 +1,19 @@
+{
+  "id": "37",
+  "phase": "phase-5",
+  "title": "Replace 13 console.log/error/warn calls with winston logger",
+  "description": "AGENTS.md mandates winston logger. Replace 13 console.* calls in: src/config/loadEnv.ts (6), src/config/app.config.ts:116, src/tools/subscribe-events.tool.ts (3), src/routes/sse.routes.ts (3). stdio-only.ts and other dead files are being deleted in #9. Use logger from @/utils/logger.",
+  "status": "pending",
+  "priority": "medium",
+  "category": "bug-fix",
+  "audit_refs": ["H17", "M16", "#16"],
+  "files": [
+    "src/config/loadEnv.ts",
+    "src/config/app.config.ts",
+    "src/tools/subscribe-events.tool.ts",
+    "src/routes/sse.routes.ts"
+  ],
+  "validation": "grep -rn 'console\\.\\(log\\|error\\|warn\\|info\\)' src/ should return 0 (excluding tests).",
+  "depends_on": [],
+  "parallel": false
+}

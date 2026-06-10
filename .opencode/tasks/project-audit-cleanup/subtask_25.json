@@ -1,0 +1,17 @@
+{
+  "id": "25",
+  "phase": "phase-4",
+  "title": "Fix docker-build-push.yml triggers and add lockfile choice",
+  "description": "docker-build-push.yml:6-7 only triggers on src/**, Dockerfile, package.json. Add bun.lock, tsconfig*.json, docker/ to triggers. Also: in release.yml, add setup-node step before `node -p` call. Also: in release.yml, remove unused `id-token: write` permission. Decide on lockfile (keep bun.lock, remove package-lock.json from CI; or keep both — but document).",
+  "status": "pending",
+  "priority": "medium",
+  "category": "build-optimization",
+  "audit_refs": ["M10", "M11", "L18"],
+  "files": [
+    ".github/workflows/docker-build-push.yml",
+    ".github/workflows/release.yml"
+  ],
+  "validation": "Read both workflow files, confirm triggers/permissions/setup-node are correct.",
+  "depends_on": [],
+  "parallel": false
+}

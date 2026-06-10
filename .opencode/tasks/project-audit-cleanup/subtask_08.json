@@ -1,0 +1,14 @@
+{
+  "id": "08",
+  "phase": "phase-1",
+  "title": "Remove Python/numpy/scipy/ALSA from default image (audio not wired up)",
+  "description": "Dockerfile installs numpy, scipy (200MB), pulseaudio, alsa-utils but CMD runs `dist/http-server.js` which has no audio path. setup-audio.sh and wake_word_detector.py are not in CMD. Either wire up the speech path properly, or remove the bloat from the default image. Recommendation: remove from default image (can add via speech compose override).",
+  "status": "pending",
+  "priority": "high",
+  "category": "install-flow",
+  "audit_refs": ["M3", "M4", "M18", "M19", "L24"],
+  "files": ["Dockerfile"],
+  "validation": "Read Dockerfile, confirm numpy/scipy/pulseaudio/alsa-utils removed from default image. Speech compose still works via override.",
+  "depends_on": ["02"],
+  "parallel": false
+}

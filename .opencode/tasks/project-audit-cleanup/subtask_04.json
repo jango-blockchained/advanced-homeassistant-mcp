@@ -1,0 +1,14 @@
+{
+  "id": "04",
+  "phase": "phase-1",
+  "title": "Fix docker-compose.dev.yml to use bun instead of npm",
+  "description": "docker-compose.dev.yml:29 uses `npm run build:all && node dist/http-server.js` inside a Bun-built image (oven/bun:1-slim). npm is not installed, and dist/http-server.js doesn't exist. Change to `bun run build:all && bun run dist/http-server.mjs`.",
+  "status": "pending",
+  "priority": "critical",
+  "category": "install-flow",
+  "audit_refs": ["C4", "L21"],
+  "files": ["docker-compose.dev.yml"],
+  "validation": "Read docker-compose.dev.yml, confirm command uses bun and points to .mjs file.",
+  "depends_on": [],
+  "parallel": false
+}

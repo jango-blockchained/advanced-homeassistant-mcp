@@ -1,0 +1,14 @@
+{
+  "id": "13",
+  "phase": "phase-2",
+  "title": "Update package.json scripts to remove dead references",
+  "description": "Remove scripts that point to deleted files: stdio, mcp:stdio (both use bin/stdio-server.js), build:http-simple (http-simple.ts deleted). Update clean script to include dist-ts/ and bin/*.js. Fix mcp:build (duplicate of build:all). Update npm → bun in build:all chain (M12).",
+  "status": "pending",
+  "priority": "high",
+  "category": "dead-code",
+  "audit_refs": ["H2", "L13", "M12"],
+  "files": ["package.json"],
+  "validation": "Read package.json scripts. Confirm dead scripts removed, clean script updated, build:all uses bun run.",
+  "depends_on": ["09", "10", "11", "12"],
+  "parallel": false
+}

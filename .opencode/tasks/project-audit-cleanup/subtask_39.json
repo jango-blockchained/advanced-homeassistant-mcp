@@ -1,0 +1,14 @@
+{
+  "id": "39",
+  "phase": "phase-5",
+  "title": "Fix security/index.ts: next() outside try-block, sanitize on output only",
+  "description": "src/security/index.ts:84: `try { checkRateLimit(ip); next(); } catch (error) { _res.status(429) }` — if next() throws, error mis-classified as 429. Move next() outside try-block. Also: src/security/index.ts:192-206 sanitizeValue runs escapeHtml on all string values (corrupts JSON inside object values). Sanitize only on output rendering, not on input.",
+  "status": "pending",
+  "priority": "medium",
+  "category": "bug-fix",
+  "audit_refs": ["H25", "M23", "M24", "#60", "#61"],
+  "files": ["src/security/index.ts"],
+  "validation": "Read src/security/index.ts. Confirm next() outside try-block, sanitize on output not input.",
+  "depends_on": [],
+  "parallel": false
+}

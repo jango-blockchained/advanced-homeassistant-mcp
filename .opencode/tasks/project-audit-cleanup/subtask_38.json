@@ -1,0 +1,22 @@
+{
+  "id": "38",
+  "phase": "phase-5",
+  "title": "Drop .ts extension from 8 imports (AGENTS.md compliance)",
+  "description": "8 files import from paths with .ts extension, violating AGENTS.md: src/middleware/logging.middleware.ts:12, src/middleware/index.ts:7, src/routes/tool.routes.ts:2, src/routes/health.routes.ts:2, src/routes/mcp.routes.ts:12, src/speech/index.ts:1, src/utils/log-rotation.ts:13. Drop the .ts extension in each.",
+  "status": "pending",
+  "priority": "medium",
+  "category": "bug-fix",
+  "audit_refs": ["H16", "M15", "#15"],
+  "files": [
+    "src/middleware/logging.middleware.ts",
+    "src/middleware/index.ts",
+    "src/routes/tool.routes.ts",
+    "src/routes/health.routes.ts",
+    "src/routes/mcp.routes.ts",
+    "src/speech/index.ts",
+    "src/utils/log-rotation.ts"
+  ],
+  "validation": "grep -rn 'from \\(\"[^\"]*\\.ts\"\\|\"[^\"]*\\.ts\"\\)' src/ should return 0.",
+  "depends_on": ["29"],
+  "parallel": false
+}

@@ -1,0 +1,14 @@
+{
+  "id": "03",
+  "phase": "phase-1",
+  "title": "Fix package.json main/module/build scripts",
+  "description": "package.json:32 main is dist/index.js (does not exist — only dist/index.cjs is built). package.json:33 module points to src/smithery-minimal.ts (.ts not resolvable by Node ESM). Also package.json:42 build and :43 build:node are 100% identical — both produce dist/index.cjs. Fix: set main to dist/index.cjs; remove module (or point to dist/stdio-server.mjs); remove the duplicate build:node script (alias build → build:node if needed).",
+  "status": "pending",
+  "priority": "critical",
+  "category": "install-flow",
+  "audit_refs": ["C8", "H2", "H3", "H13", "L12"],
+  "files": ["package.json"],
+  "validation": "Verify main: dist/index.cjs, no dead module field, no duplicate build:node.",
+  "depends_on": ["02"],
+  "parallel": false
+}

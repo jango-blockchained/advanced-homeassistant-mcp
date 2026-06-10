@@ -1,0 +1,14 @@
+{
+  "id": "20",
+  "phase": "phase-3",
+  "title": "Run bun install and verify dependency cleanup",
+  "description": "After all dep changes in #14-#19, run `bun install` to regenerate bun.lock. Then `rm package-lock.json` (or note that the project should choose one lockfile). Then `bun install --production` to confirm prod-only install works (for Docker). Verify `bun x tsc --noEmit` still passes and the dependency tree is clean.",
+  "status": "pending",
+  "priority": "high",
+  "category": "dependency-cleanup",
+  "audit_refs": ["H11", "H12", "L28", "M26"],
+  "files": ["package.json", "bun.lock", "package-lock.json"],
+  "validation": "Run `bun install`, confirm no errors. Run `bun x tsc --noEmit` to typecheck. Confirm package-lock.json decision (keep or remove).",
+  "depends_on": ["14", "15", "16", "17", "18", "19"],
+  "parallel": false
+}

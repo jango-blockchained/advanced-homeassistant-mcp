@@ -1,0 +1,14 @@
+{
+  "id": "07",
+  "phase": "phase-1",
+  "title": "Fix docker-compose.yml privacy leak and env shadowing",
+  "description": "docker-compose.yml: (1) hardcodes personal IP `http://192.168.178.63:8123` as default HASS_HOST (C14, privacy leak); (2) mounts .env via env_file AND sets HASS_HOST/HASS_TOKEN via environment block — env block wins, .env is pointless (M8). Fix: remove hardcoded IP, remove env_file or environment block (pick one).",
+  "status": "pending",
+  "priority": "high",
+  "category": "install-flow",
+  "audit_refs": ["C14", "M8", "S7"],
+  "files": ["docker-compose.yml"],
+  "validation": "Read docker-compose.yml, confirm no hardcoded personal IP, env config is consistent.",
+  "depends_on": [],
+  "parallel": false
+}

@@ -1,0 +1,14 @@
+{
+  "id": "19",
+  "phase": "phase-3",
+  "title": "Fix .npmrc scope config and other devDep hygiene",
+  "description": ".npmrc:1-2 configures GitHub Packages registry for @jango-blockchained scope. This may break `npm install` for npm users. Either remove .npmrc or restrict to a specific workflow. Also check for: misplaced types (e.g. @types/express v5 with express v4), outdated devDeps (eslint v8, @typescript-eslint v7).",
+  "status": "pending",
+  "priority": "medium",
+  "category": "dependency-cleanup",
+  "audit_refs": ["M21", "H1"],
+  "files": [".npmrc", "package.json"],
+  "validation": "Read .npmrc. Either remove it or make it opt-in. Fix @types/express to ^4.17.x. (Outdated eslint/typescript-eslint can be a separate task; recommend keeping current versions to avoid scope creep.)",
+  "depends_on": [],
+  "parallel": false
+}

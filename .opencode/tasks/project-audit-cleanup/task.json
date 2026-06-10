@@ -1,0 +1,103 @@
+{
+  "feature": "project-audit-cleanup",
+  "slug": "project-audit-cleanup",
+  "title": "Project Audit & Cleanup: advanced-homeassistant-mcp",
+  "description": "Comprehensive audit-driven cleanup of the advanced-homeassistant-mcp project. Addresses 138 issues across 5 phases: critical security/install fixes, dead code removal, dependency cleanup, build/CI optimization, and bug fixes.",
+  "session_id": "2026-06-10-project-audit-cleanup",
+  "created_at": "2026-06-10T00:00:00Z",
+  "status": "pending",
+  "priority": "high",
+  "audit_reports": [
+    ".opencode/audit/00-summary.md",
+    ".opencode/audit/01-structure-and-config.md",
+    ".opencode/audit/02-install-and-docker.md",
+    ".opencode/audit/03-bugs-and-failures.md",
+    ".opencode/audit/04-optimization-and-cleanup.md"
+  ],
+  "context_files": [],
+  "reference_files": [
+    "package.json",
+    "tsconfig.json",
+    "tsconfig.docker.json",
+    "tsconfig.stdio.json",
+    "tsconfig.test.json",
+    "bunfig.toml",
+    "Dockerfile",
+    "Dockerfile.smithery",
+    "docker-compose.yml",
+    "docker-compose.dev.yml",
+    "docker-compose.speech.yml",
+    ".dockerignore",
+    ".env.example",
+    ".gitignore",
+    ".npmrc",
+    "AGENTS.md",
+    "README.md"
+  ],
+  "phases": [
+    {
+      "id": "phase-1",
+      "name": "Critical: Security & Broken Install",
+      "summary": "Fix Dockerfile CMD, revoke committed JWT, fix package.json main, fix docker-compose",
+      "subtasks": ["01", "02", "03", "04", "05", "06", "07", "08"]
+    },
+    {
+      "id": "phase-2",
+      "name": "Dead Code Removal",
+      "summary": "Delete dead source files, dead test files, dead bin/ artifacts, dead scripts, stale dist dirs",
+      "subtasks": ["09", "10", "11", "12", "13"]
+    },
+    {
+      "id": "phase-3",
+      "name": "Dependency Cleanup",
+      "summary": "Remove 12+ unused deps, move mis-categorized ones, update esbuild external list",
+      "subtasks": ["14", "15", "16", "17", "18", "19", "20"]
+    },
+    {
+      "id": "phase-4",
+      "name": "Build & CI Optimization",
+      "summary": "Add minify/sourcemap, fix tsconfig, update AGENTS.md, version constants, drop package-lock",
+      "subtasks": ["21", "22", "23", "24", "25", "26"]
+    },
+    {
+      "id": "phase-5",
+      "name": "Bug Fixes",
+      "summary": "WebSocket leaks, JWT defaults, MCPServer singleton, MCPResponse id null, SSE shutdown, console.log",
+      "subtasks": [
+        "27",
+        "28",
+        "29",
+        "30",
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40"
+      ]
+    }
+  ],
+  "exit_criteria": [
+    "All 5 phases complete with subtasks marked completed",
+    "bun x tsc --noEmit passes with zero new errors",
+    "bun test passes (existing tests)",
+    "bun run build:all succeeds",
+    "Dockerfile CMD is correct (image boots successfully)",
+    "No committed secrets in .env"
+  ],
+  "stats": {
+    "total_issues": 138,
+    "critical": 11,
+    "high": 23,
+    "medium": 32,
+    "low": 38,
+    "cleanup_tasks": 40,
+    "dead_code_lines_to_remove": 3500,
+    "build_artifacts_to_remove_mb": 6,
+    "bundle_size_reduction_factor": "2-3x"
+  }
+}

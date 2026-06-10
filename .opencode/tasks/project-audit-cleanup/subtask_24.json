@@ -1,0 +1,14 @@
+{
+  "id": "24",
+  "phase": "phase-4",
+  "title": "Update AGENTS.md to reflect reality",
+  "description": "AGENTS.md has drift: (1) says 'Three entry points' but 7+ exist; (2) says 'path aliases @/*' but only 1 file uses them; (3) says 'NO .js extensions' with 220 violations; (4) says 'config validates with Valibot' but uses Zod; (5) section on 'Three entry points' is wrong. Update AGENTS.md to match the post-cleanup state. Note: depends on tasks 9, 22 being done first.",
+  "status": "pending",
+  "priority": "medium",
+  "category": "build-optimization",
+  "audit_refs": ["M13", "H5", "H16", "#26"],
+  "files": ["AGENTS.md"],
+  "validation": "Read AGENTS.md, confirm: 3 entry points (index.ts, stdio-server.ts, http-server.ts), Zod (not Valibot), @/ alias encouraged but not enforced, .js extensions not present (after #9 removes the bad files).",
+  "depends_on": ["09", "22"],
+  "parallel": false
+}

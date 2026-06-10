@@ -1,0 +1,14 @@
+{
+  "id": "36",
+  "phase": "phase-5",
+  "title": "Fix sse.routes.ts write-after-end race",
+  "description": "src/routes/sse.routes.ts:38-43 initial connection message writes to res; line 64 may call res.end() then more writes happen — throws ERR_STREAM_WRITE_AFTER_END. Fix: wrap res.write in try/catch, or set a flag after end().",
+  "status": "pending",
+  "priority": "medium",
+  "category": "bug-fix",
+  "audit_refs": ["H25", "M26", "#66"],
+  "files": ["src/routes/sse.routes.ts"],
+  "validation": "Read sse.routes.ts. Confirm res.write wrapped in try/catch or flag-guarded.",
+  "depends_on": [],
+  "parallel": false
+}

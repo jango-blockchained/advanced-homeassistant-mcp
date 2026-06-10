@@ -1,0 +1,14 @@
+{
+  "id": "14",
+  "phase": "phase-3",
+  "title": "Remove 12 unused production dependencies",
+  "description": "Remove these deps (none are imported in src/): @anthropic-ai/sdk, @smithery/sdk, @valibot/to-json-schema, @xmldom/xmldom, chalk, minimatch, node-fetch, node-record-lpcm16, openai, sury, valibot, yaml. After removal, run `bun install` to verify the lockfile regenerates cleanly.",
+  "status": "pending",
+  "priority": "high",
+  "category": "dependency-cleanup",
+  "audit_refs": ["#5", "H1"],
+  "files": ["package.json"],
+  "validation": "Read package.json, confirm 12 deps removed. Run `grep -r \"@anthropic-ai\\|@smithery\\|chalk\\|minimatch\\|node-fetch\\|node-record-lpcm16\\|sury\\|valibot\\|@xmldom\\|openai\" src/__tests__ src/` to confirm no remaining imports. Run `bun install` and confirm success.",
+  "depends_on": ["09", "10", "11"],
+  "parallel": false
+}

@@ -1,0 +1,14 @@
+{
+  "id": "01",
+  "phase": "phase-1",
+  "title": "Revoke and remove committed JWT from .env",
+  "description": "The committed .env contains a real-looking JWT in HASS_TOKEN at line 12. Action: (1) alert the user to REVOKE the token in Home Assistant, (2) remove HASS_TOKEN value from .env (replace with placeholder), (3) update .gitignore to ensure .env is excluded, (4) provide instructions to remove from git history (BFG Repo-Cleaner or git filter-repo) — DO NOT run the history rewrite automatically; just stage instructions.",
+  "status": "pending",
+  "priority": "critical",
+  "category": "security",
+  "audit_refs": ["C3", "S1", "S8"],
+  "files": [".env", ".gitignore"],
+  "validation": "Run `git log --all --full-history -- .env` to confirm file is tracked. Replace HASS_TOKEN value in .env with empty/placeholder. Print warning to user about revoking the token.",
+  "depends_on": [],
+  "parallel": false
+}

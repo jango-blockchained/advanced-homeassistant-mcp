@@ -1,0 +1,21 @@
+{
+  "id": "10",
+  "phase": "phase-2",
+  "title": "Delete dead test files",
+  "description": "Delete: __tests__/schemas/devices.test.js (185 lines, .js not matched), __tests__/tools/tool-registry.test.ts.disabled (205 lines, .disabled not matched), test/e2e/automation.test.ts (176 lines, excluded by bunfig), __tests__/core/server.test.ts (33 lines, vestigial litemcp ref), __tests__/helpers.test.ts (tests dead code in helpers.ts being deleted in #9). Also delete __tests__/types/litemcp.d.ts (19 lines, mock for dead lib).",
+  "status": "pending",
+  "priority": "high",
+  "category": "dead-code",
+  "audit_refs": ["M4", "M5", "M6", "M7", "#11", "#12", "#13", "#20", "#80"],
+  "files": [
+    "__tests__/schemas/devices.test.js",
+    "__tests__/tools/tool-registry.test.ts.disabled",
+    "test/e2e/automation.test.ts",
+    "__tests__/core/server.test.ts",
+    "__tests__/helpers.test.ts",
+    "__tests__/types/litemcp.d.ts"
+  ],
+  "validation": "Each file removed. Run `bun test` to confirm no broken imports.",
+  "depends_on": ["09"],
+  "parallel": false
+}

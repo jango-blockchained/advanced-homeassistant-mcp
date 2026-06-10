@@ -1,0 +1,14 @@
+{
+  "id": "05",
+  "phase": "phase-1",
+  "title": "Fix docker-compose.speech.yml image name",
+  "description": "docker-compose.speech.yml:5 references `homeassistant-mcp:latest` but CI pushes to `jangoblockchained/homeassistant-mcp`. Also uses `privileged: true` and `network_mode: host` on wake-word container (security risk). Change image name and consider whether privileged/host is actually required.",
+  "status": "pending",
+  "priority": "high",
+  "category": "install-flow",
+  "audit_refs": ["C5", "M9", "S10", "S11"],
+  "files": ["docker-compose.speech.yml"],
+  "validation": "Read docker-compose.speech.yml, confirm image name matches CI push target.",
+  "depends_on": [],
+  "parallel": false
+}

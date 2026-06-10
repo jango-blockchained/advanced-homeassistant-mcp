@@ -1,0 +1,18 @@
+{
+  "id": "32",
+  "phase": "phase-5",
+  "title": "Fix MCPResponse.id to use null for notifications (JSON-RPC 2.0)",
+  "description": "src/mcp/MCPServer.ts: 9 sites return `request.id ?? undefined` for notifications. JSON-RPC 2.0 spec requires `id: null` for notifications. Use `request.id ?? null` and tighten MCPResponse.id type to `string | number | null`.",
+  "status": "pending",
+  "priority": "high",
+  "category": "bug-fix",
+  "audit_refs": ["H13", "#12", "#27"],
+  "files": [
+    "src/mcp/MCPServer.ts",
+    "src/mcp/types.ts",
+    "src/mcp/middleware/index.ts"
+  ],
+  "validation": "Read MCPServer.ts, confirm all id returns use ?? null. Update MCPResponse.id type. Run typecheck.",
+  "depends_on": [],
+  "parallel": false
+}

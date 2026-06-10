@@ -1,0 +1,27 @@
+{
+  "id": "29",
+  "phase": "phase-5",
+  "title": "Consolidate config files (delete duplicates, standardize on app.config.ts)",
+  "description": "Two divergent config systems: src/config.ts and src/config/app.config.ts. Plus src/config/index.ts and src/config.js. Standardize on src/config/app.config.ts. Delete: src/config.ts, src/config/index.ts, src/config.js. Update all 5+ files that import from old config to use app.config.ts. Add a barrel export at src/config/index.ts that re-exports from app.config.ts for backward compat.",
+  "status": "pending",
+  "priority": "high",
+  "category": "bug-fix",
+  "audit_refs": ["C12", "#4", "#24", "M24"],
+  "files": [
+    "src/config.ts",
+    "src/config/index.ts",
+    "src/config.js",
+    "src/config/app.config.ts",
+    "src/middleware/rate-limit.middleware.ts",
+    "src/middleware/index.ts",
+    "src/middleware/logging.middleware.ts",
+    "src/routes/tool.routes.ts",
+    "src/routes/health.routes.ts",
+    "src/routes/mcp.routes.ts",
+    "src/utils/log-rotation.ts",
+    "src/speech/index.ts"
+  ],
+  "validation": "All imports of `./config/app.config` work. No import from `./config` (old) or `./config.js` remains.",
+  "depends_on": ["09"],
+  "parallel": false
+}

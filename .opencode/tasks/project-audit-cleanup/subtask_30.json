@@ -1,0 +1,14 @@
+{
+  "id": "30",
+  "phase": "phase-5",
+  "title": "Fix BaseTool.validateParams to throw Error subclasses",
+  "description": "src/mcp/BaseTool.ts:107-111 and 136-140 throw plain object `{ code, message, data }`. Catchers in MCPServer.ts (error instanceof Error ? error.message : String(error)) fall through to '[object Object]'. Fix: throw `new Error(message, { cause: data })` with a custom error class. Define a ValidationError extends Error. Update MCPServer catch blocks to use error.cause if present.",
+  "status": "pending",
+  "priority": "high",
+  "category": "bug-fix",
+  "audit_refs": ["H11", "#8"],
+  "files": ["src/mcp/BaseTool.ts", "src/mcp/MCPServer.ts"],
+  "validation": "Throw a tool with invalid params, confirm error message is preserved (not '[object Object]').",
+  "depends_on": [],
+  "parallel": false
+}

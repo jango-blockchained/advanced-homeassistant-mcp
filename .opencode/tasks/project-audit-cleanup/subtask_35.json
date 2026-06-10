@@ -1,0 +1,14 @@
+{
+  "id": "35",
+  "phase": "phase-5",
+  "title": "Fix http-server.ts shutdown, port/host parsing, and FastMCP middleware type error",
+  "description": "src/http-server.ts has multiple issues: (1) shutdown is `process.exit(0)` — no await server.stop(), no flush (L19/H19). (2) Port parsing: `(process.env.PORT ?? '7123') ? parseInt(...) : 7123` is meaningless ternary. Host has no fallback. (3) Line 225: `middleware` not a valid FastMCP option (LSP error). Fix all three.",
+  "status": "pending",
+  "priority": "high",
+  "category": "bug-fix",
+  "audit_refs": ["H19", "H21", "H24", "M2"],
+  "files": ["src/http-server.ts"],
+  "validation": "Read http-server.ts. Confirm shutdown is async, port/host are simple, no `middleware` option. Run typecheck.",
+  "depends_on": [],
+  "parallel": false
+}

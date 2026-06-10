@@ -1,0 +1,14 @@
+{
+  "id": "26",
+  "phase": "phase-4",
+  "title": "Run final build:all and verify all outputs",
+  "description": "After all build/dependency changes, run: `bun install`, `bun run clean`, `bun run build:all`, `bun x tsc --noEmit`, `bun test`. Confirm: (1) build succeeds for index.cjs, stdio-server.mjs, http-server.mjs; (2) all 3 dist files exist and are smaller; (3) typecheck passes (or has no NEW errors beyond pre-existing); (4) tests pass.",
+  "status": "pending",
+  "priority": "high",
+  "category": "build-optimization",
+  "audit_refs": ["validation"],
+  "files": ["package.json"],
+  "validation": "All 4 commands succeed. Document the before/after dist/ sizes in task output.",
+  "depends_on": ["20", "21", "22"],
+  "parallel": false
+}

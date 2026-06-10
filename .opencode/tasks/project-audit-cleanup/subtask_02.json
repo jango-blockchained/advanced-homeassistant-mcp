@@ -1,0 +1,14 @@
+{
+  "id": "02",
+  "phase": "phase-1",
+  "title": "Fix Dockerfile CMD to point to dist/http-server.mjs",
+  "description": "Dockerfile:104 has CMD [\"bun\", \"run\", \"dist/http-server.js\"] but the build emits dist/http-server.mjs (ESM). The image crashes on start. Also remove the redundant `bun build ./src/http-server.ts --outdir ./dist --target node` on line 39 (it produces a duplicate that masks the real bug).",
+  "status": "pending",
+  "priority": "critical",
+  "category": "install-flow",
+  "audit_refs": ["C1", "C2", "L2"],
+  "files": ["Dockerfile"],
+  "validation": "Read Dockerfile, confirm CMD references dist/http-server.mjs. Confirm line 39 redundant build is removed.",
+  "depends_on": [],
+  "parallel": false
+}

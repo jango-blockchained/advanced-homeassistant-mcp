@@ -1,0 +1,14 @@
+{
+  "id": "17",
+  "phase": "phase-3",
+  "title": "Fix package.json prepare and main/module",
+  "description": "Fix: (1) prepare script is `echo 'Skipping prepare' || true` — re-enable with `husky` (or remove husky if not wanted); (2) main field should be dist/index.cjs (not dist/index.js); (3) remove module field (was src/smithery-minimal.ts which is dead).",
+  "status": "pending",
+  "priority": "high",
+  "category": "dependency-cleanup",
+  "audit_refs": ["C8", "H4", "H13", "L12"],
+  "files": ["package.json"],
+  "validation": "Read package.json, confirm prepare works (or husky is removed), main is dist/index.cjs, module field removed.",
+  "depends_on": [],
+  "parallel": false
+}

@@ -1,0 +1,14 @@
+{
+  "id": "12",
+  "phase": "phase-2",
+  "title": "Delete stale dist-ts/ and ensure dist/, bin/*.js gitignored",
+  "description": "dist-ts/ is a stale tsc output (not built by esbuild). dist/ contains 6MB of build artifacts that are committed but should be gitignored. bin/stdio-server.js (being deleted) but other bin/*.js should be ignored. Models/ dir (3.4MB HuggingFace cache) should be gitignored. Update .gitignore to add: dist-ts/, models/, bin/*.js (with bin/*.cjs, bin/*.mjs explicitly allowed).",
+  "status": "pending",
+  "priority": "high",
+  "category": "dead-code",
+  "audit_refs": ["H9", "M12", "M13", "M14", "M15", "#17", "#28", "L20"],
+  "files": ["dist-ts/", "dist/", ".gitignore"],
+  "validation": "rm -rf dist-ts dist; update .gitignore; run `git status` to confirm dist/, dist-ts/, models/ are untracked.",
+  "depends_on": [],
+  "parallel": false
+}

@@ -1,0 +1,14 @@
+{
+  "id": "34",
+  "phase": "phase-5",
+  "title": "Fix stdio.transport.ts: add max-buffer cap and proper parser",
+  "description": "src/mcp/transports/stdio.transport.ts:144-208: custom brace-counting parser is not newline-safe, no max-buffer guard, doesn't respect brackets. DoS vector. Fix: use readline-based approach (utils/stdio-transport.ts already exists, or use split2). Cap buffer at 1MB; reset on overflow with error response. Make setupInputHandling idempotent.",
+  "status": "pending",
+  "priority": "critical",
+  "category": "bug-fix",
+  "audit_refs": ["C13", "H17", "H18", "M5", "M6", "#5", "#18"],
+  "files": ["src/mcp/transports/stdio.transport.ts"],
+  "validation": "Send a 2MB incomplete JSON frame, confirm server rejects with error and resets. Send proper newline-delimited JSON, confirm it works.",
+  "depends_on": [],
+  "parallel": false
+}

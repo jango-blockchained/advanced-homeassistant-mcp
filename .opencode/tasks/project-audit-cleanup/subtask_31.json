@@ -1,0 +1,14 @@
+{
+  "id": "31",
+  "phase": "phase-5",
+  "title": "Add MCPServer.resetInstance() and call from shutdown()",
+  "description": "src/mcp/MCPServer.ts:67-113, 580-598: singleton has no reset hook. shutdown() doesn't clear static instance → zombie state on retry. Add static MCPServer.resetInstance() and call it from shutdown(). Also reset transports, middlewares, resources, tools maps.",
+  "status": "pending",
+  "priority": "high",
+  "category": "bug-fix",
+  "audit_refs": ["H12", "H16", "#9", "#16"],
+  "files": ["src/mcp/MCPServer.ts"],
+  "validation": "Test that getInstance() after shutdown() returns fresh instance with empty tools.",
+  "depends_on": [],
+  "parallel": false
+}
