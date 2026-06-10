@@ -91,7 +91,7 @@ describe("Home Assistant MCP Server", () => {
       mockFetch = createMockFetch(mockDevices);
       globalThis.fetch = mockFetch;
 
-      const resultString = await listDevicesTool.execute({});
+      const resultString = await listDevicesTool!.execute({});
       // Tools return JSON strings, so we need to parse them
       expect(typeof resultString).toBe("string");
       // resultString is typed `unknown` (per Tool.execute), so cast to
@@ -109,7 +109,7 @@ describe("Home Assistant MCP Server", () => {
       mockFetch = createMockFetch({ success: true });
       globalThis.fetch = mockFetch;
 
-      const result = await controlTool.execute({
+      const result = await controlTool!.execute({
         command: "turn_on",
         entity_id: "light.living_room",
         brightness: 255,
@@ -119,7 +119,11 @@ describe("Home Assistant MCP Server", () => {
       expect(typeof result).toBe("string");
       const parsed = JSON.parse(result as string);
       expect(parsed).toHaveProperty("success", true);
-      expect(mockFetch.mock.calls.length).toBeGreaterThan(0);
+      // mockFetch is typed as `typeof fetch`; cast to expose bun:test
+      // mock.calls (a real fetch has no `.mock` property).
+      expect(
+        (mockFetch as unknown as { mock: { calls: unknown[] } }).mock.calls.length,
+      ).toBeGreaterThan(0);
     });
   });
 });
