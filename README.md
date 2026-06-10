@@ -68,6 +68,8 @@ bun run start:stdio
 
 That's it! Your AI assistant can now control your smart home. 🤖✨
 
+For the full guide — install paths, configuration, all 40+ tools, deployment topologies, and architecture deep-dives — see the **[project documentation](https://jango-blockchained.github.io/advanced-homeassistant-mcp/)**.
+
 ---
 
 ## 📦 Installation
@@ -98,7 +100,7 @@ You'll be prompted to configure:
 - Long-lived access token
 - Optional settings (port, debug mode)
 
-See the [Smithery Deployment guide](https://jango-blockchained.github.io/advanced-homeassistant-mcp/deployment/smithery) for details.
+See the [Smithery Deployment guide](https://jango-blockchained.github.io/advanced-homeassistant-mcp/deployment/smithery/) for details.
 
 ### Option 2: NPX (Quick Start)
 
@@ -387,7 +389,7 @@ RATE_LIMIT_MAX=50
   - Energy saving: Detect daytime lights, standby power
   - Generate automation configs
 
-> See the [Tools Reference](https://jango-blockchained.github.io/advanced-homeassistant-mcp/tools/generic-tools) for detailed documentation.
+> See the [Tools Reference](https://jango-blockchained.github.io/advanced-homeassistant-mcp/tools/generic-tools/) for detailed documentation.
 
 ### MCP Features
 
@@ -405,7 +407,7 @@ RATE_LIMIT_MAX=50
   - Dashboard summaries with current home status
 
 - 🛠️ **24 Comprehensive Tools**: Full device control and smart automation
-  - See the [Tools Reference](https://jango-blockchained.github.io/advanced-homeassistant-mcp/tools/generic-tools) for all available tools
+  - See the [Tools Reference](https://jango-blockchained.github.io/advanced-homeassistant-mcp/tools/generic-tools/) for all available tools
   - Device control, automation, system management, and smart features
   - Natural language to Home Assistant API translation
 
