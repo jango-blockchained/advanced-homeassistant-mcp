@@ -50,7 +50,10 @@ describe("SSE Core Features", () => {
   describe("State Management", () => {
     it("should track and update entity states", () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken);
+      // addClient can return null (e.g. invalid token); the truthy
+      // assertion below confirms it, and the cast asserts to TS that
+      // we treat the success path as the only path in this test.
+      const sseClient = sseManager.addClient(client, validToken) as SSEClient;
       expect(sseClient).toBeTruthy();
 
       const entityId = "light.living_room";
@@ -80,7 +83,7 @@ describe("SSE Core Features", () => {
 
     it("should handle state updates and notify subscribers", () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken);
+      const sseClient = sseManager.addClient(client, validToken) as SSEClient;
       expect(sseClient).toBeTruthy();
 
       const entityId = "light.living_room";
@@ -131,7 +134,7 @@ describe("SSE Core Features", () => {
   describe("Domain Subscriptions", () => {
     it("should handle domain-wide subscriptions", () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken);
+      const sseClient = sseManager.addClient(client, validToken) as SSEClient;
       expect(sseClient).toBeTruthy();
 
       const domain = "light";
@@ -170,7 +173,7 @@ describe("SSE Core Features", () => {
   describe("Connection Maintenance", () => {
     it("should send periodic pings to keep connections alive", async () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken);
+      const sseClient = sseManager.addClient(client, validToken) as SSEClient;
       expect(sseClient).toBeTruthy();
 
       // Wait for ping interval
@@ -186,7 +189,7 @@ describe("SSE Core Features", () => {
 
     it("should cleanup inactive connections", async () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken);
+      const sseClient = sseManager.addClient(client, validToken) as SSEClient;
       expect(sseClient).toBeTruthy();
 
       // Simulate connection age exceeding limit
@@ -247,7 +250,7 @@ describe("SSE Core Features", () => {
 
     it("should handle invalid entity updates", () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken);
+      const sseClient = sseManager.addClient(client, validToken) as SSEClient;
       expect(sseClient).toBeTruthy();
 
       // Subscribe to entity
