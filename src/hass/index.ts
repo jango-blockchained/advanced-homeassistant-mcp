@@ -17,7 +17,9 @@ export class HomeAssistantAPI {
 
     if (this.token) {
       logger.info(`Initializing Home Assistant API with base URL: ${this.baseUrl}`);
-      logger.info(`Token loaded: yes (${this.token.length} chars)`);
+      // Token existence/length is low-cardinality but reveals info; log
+      // at debug so it doesn't end up in production log aggregators.
+      logger.debug(`Token loaded: yes (${this.token.length} chars)`);
     } else if (throwOnMissingToken) {
       logger.warn("Home Assistant API initialized without token - limited functionality");
     } else {

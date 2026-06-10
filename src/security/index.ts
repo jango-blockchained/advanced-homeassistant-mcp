@@ -413,10 +413,13 @@ export class TokenManager {
 
       return { valid: true };
     } catch (error) {
-      if (ip) this.recordFailedAttempt(ip);
+      // Don't trigger failed-attempt lockout for expired tokens — the user
+      // is legitimate, their token just aged out. Only record failures for
+      // actual signature/format errors which suggest tampering or forgery.
       if (error instanceof jwt.TokenExpiredError) {
         return { valid: false, error: "Token has expired" };
       }
+      if (ip) this.recordFailedAttempt(ip);
       if (error instanceof jwt.JsonWebTokenError) {
         return { valid: false, error: "Invalid token signature" };
       }

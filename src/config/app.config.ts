@@ -43,7 +43,10 @@ export const AppConfigSchema = z.object({
     }),
 
   /** Security Configuration */
-  JWT_SECRET: z.string().default("your-secret-key-must-be-32-char-min"),
+  JWT_SECRET: z
+    .string()
+    .min(32, "JWT_SECRET must be at least 32 characters (use a secure random value)")
+    .describe("JWT_SECRET is required for token signing; never use a default in production"),
   RATE_LIMIT: z.object({
     /** Time window for rate limiting in milliseconds */
     windowMs: z.number().default(15 * 60 * 1000), // 15 minutes
@@ -90,11 +93,11 @@ const requiredEnvVars = ["HASS_TOKEN"] as const;
 /**
  * Validate that all required environment variables are set
  * Throws an error if any required variable is missing
- * 
+ *
  * Skip validation in the following cases:
  * 1. SMITHERY_SCAN=true (Smithery is scanning for tool capabilities)
  * 2. HASS_TOKEN is explicitly empty (user intends to run without credentials for discovery)
- * 
+ *
  * This allows Smithery and other MCP clients to discover available tools
  * before user credentials are configured. Tool execution will still fail
  * gracefully if credentials are missing.
