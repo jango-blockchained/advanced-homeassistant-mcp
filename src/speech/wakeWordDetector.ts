@@ -73,19 +73,16 @@ export class WakeWordDetector extends EventEmitter implements IWakeWordDetector 
 
   private async setupDetector(): Promise<void> {
     try {
-      // Test connection to Wyoming openwakeword service
-      const response = await fetch(
-        `http://${this.wyomingHost}:${this.wyomingPort}/status`,
-        { timeout: 5000 }
-      );
+      // Test connection to Wyoming openwakeword service. `timeout` is a
+      // Bun extension to RequestInit; cast through unknown because the
+      // standard @types/node fetch signature omits it.
+      const response = await fetch(`http://${this.wyomingHost}:${this.wyomingPort}/status`, {
+        timeout: 5000,
+      } as unknown as RequestInit);
       if (!response.ok) {
-        throw new Error(
-          `Wyoming wake word service responded with ${response.status}`
-        );
+        throw new Error(`Wyoming wake word service responded with ${response.status}`);
       }
-      logger.info(
-        `Connected to Wyoming openwakeword at ${this.wyomingHost}:${this.wyomingPort}`
-      );
+      logger.info(`Connected to Wyoming openwakeword at ${this.wyomingHost}:${this.wyomingPort}`);
     } catch (error) {
       logger.warn("Wyoming service not available, continuing anyway:", error);
       // Don't fail initialization if Wyoming is not available yet

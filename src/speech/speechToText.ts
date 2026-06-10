@@ -105,19 +105,17 @@ export class SpeechToText extends EventEmitter implements ISpeechToText {
 
   private async setupContainer(): Promise<void> {
     try {
-      // Test connection to Fast-Whisper service
-      const response = await fetch(
-        `http://${this.whisperHost}:${this.whisperPort}/health`,
-        { timeout: 5000 }
-      );
+      // Test connection to Fast-Whisper service. `timeout` is a Bun
+      // extension to RequestInit (see BunFetchRequestInit) and is the
+      // idiomatic way to bound a fetch under Bun; cast through unknown
+      // because the standard @types/node fetch signature omits it.
+      const response = await fetch(`http://${this.whisperHost}:${this.whisperPort}/health`, {
+        timeout: 5000,
+      } as unknown as RequestInit);
       if (!response.ok) {
-        throw new Error(
-          `Fast-Whisper service responded with ${response.status}`
-        );
+        throw new Error(`Fast-Whisper service responded with ${response.status}`);
       }
-      logger.info(
-        `Connected to Fast-Whisper at ${this.whisperHost}:${this.whisperPort}`
-      );
+      logger.info(`Connected to Fast-Whisper at ${this.whisperHost}:${this.whisperPort}`);
     } catch (error) {
       logger.warn("Fast-Whisper service not available yet:", error);
       // Don't fail initialization if Fast-Whisper is not available yet
@@ -137,7 +135,7 @@ export class SpeechToText extends EventEmitter implements ISpeechToText {
       const formData = new FormData();
       const arrayBuffer = audioData.buffer.slice(
         audioData.byteOffset,
-        audioData.byteOffset + audioData.byteLength
+        audioData.byteOffset + audioData.byteLength,
       );
       const blob = new Blob([new Uint8Array(arrayBuffer as ArrayBuffer)], {
         type: "audio/wav",
@@ -149,13 +147,11 @@ export class SpeechToText extends EventEmitter implements ISpeechToText {
         {
           method: "POST",
           body: formData,
-        }
+        },
       );
 
       if (!response.ok) {
-        throw new TranscriptionError(
-          `Fast-Whisper API returned ${response.status}`
-        );
+        throw new TranscriptionError(`Fast-Whisper API returned ${response.status}`);
       }
 
       const result = (await response.json()) as {
@@ -175,7 +171,7 @@ export class SpeechToText extends EventEmitter implements ISpeechToText {
     } catch (error) {
       logger.error("Audio processing error:", error);
       throw new TranscriptionError(
-        `Failed to transcribe audio: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to transcribe audio: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -195,10 +191,7 @@ export class SpeechToText extends EventEmitter implements ISpeechToText {
         this.emit("wake_word", {
           timestamp: new Date().toISOString(),
           audioFile: path.join(audioDir, filename),
-          metadataFile: path.join(
-            audioDir,
-            filename.replace(".wav", ".json")
-          ),
+          metadataFile: path.join(audioDir, filename.replace(".wav", ".json")),
         } as WakeWordEvent);
 
         // Automatically transcribe the wake word audio
@@ -207,7 +200,7 @@ export class SpeechToText extends EventEmitter implements ISpeechToText {
           logger.info(`Transcribing wake word audio: ${audioPath}`);
         } catch (error) {
           logger.error(
-            `Error transcribing wake word audio: ${error instanceof Error ? error.message : String(error)}`
+            `Error transcribing wake word audio: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
       }
