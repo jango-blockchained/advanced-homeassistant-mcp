@@ -48,8 +48,10 @@ export type MockSend = Mock<MockSendFn>;
 export type ValidateTokenFn = (token: string, ip?: string) => { valid: boolean; error?: string };
 export type MockValidateToken = Mock<ValidateTokenFn>;
 
-// Type guard for mock functions
-export function isMockFunction(value: unknown): value is Mock<unknown> {
+// Type guard for mock functions. Use `Mock<(...args: any[]) => any>`
+// because Mock's type parameter must satisfy `FunctionLike`; a real
+// function reference is required to constrain the generic.
+export function isMockFunction(value: unknown): value is Mock<(...args: any[]) => any> {
   return typeof value === "function" && "mock" in value;
 }
 
