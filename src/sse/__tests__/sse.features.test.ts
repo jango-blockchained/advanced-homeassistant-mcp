@@ -324,15 +324,19 @@ describe("SSE Core Features", () => {
     });
   });
 
-  // Future test cases to implement
-  test.todo("should handle reconnection attempts with exponential backoff");
-  test.todo("should properly clean up resources when client disconnects");
-  test.todo("should handle message queuing when client temporarily disconnects");
-  test.todo("should validate message format before sending to clients");
-  test.todo("should handle client subscription to multiple domains");
-  test.todo("should properly handle client unsubscribe requests");
-  test.todo("should enforce per-domain rate limits");
-  test.todo("should handle large numbers of concurrent state updates");
-  test.todo("should maintain message order for each client");
-  test.todo("should handle client authentication timeout");
+  // Future test cases to implement. The bun-types `Test<T>` interface
+  // expects `(label, fn, options?)` even for `.todo` calls, but at
+  // runtime `test.todo(label)` is valid (it just creates a placeholder).
+  // Cast through unknown to bridge the gap.
+  const todo = test.todo as unknown as (label: string) => void;
+  todo("should handle reconnection attempts with exponential backoff");
+  todo("should properly clean up resources when client disconnects");
+  todo("should handle message queuing when client temporarily disconnects");
+  todo("should validate message format before sending to clients");
+  todo("should handle client subscription to multiple domains");
+  todo("should properly handle client unsubscribe requests");
+  todo("should enforce per-domain rate limits");
+  todo("should handle large numbers of concurrent state updates");
+  todo("should maintain message order for each client");
+  todo("should handle client authentication timeout");
 });
