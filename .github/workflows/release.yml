@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*'  # Triggers on version tags like v1.0.0, v1.2.3, etc.
+      - "v*.*.*" # Triggers on version tags like v1.0.0, v1.2.3, etc.
 
 permissions:
   contents: write
@@ -36,10 +36,10 @@ jobs:
         run: |
           # Get package name from package.json
           PACKAGE_NAME=$(node -p "require('./package.json').name")
-          
+
           # Get the previous tag
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
+
           # Generate changelog
           if [ -z "$PREV_TAG" ]; then
             # First release - limit to recent commits
@@ -47,10 +47,10 @@ jobs:
           else
             CHANGELOG=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges)
           fi
-          
+
           # Save to file for multiline output
           echo "$CHANGELOG" > changelog.txt
-          
+
           # Create formatted release notes
           {
             echo "## Changes"
@@ -105,8 +105,8 @@ jobs:
       - name: Setup Node.js for npm publish
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Verify package version matches tag
         run: |
@@ -169,3 +169,75 @@ jobs:
         run: |
           echo "Docker image published: ghcr.io/${{ github.repository }}:${{ needs.create-release.outputs.version }}"
           echo "Pull with: docker pull ghcr.io/${{ github.repository }}:${{ needs.create-release.outputs.version }}"
+
+  # Job 4: Update README badges and install commands to reflect
+  # the new version. Runs in parallel with the npm and Docker
+  # jobs. Commits the change back to main (a fast-forward
+  # merge; the auto-release workflow's concurrency group keeps
+  # it sane).
+  update-readme:
+    name: Update README version references
+    needs: create-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update README
+        env:
+          VERSION: ${{ needs.create-release.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          # 1. Refresh the "Available Docker tags" list to reflect
+          #    the current major/minor. We keep the section
+          #    dynamic-friendly by documenting the tag pattern
+          #    rather than pinning a literal version.
+          python3 - <<'PY'
+          import re, pathlib, os
+          p = pathlib.Path("README.md")
+          text = p.read_text()
+          new_block = (
+              "**Available Docker tags:**\n"
+              "\n"
+              "- `latest` - Latest stable release\n"
+              f"- `{os.environ['VERSION']}`, `{os.environ['VERSION'].rsplit('.', 1)[0]}`, "
+              f"`{os.environ['VERSION'].split('.')[0]}` - Tagged versions\n"
+              "- `dev` - Latest development build from main branch\n"
+          )
+          text, n = re.subn(
+              r"\*\*Available Docker tags:\*\*\n\n"
+              r"(?:- `.*\n)+",
+              new_block,
+              text,
+              count=1,
+          )
+          assert n == 1, "Could not find 'Available Docker tags' block"
+          p.write_text(text)
+          PY
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if git diff --quiet README.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit README update
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git add README.md
+          git commit -m "chore(release): update README for v${{ needs.create-release.outputs.version }}"
+          git push origin main

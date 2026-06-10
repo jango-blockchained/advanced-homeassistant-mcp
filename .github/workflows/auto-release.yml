@@ -1,0 +1,182 @@
+name: Auto Release
+
+# Triggers on every push to main. Inspects the commit messages
+# since the last release tag, decides whether a release should
+# happen, and if so creates a tag. The existing `release.yml`
+# then fires on the new tag to publish npm + Docker + GitHub
+# release.
+#
+# Bump rules (Conventional Commits):
+#   - BREAKING CHANGE in any commit body -> major
+#   - feat: -> minor
+#   - fix: -> patch
+#   - chore:, docs:, ci:, style:, refactor:, test:, build:
+#       -> no bump
+#   - any other type (perf:, etc.) -> patch
+#
+# If no bump-worthy commit is found, this workflow exits
+# silently without creating a tag.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+# Avoid two auto-release runs racing. The older run wins on
+# conflict (newer run cancels).
+concurrency:
+  group: auto-release
+  cancel-in-progress: true
+
+jobs:
+  decide-and-bump:
+    name: Decide bump and tag
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.decide.outputs.should_release }}
+      bump: ${{ steps.decide.outputs.bump }}
+      new_version: ${{ steps.decide.outputs.new_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Decide bump from commits since last tag
+        id: decide
+        run: |
+          set -euo pipefail
+
+          # Find the most recent reachable v* tag. If none, treat
+          # the entire history as the "since" set.
+          LAST_TAG=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            RANGE="HEAD"
+          else
+            RANGE="${LAST_TAG}..HEAD"
+          fi
+          echo "Commit range: $RANGE"
+
+          # Pull all commit subjects + bodies in the range.
+          # Filter out our own bump-and-tag commits so a previous
+          # run's `chore(release): bump version to X` doesn't get
+          # counted as a fresh source change on the next run.
+          COMMITS=$(git log "$RANGE" --pretty=format:"%H%n%s%n%b%n---END---" \
+            | grep -vE "^(chore\(release\): bump version to |---END---)" \
+            | awk 'BEGIN{p=1} /^---END---$/{p=1; next} p{print} /^---END---$/{p=0}')
+          # The above awk keeps blank lines between commits but
+          # trims the trailing separator. Simpler: just split on
+          # the separator after grep.
+          COMMITS=$(git log "$RANGE" --pretty=format:"%s%n%b" \
+            | grep -vE "^chore\(release\): bump version to ")
+          echo "=== Filtered commits ==="
+          echo "$COMMITS"
+          echo "======================="
+
+          # Decide bump: major > minor > patch > none.
+          # Breaking-change markers we recognise:
+          #   - "BREAKING CHANGE:" or "BREAKING-CHANGE:" in the body
+          #   - "!" after the type/scope in the subject, e.g.
+          #     "feat(api)!: rename foo" or "fix!: drop legacy"
+          BUMP="none"
+          if [ -n "$COMMITS" ]; then
+            if echo "$COMMITS" | grep -qE "^(BREAKING[ -]CHANGE:|^.*[a-z]+(\([^)]+\))?!: )"; then
+              BUMP="major"
+            elif echo "$COMMITS" | grep -qE "^(feat|feat\([^)]+\)):" ; then
+              BUMP="minor"
+            elif echo "$COMMITS" | grep -qE "^(fix|fix\([^)]+\)):" ; then
+              BUMP="patch"
+            elif echo "$COMMITS" | grep -qE "^(perf|perf\([^)]+\)):" ; then
+              BUMP="patch"
+            else
+              # All commits are chore/docs/ci/style/refactor/test/build
+              # -> no release-worthy change.
+              BUMP="none"
+            fi
+          else
+            BUMP="none"
+          fi
+
+          if [ "$BUMP" = "none" ]; then
+            echo "No release-worthy commits. Skipping."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            echo "bump=none" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Compute the new version from package.json + the bump.
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "New version: $NEW_VERSION"
+
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+  bump-and-tag:
+    name: Bump package.json and push tag
+    needs: decide-and-bump
+    if: needs.decide-and-bump.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version in package.json
+        run: |
+          NEW_VERSION="${{ needs.decide-and-bump.outputs.new_version }}"
+          node -e "const fs=require('fs'); const pkg=JSON.parse(fs.readFileSync('package.json')); pkg.version='$NEW_VERSION'; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
+          echo "Bumped package.json to $NEW_VERSION"
+
+      - name: Commit and push the bump
+        run: |
+          git add package.json
+          git commit -m "chore(release): bump version to ${{ needs.decide-and-bump.outputs.new_version }}"
+          git push origin main
+
+      - name: Create and push tag
+        env:
+          NEW_VERSION: ${{ needs.decide-and-bump.outputs.new_version }}
+        run: |
+          git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
+          git push origin "v${NEW_VERSION}"
+          echo "Tagged and pushed v${NEW_VERSION}"
+
+      - name: Summary
+        run: |
+          {
+            echo "## Auto-release triggered"
+            echo ""
+            echo "- Bump type: ${{ needs.decide-and-bump.outputs.bump }}"
+            echo "- New version: v${{ needs.decide-and-bump.outputs.new_version }}"
+            echo ""
+            echo "The `release.yml` workflow will now handle the GitHub release, npm publish, and Docker push."
+          } >> "$GITHUB_STEP_SUMMARY"

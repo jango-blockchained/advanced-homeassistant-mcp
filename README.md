@@ -149,7 +149,7 @@ docker run -d \
 **Available Docker tags:**
 
 - `latest` - Latest stable release
-- `1.0.x` - Specific version
+- `<version>` - Specific version (e.g. `1.4.0`, `1.4`, `1`)
 - `dev` - Latest development build from main branch
 
 ### Option 5: Local Installation
@@ -508,15 +508,13 @@ bun test
 
 This project uses **automated releases** to GitHub, npm, and Docker. See the [Release workflow docs](https://jango-blockchained.github.io/advanced-homeassistant-mcp/) for details.
 
-**Quick Release:**
+**How it works:** Every push to `main` is analyzed. Commits with `feat:` trigger a minor bump, `fix:` trigger a patch bump, and any commit with `BREAKING CHANGE` in the body triggers a major bump. `chore:`, `docs:`, `ci:`, `style:`, `refactor:`, `test:`, and `build:` commits do not trigger a release on their own. Once a bump is decided:
 
-1. Go to **Actions** → **Version Bump and Release**
-2. Click **Run workflow**
-3. Select version bump type (patch/minor/major)
-4. The system automatically:
-   - 📦 Creates a GitHub release
-   - 📤 Publishes to npm
-   - 🐳 Builds and pushes Docker image
+- 📦 A GitHub release is created (auto-generated changelog from the commits since the last release)
+- 📤 The package is published to npm with the new version
+- 🐳 The Docker image is built and pushed with the `latest`, `<major>.<minor>`, and `<major>` tags
+
+To force a specific bump type regardless of the commit history, run the **Version Bump** workflow manually from the Actions tab.
 
 ---
 
