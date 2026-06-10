@@ -1,0 +1,84 @@
+---
+title: Installation
+description: Prerequisites and the four ways to run the server (Bun, npm, GitHub, Docker).
+section: Getting Started
+order: 2
+---
+
+## Prerequisites
+
+- **Bun** >= 1.0.26 (recommended) or **Node.js** >= 18 (for production).
+- **Home Assistant** 2024.x or newer. Older versions may work but are untested.
+- A **long-lived access token** from your HA instance. In HA, go to your profile page and create a token under "Long-Lived Access Tokens".
+
+## Environment variables
+
+The server reads its config from environment variables, validated by a Zod schema in `src/config/app.config.ts`.
+
+| Variable            | Required        | Default                           | Notes                                                |
+| ------------------- | --------------- | --------------------------------- | ---------------------------------------------------- |
+| `HASS_HOST`         | yes (in prod)   | `http://homeassistant.local:8123` | Base URL of your HA instance.                        |
+| `HASS_TOKEN`        | yes (for tools) | —                                 | The long-lived access token from HA.                 |
+| `JWT_SECRET`        | yes (for HTTP)  | —                                 | At least 32 characters; used to sign session tokens. |
+| `PORT`              | no              | `4000`                            | HTTP listen port.                                    |
+| `LOG_LEVEL`         | no              | `info`                            | `error` / `warn` / `info` / `debug` / `trace`.       |
+| `RATE_LIMIT_WINDOW` | no              | `15` (minutes)                    | Sliding window for the rate limiter.                 |
+| `RATE_LIMIT_MAX`    | no              | `100`                             | Max requests per window per IP.                      |
+
+Generate a `JWT_SECRET` with `openssl rand -base64 48` or `bun -e 'console.log(crypto.randomUUID() + crypto.randomUUID())'`.
+
+## Install paths
+
+### Option 1: Bunx from npm (easiest)
+
+```bash
+bunx @jango-blockchained/homeassistant-mcp
+```
+
+This boots the STDIO entry point with no extra steps. Useful for local editor integrations.
+
+### Option 2: Bunx from GitHub (no npm login)
+
+If you can't or don't want to authenticate with npm:
+
+```bash
+bunx github:jango-blockchained/advanced-homeassistant-mcp
+```
+
+Or install into a project:
+
+```bash
+bun add github:jango-blockchained/advanced-homeassistant-mcp.git
+```
+
+### Option 3: Docker
+
+A prebuilt image is available on `ghcr.io`:
+
+```bash
+docker run -d \
+  -e HASS_HOST=http://your-ha-instance:8123 \
+  -e HASS_TOKEN=your_long_lived_access_token \
+  -e JWT_SECRET=replace-with-32-plus-random-chars \
+  -p 4000:4000 \
+  --name homeassistant-mcp \
+  ghcr.io/jango-blockchained/advanced-homeassistant-mcp:latest
+```
+
+Tags: `latest` (current stable), `1.0.x` (pinned), `dev` (latest main).
+
+### Option 4: From source (most flexible)
+
+```bash
+git clone https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
+cd advanced-homeassistant-mcp
+bun install
+bun run build:all
+bun run start:stdio
+```
+
+This builds all three entry points (`dist/index.cjs`, `dist/stdio-server.mjs`, `dist/http-server.mjs`) and starts the STDIO server in the current terminal.
+
+## Next
+
+Once installed, head to [First Connection](/getting-started/first-connection/) to wire it to your HA instance, or skip ahead to [Connect Your AI](/getting-started/connect-your-ai/) if you already know which client you want to use.

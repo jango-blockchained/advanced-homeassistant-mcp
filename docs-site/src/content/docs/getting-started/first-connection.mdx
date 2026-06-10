@@ -1,0 +1,76 @@
+---
+title: First Connection
+description: Confirm the server is talking to your Home Assistant instance, in 5 commands.
+section: Getting Started
+order: 3
+---
+
+This walks through the fastest path from a freshly installed server to a confirmed connection to your Home Assistant instance. You'll need `HASS_HOST` and `HASS_TOKEN` set; see [Installation](/getting-started/installation/) for those.
+
+## 1. Boot the server in STDIO mode
+
+```bash
+HASS_HOST=http://your-ha-instance:8123 \
+HASS_TOKEN=your_long_lived_token \
+bun run start:stdio
+```
+
+The server prints a startup line and waits for a JSON-RPC request on stdin. If it exits immediately, check the env vars — `HASS_TOKEN` is required in production and the app refuses to start without it.
+
+## 2. Hit the health endpoint (HTTP variant)
+
+If you're running the HTTP entry point instead, start it with `bun run start -- --http` and probe it:
+
+```bash
+curl http://localhost:4000/health
+```
+
+You should get a 200 with a small JSON body. The HTTP entry point also exposes `/mcp` for the Model Context Protocol over HTTP.
+
+## 3. List devices
+
+From any MCP client (or via the HTTP `POST /mcp` with a `tools/call` request), call `list_devices`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "list_devices",
+    "arguments": {}
+  }
+}
+```
+
+You should get back a JSON array of every device HA knows about, with `entity_id`, `state`, `attributes`, and a derived `domain` (light, switch, climate, ...).
+
+## 4. Toggle a light
+
+If you have any light entity, try:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "control_light",
+    "arguments": {
+      "entity_id": "light.living_room",
+      "action": "turn_on",
+      "brightness": 128
+    }
+  }
+}
+```
+
+The light should turn on at 50% brightness. If you get a permission error, the token is wrong or the user it belongs to doesn't have access to that entity.
+
+## 5. Subscribe to events (optional)
+
+The HTTP+WS entry point exposes `WebSocket /mcp/ws` for streaming state changes. Open a connection, send a `tools/call` to `subscribe_events`, and you'll receive a stream of `event` messages as HA reports state changes.
+
+## Next
+
+If the smoke test above works, you're done with the server side. Head to [Connect Your AI](/getting-started/connect-your-ai/) to wire it into Claude Desktop, Cursor, or VS Code.

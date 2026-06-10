@@ -1,0 +1,48 @@
+---
+/**
+ * Dynamic route: serves any MDX file under src/content/docs/ at
+ * /<slug>/. The slug is the file path (without .mdx) of the entry
+ * in the `docs` collection, e.g. 'getting-started/installation'
+ * is served at '/getting-started/installation/'.
+ *
+ * 'index.mdx' is special-cased to serve at '/' (the home page).
+ * Draft pages are excluded from production builds.
+ */
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Prose from "@/components/Prose.astro";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("docs", ({ data }) => {
+    return import.meta.env.PROD ? data.draft !== true : true;
+  });
+  return entries
+    .filter((entry) => entry.id !== "index")
+    .map((entry) => ({
+      params: { slug: entry.id },
+      props: { entry },
+    }));
+}
+
+interface Props {
+  entry: CollectionEntry<"docs">;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, description, section } = entry.data;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  currentSection={section}
+  path={`/${entry.id}/`}
+>
+  <Prose>
+    <h1>{title}</h1>
+    <p class="text-muted-foreground">{description}</p>
+    <hr />
+    <Content />
+  </Prose>
+</BaseLayout>

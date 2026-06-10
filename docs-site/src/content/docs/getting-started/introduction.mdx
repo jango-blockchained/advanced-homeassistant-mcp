@@ -1,0 +1,33 @@
+---
+title: Introduction
+description: What Home Assistant MCP is, who it's for, and how it fits into your smart-home stack.
+section: Getting Started
+order: 1
+---
+
+Home Assistant MCP is a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server that lets AI assistants like Claude, GPT, and Cursor control your [Home Assistant](https://www.home-assistant.io/) instance. It exposes 40+ tools for lights, climate, scenes, automations, media, and a handful of higher-level helpers like maintenance checks and energy monitoring.
+
+If you've ever asked an LLM to "turn off the living-room lights" and watched it hallucinate an API call, this is the fix: a typed, validated, rate-limited bridge between your assistant and your home.
+
+## What you get
+
+- **40+ tools** spanning device control, automation, scenes, media, and smart maintenance.
+- **Three transports** so you can wire it into whatever client you already use: HTTP+WebSocket for remote AI hosts, STDIO for local editor integrations, and Smithery for one-click install.
+- **Three entry points** that all build from the same source: `src/index.ts` (HTTP+WS, custom `MCPServer` on Express), `src/stdio-server.ts` (STDIO, `fastmcp` v3), and `src/http-server.ts` (HTTP, `fastmcp` v3).
+- **Bun-native** in development and testing, with the production artifacts (`.cjs` and `.mjs`) running on plain Node.js >= 18.
+
+## When to reach for it
+
+- You want a single MCP server that covers the long tail of HA actions without a per-domain add-on.
+- You already run a long-lived HTTP service (LAN-only is fine) and want WebSocket streaming for state changes.
+- You prefer typed schemas over docs-by-example — every tool input is Zod-validated at runtime.
+- You want to extend the tool set without forking the whole project.
+
+## When it might not be a fit
+
+- You need a strictly offline, in-browser MCP client. This server is a Node/Bun process; clients connect over a transport.
+- You only need one or two trivial tools. A 40-tool surface is overkill for "turn the porch light on at sunset" — use a direct HA automation instead.
+
+## Next
+
+Move on to [Installation](/getting-started/installation/) to set up the prerequisites, then [First Connection](/getting-started/first-connection/) to wire it to your Home Assistant instance.

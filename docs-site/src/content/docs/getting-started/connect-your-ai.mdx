@@ -1,0 +1,114 @@
+---
+title: Connect Your AI
+description: Wire the MCP server into Claude Desktop, Cursor, VS Code, or any other MCP client.
+section: Getting Started
+order: 4
+---
+
+The server speaks the Model Context Protocol, so it works with any MCP-compatible client. Below are the most common ones.
+
+## Claude Desktop
+
+Add to your `claude_desktop_config.json` (Settings → Developer → Edit Config):
+
+```json
+{
+  "mcpServers": {
+    "homeassistant-mcp": {
+      "command": "bunx",
+      "args": ["github:jango-blockchained/advanced-homeassistant-mcp"],
+      "env": {
+        "HASS_HOST": "http://your-ha-instance:8123",
+        "HASS_TOKEN": "your_long_lived_token"
+      }
+    }
+  }
+}
+```
+
+Or with `npx`:
+
+```json
+{
+  "mcpServers": {
+    "homeassistant-mcp": {
+      "command": "npx",
+      "args": ["-y", "@jango-blockchained/homeassistant-mcp@latest"],
+      "env": {
+        "HASS_HOST": "http://your-ha-instance:8123",
+        "HASS_TOKEN": "your_long_lived_token"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop. The server should appear in the tools panel (look for the "Search and tools" icon at the bottom of the chat input).
+
+## Cursor
+
+Add to `.cursor/mcp.json` in your project (or `~/.cursor/mcp.json` globally):
+
+```json
+{
+  "mcpServers": {
+    "homeassistant-mcp": {
+      "command": "bunx",
+      "args": ["github:jango-blockchained/advanced-homeassistant-mcp"],
+      "env": {
+        "HASS_HOST": "http://your-ha-instance:8123",
+        "HASS_TOKEN": "your_long_lived_token"
+      }
+    }
+  }
+}
+```
+
+In Cursor, open Settings → Models → MCP and confirm the server shows up as connected.
+
+## VS Code + Copilot / Claude extension
+
+The repo includes a `.vscode/mcp.json` template. To use it:
+
+1. Run `bun run build:all` in the project root to produce the STDIO bundle.
+2. Open this folder in VS Code and trust the workspace.
+3. The extension will pick up `.vscode/mcp.json` automatically.
+
+If you want to wire it from a clean project, create `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "homeassistant-mcp": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/stdio-server.mjs"],
+      "env": {
+        "HASS_HOST": "${env:HASS_HOST}",
+        "HASS_TOKEN": "${env:HASS_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+## Smithery (one-click)
+
+If you don't want to manage a config file at all, the server is published on [Smithery](https://smithery.ai/server/@jango-blockchained/advanced-homeassistant-mcp). Install from a Smithery-aware client and provide the HA URL + token in the setup flow.
+
+## HTTP / WebSocket clients (remote AI hosts)
+
+For hosted AI services that can't shell out to a local process, run the HTTP entry point:
+
+```bash
+HASS_HOST=http://your-ha-instance:8123 \
+HASS_TOKEN=your_long_lived_token \
+JWT_SECRET="$(openssl rand -base64 48)" \
+bun run start -- --http --port 4000
+```
+
+Point your client at `http://your-host:4000/mcp` (or `ws://your-host:4000/mcp/ws` for streaming). See [Deployment > HTTP+WS](/deployment/http/) for the full reverse-proxy and TLS setup.
+
+## Next
+
+That's it. From here the natural reads are [Tools Reference](/tools/ha-tools/) to see what your AI can actually do, or [Architecture > Tool System](/architecture/tool-system/) if you want to know how the tools are wired together.
