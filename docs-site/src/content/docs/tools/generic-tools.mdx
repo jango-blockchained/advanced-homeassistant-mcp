@@ -1,0 +1,189 @@
+---
+title: Generic Tools
+description: "The cross-cutting helpers that aren't tied to a specific HA domain: search, history, dashboard, and more."
+section: Tools
+order: 2
+---
+
+The tools in `src/tools/` (sibling to `src/tools/homeassistant/`) cover cross-cutting concerns: searching for entities, fetching history, rendering a dashboard summary, managing the server's state, and a few helpers for testing and automation config.
+
+## Discovery
+
+### `search_entities`
+
+Full-text search across entity_id, name, and attributes. Returns up to N matches sorted by relevance.
+
+```typescript
+{
+  query: string;                // free-form: "kitchen", "motion", "light.living"
+  limit?: number;               // default 25
+  domain?: string;              // restrict to e.g. "light"
+  include_disabled?: boolean;
+}
+```
+
+Annotations: `readOnlyHint: true`, `openWorldHint: true`.
+
+### `entity_state`
+
+Get the current state of one entity (or a list of entities). Cheaper than `list_devices` when you know the id.
+
+```typescript
+{ entity_id: string | string[]; }
+```
+
+## History and observability
+
+### `history`
+
+Query the historical state of an entity over a time window. Wraps HA's `history` service.
+
+```typescript
+{
+  entity_id: string | string[];
+  start_time: string;           // ISO 8601
+  end_time?: string;
+  minimal_response?: boolean;
+  significant_changes_only?: boolean;
+}
+```
+
+### `error_log`
+
+Returns the last N log entries from the server. Useful for debugging "why is my AI host saying the tool failed?".
+
+```typescript
+{ level?: "error" | "warn" | "info" | "debug"; limit?: number; since?: string; }
+```
+
+Annotations: `readOnlyHint: true`.
+
+### `sse_stats`
+
+Returns the count of active SSE/WS clients, the bytes sent, and the time-since-last-ping for each. Useful for verifying a stream is healthy.
+
+```typescript
+{
+}
+```
+
+Annotations: `readOnlyHint: true`.
+
+## Dashboards
+
+### `dashboard`
+
+Returns a summary of the current state of your home: active lights, open covers, climate temperatures, motion sensors that have fired in the last hour, and any triggered automations.
+
+```typescript
+{ sections?: ("lights"|"climate"|"covers"|"motion"|"automations")[]; }
+```
+
+If `sections` is omitted, returns everything. Annotations: `readOnlyHint: true`, `openWorldHint: true`.
+
+## Subscriptions
+
+### `subscribe_events`
+
+Subscribes the calling connection to a stream of HA events. On the HTTP+WS entry point, the events are streamed to the client over the WebSocket. On STDIO, they're emitted as JSON-RPC notifications.
+
+```typescript
+{
+  event_type?: string;          // e.g. "state_changed"; default = all
+  entity_id?: string;           // filter to one entity
+}
+```
+
+To unsubscribe, the client sends a `notifications/cancelled` JSON-RPC message with the subscription id returned by the initial call.
+
+## Universal control
+
+### `control`
+
+The "I don't know which domain this entity is in" tool. Accepts an arbitrary `entity_id`, looks up its domain, and dispatches to the right specialized control tool (light, switch, cover, lock, vacuum, ...). Convenient when you're scripting a bunch of generic entity_ids.
+
+```typescript
+{
+  entity_id: string;
+  action: "turn_on" | "turn_off" | "toggle";
+  // ... domain-specific extras are passed through:
+  brightness?: number;
+  position?: number;
+  fan_speed?: string;
+  // ...
+}
+```
+
+This is the most flexible tool, but the specialized ones are more discoverable. Prefer `control_light` over `control` when you know the entity is a light.
+
+## Templates and automation config
+
+### `template`
+
+Renders a Handlebars template against a context object. Useful for one-off computations and for the AI to format responses.
+
+```typescript
+{
+  template: string; // e.g. "There are {{count}} lights on."
+  context: Record<string, unknown>;
+}
+```
+
+Annotations: `readOnlyHint: true`, `openWorldHint: false`.
+
+### `automation_config`
+
+Create, update, or delete an automation. The full HA automation schema is supported.
+
+```typescript
+{
+  action: "create" | "update" | "delete";
+  automation_id?: string;       // required for update/delete
+  config: AutomationConfig;
+}
+```
+
+`AutomationConfig` is a Zod-validated mirror of HA's `automation` schema. Annotations: `destructiveHint: true`.
+
+## System
+
+### `addon`
+
+Manage Home Assistant add-ons (install, start, stop, restart, update, config).
+
+```typescript
+{
+  action: "list" | "info" | "install" | "start" | "stop" | "restart" | "update" | "uninstall" | "set_option" | "get_config";
+  slug?: string;                // for everything except "list"
+  // ... action-specific args
+}
+```
+
+### `package`
+
+Manage HACS integrations and custom components.
+
+```typescript
+{
+  action: "list" | "install" | "uninstall" | "update";
+  category: "integration" | "theme" | "python_script";
+  name?: string;
+}
+```
+
+## Testing and development
+
+### `example`
+
+A no-op tool that echoes its input back. Used to verify the end-to-end JSON-RPC pipeline is healthy.
+
+```typescript
+{
+  message: string;
+}
+```
+
+## Next
+
+- [Home Assistant Tools](/tools/ha-tools/) — the 25+ domain-specific tools.
+- [Guides > Adding a Tool](/guides/adding-a-tool/) — write your own.

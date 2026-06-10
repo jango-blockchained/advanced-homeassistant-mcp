@@ -1,0 +1,270 @@
+---
+title: Home Assistant Tools
+description: The 25+ domain-specific tools for controlling lights, climate, media, and the rest of your smart home.
+section: Tools
+order: 1
+---
+
+This page lists every tool in `src/tools/homeassistant/`. Each card is a quick reference: name, what it does, the input shape, and the annotation hints. For the underlying class structure, see [Architecture > Tool System](/architecture/tool-system/).
+
+## Device control
+
+### `control_light`
+
+Turn a light on or off, set brightness, color, or color temperature.
+
+```typescript
+{
+  entity_id: string;          // e.g. "light.living_room"
+  action: "turn_on" | "turn_off" | "toggle";
+  brightness?: number;        // 0–255
+  color_temp_kelvin?: number;
+  rgb_color?: [number, number, number];
+  transition?: number;        // seconds
+  effect?: string;            // e.g. "colorloop"
+}
+```
+
+Annotations: `destructiveHint: true`, `openWorldHint: true`.
+
+### `set_climate`
+
+Change a climate entity's mode, target temperature, or fan speed.
+
+```typescript
+{
+  entity_id: string;
+  mode?: "heat" | "cool" | "auto" | "off" | "fan_only" | "dry";
+  target_temp_low?: number;   // for "auto" mode
+  target_temp_high?: number;  // for "auto" mode
+  target_temp?: number;       // for heat/cool
+  fan_mode?: string;
+}
+```
+
+### `control_cover`
+
+Open, close, stop, or position a cover (blinds, curtains, garage door).
+
+```typescript
+{
+  entity_id: string;
+  action: "open" | "close" | "stop" | "toggle";
+  position?: number;          // 0–100
+}
+```
+
+### `set_fan_speed`
+
+```typescript
+{ entity_id: string; speed?: "off"|"low"|"medium"|"high"; percentage?: number; }
+```
+
+### `lock_control`
+
+```typescript
+{ entity_id: string; action: "lock" | "unlock" | "open"; code?: string; }
+```
+
+### `set_switch`
+
+```typescript
+{
+  entity_id: string;
+  action: "turn_on" | "turn_off" | "toggle";
+}
+```
+
+### `vacuum_command`
+
+```typescript
+{
+  entity_id: string;
+  command: "start" | "stop" | "pause" | "return_to_base" | "clean_spot" | "locate" | "set_fan_speed";
+  fan_speed?: string;
+}
+```
+
+### `set_alarm_mode`
+
+```typescript
+{
+  entity_id: string;
+  mode: "disarmed" |
+    "armed_home" |
+    "armed_away" |
+    "armed_night" |
+    "armed_vacation" |
+    "armed_custom_bypass";
+}
+```
+
+## Media
+
+### `media_player_command`
+
+```typescript
+{
+  entity_id: string;
+  command: "play" | "pause" | "stop" | "next" | "previous" | "volume" | "mute" | "select_source";
+  volume_level?: number;      // 0.0–1.0
+  source?: string;
+}
+```
+
+## Scenes, automations, notifications
+
+### `activate_scene`
+
+```typescript
+{ entity_id: string; transition?: number; }
+```
+
+### `trigger_automation`
+
+```typescript
+{
+  entity_id: string;
+}
+```
+
+### `control_automation`
+
+```typescript
+{
+  entity_id: string;
+  action: "turn_on" | "turn_off" | "toggle";
+}
+```
+
+### `send_notification`
+
+```typescript
+{
+  message: string;
+  title?: string;
+  target?: string | string[]; // service name (e.g. "mobile_app_pixel") or entity_id
+  data?: Record<string, unknown>;
+}
+```
+
+## Discovery and maintenance
+
+### `list_devices`
+
+```typescript
+{ domain?: string; area?: string; }
+```
+
+Returns the full list of devices with `entity_id`, `state`, `attributes`, and a derived `domain`. Annotations: `readOnlyHint: true`, `openWorldHint: true`.
+
+### `maintenance_report`
+
+No input. Returns a list of:
+
+- Orphaned or unavailable devices
+- Low-battery sensors
+- Entities that haven't updated in 7+ days
+- Light usage patterns by room
+- Energy consumption summary
+
+Annotations: `readOnlyHint: true`.
+
+### `smart_scenarios`
+
+```typescript
+{ scenario?: "nobody_home" | "window_heating" | "energy_saving" | "all"; }
+```
+
+If no `scenario` is given, detects which apply and returns a recommendation; with a specific scenario, returns the automation config to apply. Annotations: `readOnlyHint: true` unless the caller passes `apply: true` (custom extension).
+
+## Lighting extras
+
+### `light_scenario`
+
+Activates a named lighting scene across one or more lights.
+
+```typescript
+{
+  name: string;               // e.g. "movie", "reading", "dinner"
+  lights?: string[];          // subset; default = all
+  transition?: number;
+}
+```
+
+### `light_showcase`
+
+Drives a one-shot "showcase" animation (e.g. rainbow sweep) across a set of RGB lights.
+
+```typescript
+{ lights: string[]; duration?: number; pattern?: "sweep"|"pulse"|"rainbow"; }
+```
+
+### `animation_control`
+
+Continuously runs an animation until stopped.
+
+```typescript
+{ lights: string[]; pattern: string; speed?: number; }
+```
+
+## Voice (opt-in)
+
+These tools require `ENABLE_SPEECH_FEATURES=true` and (for some) `ENABLE_WAKE_WORD=true`.
+
+### `text_to_speech`
+
+```typescript
+{ message: string; voice?: string; language?: string; }
+```
+
+### `voice_command_parser`
+
+Parses a free-form voice command into a structured action. Returns the parsed intent without executing it; pair with `voice_command_executor`.
+
+```typescript
+{
+  command: string;
+}
+```
+
+### `voice_command_executor`
+
+Executes a parsed command.
+
+```typescript
+{
+  intent: ParsedIntent;
+}
+```
+
+### `voice_command_ai_parser`
+
+A more powerful parser that uses an LLM to interpret ambiguous commands. Slower and rate-limited.
+
+```typescript
+{ command: string; context?: Record<string, unknown>; }
+```
+
+## Traces
+
+### `trace_entity`
+
+Returns the trace of recent state changes for an entity. Useful for debugging "why did my light turn on at 3am?".
+
+```typescript
+{ entity_id: string; start_time?: string; end_time?: string; }
+```
+
+### `todo`
+
+A simple in-server todo list tool. Useful for letting the AI track multi-step tasks.
+
+```typescript
+{ action: "add" | "list" | "done" | "clear"; item?: string; }
+```
+
+## Next
+
+- [Generic Tools](/tools/generic-tools/) — cross-cutting helpers (search, history, dashboard, ...).
+- [Configuration > Tools](/configuration/tools/) — annotations, read-only mode, per-tool rate limits.
