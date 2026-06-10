@@ -149,7 +149,7 @@ docker run -d \
 **Available Docker tags:**
 
 - `latest` - Latest stable release
-- `<version>` - Specific version (e.g. `1.4.0`, `1.4`, `1`)
+- `1.6.0`, `1.6`, `1` - Tagged versions
 - `dev` - Latest development build from main branch
 
 ### Option 5: Local Installation
