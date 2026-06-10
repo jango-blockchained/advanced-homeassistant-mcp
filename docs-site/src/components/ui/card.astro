@@ -1,0 +1,28 @@
+---
+/**
+ * Card — Astro wrapper with named slots. Use as:
+ *
+ *   <Card>
+ *     <CardHeader>
+ *       <CardTitle>...</CardTitle>
+ *       <CardDescription>...</CardDescription>
+ *     </CardHeader>
+ *     <CardContent>...</CardContent>
+ *     <CardFooter>...</CardFooter>
+ *   </Card>
+ */
+import { cn } from "@/lib/utils";
+import type { HTMLAttributes } from "astro/types";
+
+type CardProps = HTMLAttributes<"div">;
+const { class: className, ...rest } = Astro.props as CardProps;
+---
+<div
+  class={cn(
+    "bg-card text-card-foreground rounded-lg border shadow-sm",
+    className,
+  )}
+  {...rest}
+>
+  <slot />
+</div>

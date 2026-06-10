@@ -1,0 +1,10 @@
+---
+/**
+ * AccordionItem — single collapsible section. Use inside <Accordion>.
+ */
+import { cn } from "@/lib/utils";
+const { class: className } = Astro.props as { class?: string };
+---
+<details class={cn("accordion-item", className)}>
+  <slot />
+</details>

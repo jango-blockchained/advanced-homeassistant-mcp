@@ -1,0 +1,14 @@
+---
+/**
+ * CardDescription — muted small text under a card title.
+ */
+import { cn } from "@/lib/utils";
+import type { HTMLAttributes } from "astro/types";
+const { class: className, ...rest } = Astro.props as HTMLAttributes<"p">;
+---
+<p
+  class={cn("text-muted-foreground text-sm", className)}
+  {...rest}
+>
+  <slot />
+</p>

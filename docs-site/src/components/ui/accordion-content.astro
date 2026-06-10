@@ -1,0 +1,10 @@
+---
+/**
+ * AccordionContent — the body revealed when the item is open.
+ */
+import { cn } from "@/lib/utils";
+const { class: className } = Astro.props as { class?: string };
+---
+<div class={cn("accordion-content", className)}>
+  <slot />
+</div>

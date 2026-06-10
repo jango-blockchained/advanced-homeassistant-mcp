@@ -1,0 +1,24 @@
+---
+/**
+ * Separator — visual divider, horizontal or vertical.
+ */
+import { cn } from "@/lib/utils";
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"hr"> {
+  orientation?: "horizontal" | "vertical";
+}
+const {
+  orientation = "horizontal",
+  class: className,
+  ...rest
+} = Astro.props as Props;
+---
+<hr
+  class={cn(
+    "bg-border shrink-0",
+    orientation === "horizontal" ? "h-px w-full" : "h-full w-px",
+    className,
+  )}
+  {...rest}
+/>

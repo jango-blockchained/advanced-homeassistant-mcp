@@ -1,0 +1,13 @@
+---
+/**
+ * TabsList — visual container for tabs triggers. Use inside <Tabs>.
+ */
+import { cn } from "@/lib/utils";
+const { class: className } = Astro.props as { class?: string };
+---
+<div
+  role="tablist"
+  class={cn("tabs-list", className)}
+>
+  <slot />
+</div>

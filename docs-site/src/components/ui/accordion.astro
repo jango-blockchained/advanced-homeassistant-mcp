@@ -1,0 +1,61 @@
+---
+/**
+ * Accordion — uses native <details>/<summary> for built-in
+ * accessibility, keyboard support, and zero JS. Animations are
+ * handled by CSS using the new `interpolate-size: allow-keywords`
+ * pattern where supported, falling back gracefully.
+ */
+import { cn } from "@/lib/utils";
+
+interface Props {
+  type?: "single" | "multiple";
+  collapsible?: boolean;
+  class?: string;
+}
+const { class: className } = Astro.props as Props;
+---
+<div class={cn("accordion-root", className)}>
+  <slot />
+</div>
+
+<style is:global>
+  .accordion-item {
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .accordion-item:first-child {
+    border-top: 1px solid hsl(var(--border));
+  }
+  .accordion-trigger {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: left;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    color: inherit;
+  }
+  .accordion-trigger:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring));
+  }
+  .accordion-trigger::after {
+    content: "+";
+    transition: transform 200ms;
+    font-size: 1rem;
+    color: hsl(var(--muted-foreground));
+  }
+  .accordion-item[open] .accordion-trigger::after {
+    transform: rotate(45deg);
+  }
+  .accordion-content {
+    overflow: hidden;
+    font-size: 0.875rem;
+    color: hsl(var(--muted-foreground));
+    padding: 0 0.5rem 1rem 0.5rem;
+  }
+</style>

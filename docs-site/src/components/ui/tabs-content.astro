@@ -1,0 +1,20 @@
+---
+/**
+ * TabsContent — body of a tab pane.
+ */
+import { cn } from "@/lib/utils";
+
+interface Props {
+  value: string;
+  class?: string;
+}
+const { value, class: className } = Astro.props as Props;
+---
+<div
+  role="tabpanel"
+  data-value={value}
+  data-state="inactive"
+  class={cn("tabs-content", className)}
+>
+  <slot />
+</div>

@@ -3,9 +3,18 @@
  * Docs site index. Will be replaced by the proper layout (BaseLayout +
  * Sidebar + TopNav) in subtask 4 of the docs-site rewrite plan. For
  * now this is a minimal landing page that proves the Tailwind v4
- * theme tokens and the grayscale B/W + indigo accent are wired up.
+ * theme tokens, the grayscale B/W + indigo accent, and the shadcn
+ * components are wired up.
  */
 import "@/styles/global.css";
+import Button from "@/components/ui/button.astro";
+import Card from "@/components/ui/card.astro";
+import CardHeader from "@/components/ui/card-header.astro";
+import CardTitle from "@/components/ui/card-title.astro";
+import CardDescription from "@/components/ui/card-description.astro";
+import CardContent from "@/components/ui/card-content.astro";
+import Badge from "@/components/ui/badge.astro";
+import Kbd from "@/components/ui/kbd.astro";
 ---
 
 <!doctype html>
@@ -29,23 +38,37 @@ import "@/styles/global.css";
         </a> for the current MCP server source.
       </p>
 
-      <h2 class="mt-10">Theme check</h2>
-      <p>
-        If you can see this in grayscale with an indigo focus ring on the
-        links, the theme is wired up correctly.
-      </p>
-
-      <div
-        class="bg-card text-card-foreground mt-6 rounded-lg border p-4"
-      >
-        <p class="text-sm">
-          <strong>Card surface.</strong> A muted card with a border. The
-          background should be near-white in light mode, near-black in dark
-          mode.
-        </p>
+      <div class="mt-6 flex flex-wrap items-center gap-2">
+        <Badge>v1.0</Badge>
+        <Badge variant="secondary">stable</Badge>
+        <Badge variant="outline">draft</Badge>
+        <span class="ml-2 text-sm">Press <Kbd>Cmd</Kbd> + <Kbd>K</Kbd> for search</span>
       </div>
 
-      <p class="mt-6 text-sm text-muted-foreground">
+      <h2 class="mt-10">Theme check</h2>
+      <p>
+        If you can see this in grayscale with an indigo focus ring on
+        interactive elements, the theme is wired up correctly.
+      </p>
+
+      <Card class="mt-6">
+        <CardHeader>
+          <CardTitle>Components live</CardTitle>
+          <CardDescription>shadcn-style components on Astro + Tailwind v4</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div class="flex flex-wrap gap-2">
+            <Button>Default</Button>
+            <Button variant="secondary">Secondary</Button>
+            <Button variant="outline">Outline</Button>
+            <Button variant="ghost">Ghost</Button>
+            <Button variant="destructive">Destructive</Button>
+            <Button variant="link">Link</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <p class="mt-10 text-sm text-muted-foreground">
         Next: layout shell, sidebar, search.
       </p>
     </main>

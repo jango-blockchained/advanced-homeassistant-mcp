@@ -1,0 +1,12 @@
+---
+/**
+ * CardHeader — top section of a Card, stacks title/description/children
+ * with consistent vertical rhythm.
+ */
+import { cn } from "@/lib/utils";
+import type { HTMLAttributes } from "astro/types";
+const { class: className, ...rest } = Astro.props as HTMLAttributes<"div">;
+---
+<div class={cn("flex flex-col gap-1.5 p-6", className)} {...rest}>
+  <slot />
+</div>

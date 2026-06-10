@@ -1,0 +1,14 @@
+---
+/**
+ * CardFooter — bottom section of a card, e.g. action buttons.
+ */
+import { cn } from "@/lib/utils";
+import type { HTMLAttributes } from "astro/types";
+const { class: className, ...rest } = Astro.props as HTMLAttributes<"div">;
+---
+<div
+  class={cn("flex items-center p-6 pt-0", className)}
+  {...rest}
+>
+  <slot />
+</div>

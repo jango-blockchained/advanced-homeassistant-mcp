@@ -1,0 +1,21 @@
+---
+/**
+ * TabsTrigger — the clickable tab label.
+ */
+import { cn } from "@/lib/utils";
+
+interface Props {
+  value: string;
+  class?: string;
+}
+const { value, class: className } = Astro.props as Props;
+---
+<button
+  type="button"
+  role="tab"
+  data-value={value}
+  data-state="inactive"
+  class={cn("tabs-trigger", className)}
+>
+  <slot />
+</button>

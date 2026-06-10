@@ -2,6 +2,7 @@
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
+import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
@@ -11,13 +12,11 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   site: "https://jango-blockchained.github.io",
   base: "/advanced-homeassistant-mcp",
-  integrations: [mdx(), sitemap()],
+  integrations: [mdx(), react(), sitemap()],
   vite: {
     plugins: [tailwindcss()],
   },
   markdown: {
-    // Shiki handles syntax highlighting at build time. We don't need
-    // MDX remark plugins yet but this is the place to add them.
     shikiConfig: {
       theme: "github-dark-dimmed",
       wrap: true,

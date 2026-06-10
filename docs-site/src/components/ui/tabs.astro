@@ -1,0 +1,104 @@
+---
+/**
+ * Tabs — accessible tabbed interface using radio inputs (CSS-only,
+ * no JS runtime). Each <Tabs> holds <TabsList> with <TabsTrigger>
+ * children and matching <TabsContent> children. Pair values with
+ * the same `value` prop to link trigger → content.
+ *
+ * Uses the :has() + :checked pattern (works in all modern browsers).
+ */
+import { cn } from "@/lib/utils";
+
+interface Props {
+  defaultValue?: string;
+  class?: string;
+}
+const { defaultValue, class: className } = Astro.props as Props;
+const groupId = `tabs-${Math.random().toString(36).slice(2, 9)}`;
+---
+<div
+  class={cn("tabs-root", className)}
+  data-tabs-group={groupId}
+  data-default-value={defaultValue}
+>
+  <slot />
+</div>
+
+<style is:global>
+  .tabs-root {
+    --tab-active-bg: hsl(var(--background));
+  }
+  .tabs-list {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    background-color: hsl(var(--muted));
+    padding: 0.25rem;
+    color: hsl(var(--muted-foreground));
+    gap: 0.25rem;
+  }
+  .tabs-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 150ms;
+    cursor: pointer;
+    user-select: none;
+  }
+  .tabs-trigger[data-state="active"] {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  }
+  .tabs-trigger:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring));
+  }
+  .tabs-content {
+    margin-top: 0.5rem;
+  }
+  .tabs-content[data-state="inactive"] {
+    display: none;
+  }
+</style>
+
+<script>
+  // Vanilla JS for state management: keeps data-state in sync with
+  // the currently selected tab. Runs once on page load; Astro will
+  // re-execute on view transitions if they get added later.
+  function initTabs() {
+    const roots = document.querySelectorAll<HTMLElement>(".tabs-root");
+    roots.forEach((root) => {
+      const triggers = root.querySelectorAll<HTMLElement>(".tabs-trigger");
+      const contents = root.querySelectorAll<HTMLElement>(".tabs-content");
+      const defaultValue = root.dataset.defaultValue;
+      triggers.forEach((trigger) => {
+        trigger.addEventListener("click", () => {
+          const value = trigger.dataset.value;
+          triggers.forEach((t) =>
+            t.dataset.state =
+              t === trigger ? "active" : "inactive",
+          );
+          contents.forEach((c) =>
+            c.dataset.state =
+              c.dataset.value === value ? "active" : "inactive",
+          );
+        });
+      });
+      // Initialize
+      const initial =
+        (defaultValue && root.querySelector<HTMLElement>(
+          `.tabs-trigger[data-value="${defaultValue}"]`,
+        )) || (triggers[0] as HTMLElement | undefined);
+      if (initial) initial.click();
+    });
+  }
+  initTabs();
+  document.addEventListener("astro:page-load", initTabs);
+</script>

@@ -1,0 +1,10 @@
+---
+/**
+ * AccordionTrigger — the clickable header.
+ */
+import { cn } from "@/lib/utils";
+const { class: className } = Astro.props as { class?: string };
+---
+<summary class={cn("accordion-trigger", className)}>
+  <slot />
+</summary>
