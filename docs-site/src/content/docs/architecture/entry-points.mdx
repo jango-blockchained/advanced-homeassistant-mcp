@@ -1,0 +1,76 @@
+---
+title: Entry Points
+description: The three binaries you can run, when to use each, and how they're wired to the same MCPServer core.
+section: Architecture
+order: 2
+---
+
+The three entry points share a single `MCPServer` core (`src/mcp/MCPServer.ts`). What changes between them is the transport: the same tool registry is plugged into different runtimes so you can pick the deployment that matches your client.
+
+## `src/index.ts` — HTTP + WebSocket (custom MCPServer on Express)
+
+The original entry point. Wraps the singleton `MCPServer` in an Express app, mounts `/mcp` for JSON-RPC-over-HTTP, and `/mcp/ws` for streaming.
+
+When to use it:
+
+- You're deploying the server on a LAN or a VPS and want full control over the request pipeline.
+- You need the bespoke middleware (rate limit per IP, helmet, sanitize-html, expired-token lockout).
+- You want the WebSocket endpoint for streaming state changes.
+
+When **not** to use it:
+
+- You only need STDIO. The custom stack is overkill for an editor integration.
+- You're deploying to Smithery. The Smithery SDK has its own entry point.
+
+Internals:
+
+- `src/index.ts` builds the Express app, attaches the security middleware from `src/security/`, and routes `/mcp` + `/mcp/ws` to the transport layer.
+- The transport lives in `src/mcp/transports/http.transport.ts`. It adapts Express `Request`/`Response` and `ws` `WebSocket` objects into the `MCPServer.request()` API.
+- The HA client WebSocket is opened lazily on first tool call and kept alive for the process lifetime.
+
+## `src/stdio-server.ts` — STDIO (fastmcp v3)
+
+A thin entry point that registers every tool with `fastmcp`'s STDIO server, which reads JSON-RPC envelopes from stdin and writes responses to stdout. No HTTP, no port, no WebSocket.
+
+When to use it:
+
+- You're wiring the server into Claude Desktop, Cursor, VS Code, or any editor that speaks MCP-over-STDIO.
+- You want the simplest possible transport — no firewall holes, no port to manage.
+
+When **not** to use it:
+
+- Your AI host runs in a browser or on a different machine than the server. STDIO requires a local process.
+
+Internals:
+
+- `src/stdio-server.ts` calls `fastmcp`'s `FastMCP` builder once per process and registers the same 40+ tools the HTTP entry point exposes.
+- All logging goes to stderr so it doesn't corrupt the JSON-RPC stream on stdout.
+
+## `src/http-server.ts` — HTTP (fastmcp v3)
+
+The `fastmcp` HTTP transport. Same shape as the custom HTTP entry but with `fastmcp`'s request handling instead of Express. Useful when you want remote access but don't need the bespoke security middleware.
+
+When to use it:
+
+- You want a remote MCP server without the overhead of the custom middleware.
+- You're integrating with a `fastmcp`-native client.
+
+When **not** to use it:
+
+- You need the rate limiter, JWT lockout, or other bespoke security features. Those live in the custom stack.
+
+Internals:
+
+- `src/http-server.ts` builds a `FastMCP` server, registers all tools, and binds to a port.
+- Authentication is delegated to whatever the client provides; the custom JWT logic is **not** applied here.
+
+## How the same tools get registered everywhere
+
+`src/tools/index.ts` is the single source of truth for the tool registry. It re-exports the 40+ tool classes from `src/tools/homeassistant/` and `src/tools/`, grouped by domain. Every entry point calls into that module to register tools at startup.
+
+That means adding a new tool is a one-place change: write the class, add it to the registry, and it shows up in all three transports.
+
+## Next
+
+- [Tool System](/architecture/tool-system/) — how `BaseTool` + Zod schemas produce the tool manifest.
+- [Deployment > HTTP+WS](/deployment/http/) — operationalizing the custom entry point.

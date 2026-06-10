@@ -1,0 +1,111 @@
+---
+title: Tool System
+description: How a tool is defined, validated, registered, and dispatched through the MCP middleware.
+section: Architecture
+order: 3
+---
+
+Every action the AI can take is a `Tool` — a class with a Zod input schema, a name, a description, and an `execute()` method. The tool system is the part of the codebase you'll touch most if you want to extend the server.
+
+## The `BaseTool` contract
+
+`src/mcp/BaseTool.ts` defines the base class. It's generic over the input and output shapes, both typed by Zod:
+
+```typescript
+export abstract class BaseTool<TInput extends z.ZodTypeAny, TOutput> {
+  abstract name: string;
+  abstract description: string;
+  abstract inputSchema: TInput;
+
+  abstract execute(
+    input: z.infer<TInput>,
+    context: ToolContext,
+  ): Promise<TOutput>;
+}
+```
+
+The Zod schema is the source of truth. It's used at runtime to validate incoming arguments, and at registration time to generate the JSON Schema that the MCP protocol returns to clients in the `tools/list` response. The bridge is `zod-to-json-schema` (`zodToJsonSchema` in `src/mcp/MCPServer.ts`).
+
+## An example tool
+
+A trimmed version of `src/tools/homeassistant/list-devices.tool.ts`:
+
+```typescript
+export class ListDevicesTool extends BaseTool<
+  z.ZodType<{ domain?: string; area?: string }>,
+  DeviceSummary[]
+> {
+  name = "list_devices";
+  description =
+    "List Home Assistant devices, optionally filtered by domain or area.";
+  inputSchema = z.object({
+    domain: z.string().optional(),
+    area: z.string().optional(),
+  });
+
+  async execute(input, context) {
+    const client = context.hassClient;
+    const states = await client.getStates();
+    return states
+      .filter(
+        (s) => !input.domain || s.entity_id.startsWith(input.domain + "."),
+      )
+      .filter((s) => !input.area || s.attributes.area_id === input.area)
+      .map(toDeviceSummary);
+  }
+}
+```
+
+The tool receives a `ToolContext` (defined in `src/types/index.ts`) that gives it access to the HA client, the logger, the current request ID, and any per-request state the middlewares want to attach.
+
+## Registration
+
+`src/tools/index.ts` re-exports every tool class. Each entry point iterates this list and calls `server.registerTool(tool)`:
+
+```typescript
+for (const ToolClass of TOOL_REGISTRY) {
+  const tool = new ToolClass();
+  server.registerTool(tool);
+}
+```
+
+`MCPServer.registerTool` does four things:
+
+1. Instantiates the tool (parameterless constructor).
+2. Calls `zodToJsonSchema(tool.inputSchema)` to produce the JSON manifest.
+3. Stores the tool in a `Map<string, ToolDefinition>` keyed by name.
+4. Emits the `TOOL_REGISTERED` event so listeners (telemetry, dev-mode logging) can react.
+
+## The execute path
+
+When a `tools/call` request comes in, the middleware chain hands it to `MCPServer.executeTool()`. The flow:
+
+1. Look up the tool by name. If missing, return `MCPErrorCode.METHOD_NOT_FOUND`.
+2. Validate the `arguments` object against the tool's `inputSchema` with `.safeParse()`. If it fails, return `MCPErrorCode.VALIDATION_ERROR` with the Zod issues.
+3. Build a `ToolContext` from the request: the HA client, a per-request logger (with `requestId` bound), and any other middleware-set fields.
+4. Call `tool.execute(input, context)` with a timeout. The default is 30s, set in `MCPServer`'s constructor (`executionTimeout`).
+5. Return the result as a JSON-RPC `result`. If the tool throws, the error-handling middleware maps it to an `MCPErrorCode.TOOL_EXECUTION_ERROR` with the error message as `data`.
+
+## Why Zod over hand-written schemas?
+
+- One source of truth. The schema is the validation function and the type and the JSON manifest.
+- Composable. `z.object({ a: z.string() }).merge(z.object({ b: z.number() }))` produces a merged schema with a merged TS type and a merged JSON Schema.
+- Better errors. Zod's `safeParse` returns a structured `issues` array that's friendlier than a hand-rolled validator's string error.
+
+The cost is one extra dep (`zod`) and a bridge to JSON Schema (`zod-to-json-schema`). Both are already in `package.json#dependencies` and external from the bundle.
+
+## Adding a new tool
+
+See [Guides > Adding a Tool](/guides/adding-a-tool/) for the full step-by-step. The short version:
+
+1. Create `src/tools/<domain>/<name>.tool.ts` extending `BaseTool`.
+2. Add it to `src/tools/index.ts` registry.
+3. Add a Zod-typed test under `__tests__/`.
+4. Rebuild with `bun run build:all`.
+
+The new tool shows up in `tools/list` for all three entry points automatically.
+
+## Next
+
+- [HA Client](/architecture/ha-client/) — the WebSocket layer the tools call into.
+- [Guides > Adding a Tool](/guides/adding-a-tool/) — the step-by-step walkthrough.

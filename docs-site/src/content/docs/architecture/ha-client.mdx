@@ -1,0 +1,61 @@
+---
+title: HA Client
+description: The WebSocket layer that connects the server to Home Assistant, with command queueing and event subscription.
+section: Architecture
+order: 4
+---
+
+Every tool that needs to talk to Home Assistant goes through a single client in `src/hass/`. It's a long-lived WebSocket connection to HA's `/api/websocket` endpoint, with a small command queue, an event subscription manager, and a state cache.
+
+## The connection lifecycle
+
+1. **Lazy connect.** The client is created at process start but doesn't open the WebSocket until the first tool call that needs it. This keeps Smithery and `tools/list` discovery fast.
+2. **Auth.** On connect, HA sends an `auth_required` message. The client replies with `auth` carrying the `HASS_TOKEN`. HA replies `auth_ok` and the connection becomes usable.
+3. **Subscribe to events.** Immediately after auth, the client sends `subscribe_events` so every tool that asks "what changed?" can be answered from the in-process event log without re-querying HA.
+4. **Idle keepalive.** If no traffic for 30s, the client sends a `ping` and expects a `pong` within 5s. Three missed pongs and the connection is treated as dead and reconnected.
+5. **Reconnect.** On disconnect (any reason: HA restart, network blip, server restart), the client waits 1s, 2s, 4s, 8s, ..., capped at 60s, and tries again. It preserves all subscriptions on reconnect.
+
+## Command queue
+
+Tools call `client.sendCommand(type, payload)` to invoke a service or read state. The client assigns a numeric `id`, sends the message, and returns a `Promise<unknown>` that resolves when HA replies with the matching `id`.
+
+The queue ensures that if 50 tools call `sendCommand` at the same time, they get 50 distinct IDs and the responses are matched back to the right caller. There's no per-connection mutex — the WebSocket is multiplexed.
+
+The promise has a 30s timeout. If HA hasn't replied in that window, the promise rejects with `HASSErrorCode.TIMEOUT` and the caller can decide whether to retry.
+
+## Event subscription
+
+The HA client subscribes once to `subscribe_events` at startup. Every event HA emits (state change, service call, component loaded, ...) flows into an internal `EventEmitter`. Tools can subscribe to:
+
+- All events: `client.events.on('event', handler)`
+- One event type: `client.events.on('state_changed', handler)`
+
+The HTTP+WS entry point bridges this `EventEmitter` to its own `/mcp/ws` endpoint, so a connected MCP client can `subscribe_events` and get a live stream.
+
+## State cache
+
+`client.getStates()` is the workhorse. It calls HA's `get_states` command and caches the result. The cache invalidates on any `state_changed` event for the duration of the process, so `getStates()` after a state change returns the fresh data without a round-trip.
+
+If you need to force a re-fetch, call `client.refreshStates()`.
+
+## Where the rest of the codebase touches it
+
+Tools get a `HassClient` from their `ToolContext`. The shape is defined in `src/types/index.ts`. The custom HTTP entry point (`src/index.ts`) is the only place the client is instantiated at startup; the other entry points create it lazily on first tool call.
+
+## Error handling
+
+HA errors arrive as `{"type": "result", "success": false, "error": {...}}`. The client maps them to a typed `HassError`:
+
+| HA error code          | `HassError.code`       |
+| ---------------------- | ---------------------- |
+| `invalid_format`       | `INVALID_FORMAT`       |
+| `not_found`            | `NOT_FOUND`            |
+| `unauthorized`         | `UNAUTHORIZED`         |
+| `home_assistant_error` | `HOME_ASSISTANT_ERROR` |
+
+Tools that need fine-grained error handling can `instanceof HassError` and switch on `code`. The default is to rethrow — the MCP error-handling middleware turns it into a JSON-RPC error response.
+
+## Next
+
+- [Tool System](/architecture/tool-system/) — how the client is exposed to tools.
+- [Configuration > Environment](/configuration/environment/) — the `HASS_HOST` / `HASS_TOKEN` settings that drive the client.

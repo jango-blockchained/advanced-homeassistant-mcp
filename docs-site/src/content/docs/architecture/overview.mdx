@@ -1,0 +1,73 @@
+---
+title: Architecture Overview
+description: The high-level layers of the server, how a request flows through them, and the key files.
+section: Architecture
+order: 1
+---
+
+The server is structured as four loosely-coupled layers that sit between an MCP client (Claude, Cursor, anything else) and your Home Assistant instance. The boundaries are drawn so each layer can be swapped or extended without touching the others.
+
+## The layers
+
+```text
+┌────────────────────────────────────────────────────────────────┐
+│  Transport   (HTTP+WS via custom MCPServer, or fastmcp STDIO,   │
+│              or fastmcp HTTP)                                  │
+├────────────────────────────────────────────────────────────────┤
+│  Middleware (validation, error handling, JWT, rate limit,      │
+│              helmet, sanitize-html)                            │
+├────────────────────────────────────────────────────────────────┤
+│  Tool       (BaseTool subclass with a Zod schema + an          │
+│              execute() that talks to the HA client)            │
+├────────────────────────────────────────────────────────────────┤
+│  HA Client  (WebSocket connection to /api/websocket on the HA  │
+│              instance; command queue + event subscription)     │
+└────────────────────────────────────────────────────────────────┘
+```
+
+A request flows top-to-bottom: the transport parses a JSON-RPC envelope and hands it to the middleware chain, which validates, authenticates, and rate-limits it. The middlewares then dispatch to the named tool, which validates its own arguments against a Zod schema and runs `execute()`. The tool talks to the HA client, which sends a command over the WebSocket and waits for the response. The result flows back up the same path as a JSON-RPC reply.
+
+## Key files
+
+| Concern         | Path                       | Notes                                                      |
+| --------------- | -------------------------- | ---------------------------------------------------------- |
+| HTTP+WS server  | `src/index.ts`             | Wraps `MCPServer` in Express; serves `/mcp` and `/mcp/ws`. |
+| STDIO server    | `src/stdio-server.ts`      | Uses `fastmcp` v3 over stdin/stdout.                       |
+| HTTP server     | `src/http-server.ts`       | Uses `fastmcp` v3 over HTTP.                               |
+| MCP core        | `src/mcp/MCPServer.ts`     | Singleton, manages tool registry + middlewares.            |
+| Transports      | `src/mcp/transports/`      | `http.transport.ts`, `stdio.transport.ts`.                 |
+| Tool base class | `src/mcp/BaseTool.ts`      | Generic `<TInput, TOutput>` over Zod schemas.              |
+| HA client       | `src/hass/`                | WebSocket API client + state cache.                        |
+| Tools           | `src/tools/homeassistant/` | Domain-specific tools (lights, climate, ...).              |
+| Generic tools   | `src/tools/`               | Cross-cutting helpers (history, search, etc.).             |
+| Config          | `src/config/app.config.ts` | Zod-validated env loader (single source of truth).         |
+| Security        | `src/security/`            | JWT, rate limit, helmet, sanitize-html.                    |
+| SSE             | `src/sse/`                 | Event streaming subsystem.                                 |
+
+## Build outputs
+
+The three entry points compile to three different files via esbuild (see `package.json` `scripts`):
+
+| Entry                 | Output                  | Module   |
+| --------------------- | ----------------------- | -------- |
+| `src/index.ts`        | `dist/index.cjs`        | CommonJS |
+| `src/stdio-server.ts` | `dist/stdio-server.mjs` | ESM      |
+| `src/http-server.ts`  | `dist/http-server.mjs`  | ESM      |
+
+External deps (`@modelcontextprotocol/sdk`, `fastmcp`, `zod`, `winston`, ...) are not bundled — they're added to the esbuild `--external` flag and resolved at runtime from `node_modules`. This keeps the bundles small and makes the production build predictable on plain Node.
+
+## Why three entry points?
+
+Each target client has different needs:
+
+- **STDIO** is what Claude Desktop, Cursor, and most local editor integrations speak. It's the simplest, most firewall-friendly option.
+- **HTTP+WS** is what hosted AI services and web UIs need. The custom `MCPServer` + Express stack gives us full control over the request lifecycle, rate limiting per IP, and a `WebSocket /mcp/ws` endpoint for streaming events.
+- **HTTP (fastmcp)** is the same shape as HTTP+WS but uses the `fastmcp` v3 SDK, which is a thinner wrapper. It's useful when you want a quick remote deploy without any of the bespoke middleware.
+
+In practice you usually only need one. See [Deployment](/deployment/http/) to pick the right one for your setup.
+
+## Next
+
+- [Entry Points](/architecture/entry-points/) — deep dive on each of the three.
+- [Tool System](/architecture/tool-system/) — how tools are defined, registered, and dispatched.
+- [HA Client](/architecture/ha-client/) — the WebSocket layer under everything.
