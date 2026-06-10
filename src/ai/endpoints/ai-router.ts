@@ -83,8 +83,9 @@ const errorHandler = (
       "Check device names and parameters",
     ],
     // req.body may be undefined for GET requests with no body or when an
-    // upstream parser hasn't run; treat as optional.
-    context: (req.body as { context?: AIContext } | undefined)?.context,
+    // upstream parser hasn't run; treat as optional. Fall back to a
+    // minimal AIContext stub to satisfy the required field.
+    context: (req.body as { context?: AIContext } | undefined)?.context ?? ({} as AIContext),
   };
 
   res.status(500).json({ error: aiError });

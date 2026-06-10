@@ -31,8 +31,11 @@ export const validationMiddleware: MCPMiddleware = async (
 
   if (tool.parameters && request.params) {
     try {
-      // Zod validation happens here
-      const validatedParams = tool.parameters.parse(request.params);
+      // Zod validation happens here. parse() returns `unknown` because
+      // of the z.ZodType<P, _, any> relaxation; cast back to
+      // Record<string, unknown> (the request.params shape) so the
+      // assignment below type-checks.
+      const validatedParams = tool.parameters.parse(request.params) as Record<string, unknown>;
       request.params = validatedParams;
     } catch (error) {
       return {

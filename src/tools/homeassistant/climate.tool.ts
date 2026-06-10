@@ -36,11 +36,15 @@ class HomeAssistantClimateService {
     try {
       const hass = await get_hass();
       const state = await hass.getState(entity_id);
-      return JSON.stringify({
+      // The function's declared return shape is an object
+      // (Record<string, unknown> | null) so callers can destructure
+      // fields, but downstream the result is JSON.stringify'd
+      // again. Serialize the entity into a wrapper object here.
+      return {
         entity_id: state.entity_id,
         state: state.state,
         attributes: state.attributes,
-      });
+      };
     } catch (error) {
       logger.error(`Failed to get climate device ${entity_id} from HA:`, error);
       return null;
@@ -252,5 +256,3 @@ export const climateControlTool: Tool = {
 
   execute: executeClimateControlLogic,
 };
-
-

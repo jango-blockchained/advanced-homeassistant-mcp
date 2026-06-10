@@ -5,7 +5,11 @@ import supertest from "supertest";
 
 describe("Rate Limiting Middleware", () => {
   let app: express.Application;
-  let request: supertest.SuperTest<supertest.Test>;
+  // supertest(app) returns a Test (extends SuperAgent) — use
+  // ReturnType to capture that exactly. The earlier type annotation
+  // (supertest.SuperTest<supertest.Test>) doesn't match what the
+  // ESM default export of supertest actually returns.
+  let request: ReturnType<typeof supertest>;
 
   beforeAll(() => {
     app = express();
