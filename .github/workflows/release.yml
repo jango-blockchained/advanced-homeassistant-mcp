@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*.*.*" # Triggers on version tags like v1.0.0, v1.2.3, etc.
+  # workflow_dispatch is required for the auto-release workflow
+  # to dispatch this one via `gh workflow run release.yml` —
+  # tag pushes from a workflow's GITHUB_TOKEN don't trigger
+  # downstream workflow runs in the same repo (GitHub gotcha
+  # to prevent infinite loops), so we dispatch explicitly.
+  workflow_dispatch:
 
 permissions:
   contents: write
