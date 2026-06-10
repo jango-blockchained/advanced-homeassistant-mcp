@@ -1,0 +1,53 @@
+---
+/**
+ * Docs site index. Will be replaced by the proper layout (BaseLayout +
+ * Sidebar + TopNav) in subtask 4 of the docs-site rewrite plan. For
+ * now this is a minimal landing page that proves the Tailwind v4
+ * theme tokens and the grayscale B/W + indigo accent are wired up.
+ */
+import "@/styles/global.css";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Home Assistant MCP — Docs</title>
+    <meta
+      name="description"
+      content="Documentation for the Home Assistant MCP server. Bridge your AI assistant and your smart home."
+    />
+  </head>
+  <body>
+    <main class="mx-auto max-w-3xl px-6 py-20">
+      <h1>Home Assistant MCP</h1>
+      <p class="text-muted-foreground mt-3 text-lg">
+        Documentation site. Content is being rewritten — see the
+        <a href="https://github.com/jango-blockchained/advanced-homeassistant-mcp">
+          project repository
+        </a> for the current MCP server source.
+      </p>
+
+      <h2 class="mt-10">Theme check</h2>
+      <p>
+        If you can see this in grayscale with an indigo focus ring on the
+        links, the theme is wired up correctly.
+      </p>
+
+      <div
+        class="bg-card text-card-foreground mt-6 rounded-lg border p-4"
+      >
+        <p class="text-sm">
+          <strong>Card surface.</strong> A muted card with a border. The
+          background should be near-white in light mode, near-black in dark
+          mode.
+        </p>
+      </div>
+
+      <p class="mt-6 text-sm text-muted-foreground">
+        Next: layout shell, sidebar, search.
+      </p>
+    </main>
+  </body>
+</html>
