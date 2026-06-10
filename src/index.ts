@@ -135,15 +135,22 @@ async function main(): Promise<void> {
       }),
     );
 
-    // Swagger UI setup
+    // Swagger UI setup. swaggerUi.serve is a RequestHandler array (it
+    // actually serves the static swagger-ui assets). Express's `use`
+    // overload for "path + handlers" expects a spread tuple, so we
+    // spread swaggerUi.serve's handler array. The setup() call returns
+    // a single handler that renders the spec. The cast to `any` works
+    // around a known type-version mismatch between swagger-ui-express's
+    // bundled @types/express and the project's @types/express v4
+    // (the IRouterMatcher generic doesn't unify across the two).
     app.use(
       "/api-docs",
-      swaggerUi.serve,
+      ...(swaggerUi.serve as unknown as express.RequestHandler[]),
       swaggerUi.setup(openApiConfig, {
         explorer: true,
         customCss: ".swagger-ui .topbar { display: none }",
         customSiteTitle: "Home Assistant MCP API Documentation",
-      }),
+      }) as unknown as express.RequestHandler,
     );
 
     // MCP Discovery endpoint for Smithery
