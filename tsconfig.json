@@ -1,11 +1,8 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "CommonJS",
-    "lib": [
-      "esnext",
-      "dom"
-    ],
+    "module": "ESNext",
+    "lib": ["esnext", "dom"],
     "strict": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
@@ -15,7 +12,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
+    "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -27,17 +24,12 @@
       "@types/ws",
       "@types/jsonwebtoken",
       "@types/sanitize-html",
-      "@types/jest",
       "@types/express"
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@test/*": [
-        "test/*"
-      ]
+      "@/*": ["src/*"],
+      "@test/*": ["test/*"]
     },
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
@@ -56,9 +48,5 @@
     "scripts/**/*.ts",
     "*.d.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "coverage"
-  ]
+  "exclude": ["node_modules", "dist", "dist-ts", "coverage"]
 }
