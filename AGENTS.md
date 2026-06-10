@@ -66,6 +66,19 @@
 - **Container**: `Dockerfile.smithery` builds `dist/http-simple.mjs` (the simple HTTP server)
 - **Local debug**: `npx @smithery/cli playground-stdio -- npm run start:stdio`
 
+## Docs Site
+
+The project documentation lives in `docs-site/` (Astro v6 + MDX + Tailwind v4 + shadcn-style components, deployed to GitHub Pages). It is a separate package — `cd docs-site` to work on it.
+
+- **Dev**: `cd docs-site && bun install && bun run dev` (http://localhost:4321)
+- **Build**: `cd docs-site && bun run build` → `docs-site/dist/`
+- **Typecheck**: `cd docs-site && bun x astro check`
+- **Preview build**: `cd docs-site && bun run preview`
+- **Content**: MDX files in `docs-site/src/content/docs/`, one per page. Frontmatter schema (zod) is in `docs-site/src/content.config.ts` and enforces `title`, `description`, `section`, `order`, `draft`.
+- **Theme**: pure grayscale B/W with a single indigo accent (`--ring: hsl(239 84% 67%)`). All semantic tokens live in `docs-site/src/styles/global.css` and are mapped to Tailwind utilities via `@theme inline`. The shadcn config in `docs-site/components.json` matches.
+- **Base path**: `/advanced-homeassistant-mcp` (matches the GitHub Pages URL).
+- **Deploy**: `.github/workflows/deploy-docs.yml` runs on push to `main` when `docs-site/**` changes.
+
 ## Environment
 
 - **Runtime**: Bun (dev/test/build), Node.js >=18 (production)
