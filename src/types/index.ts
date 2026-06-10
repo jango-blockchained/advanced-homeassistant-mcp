@@ -7,6 +7,8 @@ import { z } from "zod";
 export interface ToolAnnotations {
   /** Human-readable title for the tool */
   title?: string;
+  /** Short description of the tool's purpose (displayed in clients) */
+  description?: string;
   /** If true, the tool does not modify any state (read-only operations) */
   readOnlyHint?: boolean;
   /** If true, the tool may perform destructive operations (delete, remove, etc.) */
@@ -18,8 +20,18 @@ export interface ToolAnnotations {
 }
 
 /**
- * Interface for a tool that can be executed by the MCP
- * @interface Tool
+ * Interface for a tool that can be executed by the MCP.
+ *
+ * Note: we intentionally declare `params: any` (not `unknown`) in
+ * the execute signature. TypeScript's strict function-type
+ * checking makes function parameters contravariant: a function
+ * declared `(p: SpecificShape) => Result` is NOT assignable to
+ * `(p: unknown) => Result` because the wider parameter type
+ * wouldn't be safe (the implementation expects the narrower shape).
+ * Using `any` here lets each tool declare its own parameter shape
+ * (e.g. `(params: CommandParams) => Promise<string>`) without
+ * fighting the type system. The Zod schema on `parameters` is the
+ * real source of truth for what `params` looks like at runtime.
  */
 export interface Tool {
   /** Unique name identifier for the tool */
@@ -27,9 +39,9 @@ export interface Tool {
   /** Description of what the tool does */
   description: string;
   /** Zod schema for validating tool parameters */
-  parameters: z.ZodType<unknown>;
+  parameters: z.ZodType<any>;
   /** Function to execute the tool with the given parameters */
-  execute: (params: unknown) => Promise<unknown>;
+  execute: (params: any) => Promise<unknown>;
   /** Optional MCP annotations for trust & safety */
   annotations?: ToolAnnotations;
 }
