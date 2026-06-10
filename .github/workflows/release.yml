@@ -10,6 +10,15 @@ permissions:
   packages: write
   id-token: write
 
+# Dedupe concurrent runs for the same tag. The auto-release
+# workflow fires release.yml twice in some cases (once from
+# the tag push, once from the explicit `gh workflow run`
+# dispatch). This concurrency group keeps the second run
+# from racing the first; older runs cancel.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}

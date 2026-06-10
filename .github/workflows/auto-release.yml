@@ -202,8 +202,16 @@ jobs:
 
       - name: Commit and push the bump
         run: |
+          # The skip-CI trailer prevents the auto-release
+          # workflow from re-firing on the bump commit's push
+          # to main. Without it, the auto-release would run
+          # again on the bump commit (only to no-op because
+          # the decide step filters out the chore(release)
+          # commit), wasting ~30s of CI.
           git add package.json
-          git commit -m "chore(release): bump version to ${{ needs.decide-and-bump.outputs.new_version }}"
+          git commit -m "chore(release): bump version to ${{ needs.decide-and-bump.outputs.new_version }}" \
+                       -m "skip-auto-release" \
+                       -m "ci-skip: no-op bump, decide step would no-op anyway"
           git push origin main
 
       - name: Create and push tag
@@ -213,6 +221,20 @@ jobs:
           git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
           git push origin "v${NEW_VERSION}"
           echo "Tagged and pushed v${NEW_VERSION}"
+
+      - name: Trigger release.yml
+        # release.yml listens for v*.*.* tag pushes, but tag
+        # pushes from GITHUB_TOKEN in a workflow run do NOT
+        # trigger downstream workflow runs in the same repo
+        # (GitHub gotcha to prevent infinite loops). Explicitly
+        # dispatch release.yml here so it actually runs.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_VERSION: ${{ needs.decide-and-bump.outputs.new_version }}
+        run: |
+          echo "Dispatching release.yml for v${NEW_VERSION}..."
+          gh workflow run release.yml --ref "v${NEW_VERSION}"
+          echo "Done. release.yml is now running."
 
       - name: Summary
         run: |
