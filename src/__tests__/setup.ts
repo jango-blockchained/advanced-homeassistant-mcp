@@ -67,8 +67,20 @@ const testUtils = {
     removeAllListeners: mock(() => {}),
   }),
 
-  // Mock HTTP response for API tests
-  mockResponse: () => {
+  // Mock HTTP response for API tests. The mocked methods all return
+  // `res` (the response itself) to mimic the express response
+  // chaining pattern. An explicit return type breaks the otherwise
+  // circular inference that blows up TS7056.
+  mockResponse: (): {
+    status: ReturnType<typeof mock>;
+    json: ReturnType<typeof mock>;
+    send: ReturnType<typeof mock>;
+    end: ReturnType<typeof mock>;
+    setHeader: ReturnType<typeof mock>;
+    writeHead: ReturnType<typeof mock>;
+    write: ReturnType<typeof mock>;
+    removeHeader: ReturnType<typeof mock>;
+  } => {
     const res = {
       status: mock(() => res),
       json: mock(() => res),

@@ -64,12 +64,22 @@ const parseDuration = (duration: string): number => {
 };
 
 /**
+ * List log files in a directory (files matching *.log*).
+ * Uses native fs.readdir instead of the `glob` package (removed
+ * during dependency cleanup).
+ */
+const listLogFiles = async (logDir: string): Promise<string[]> => {
+  const entries = await fs.readdir(logDir);
+  return entries.filter((name) => /\.log/.test(name));
+};
+
+/**
  * Get information about log files
  * @returns Array of log file information
  */
 const getLogFiles = async (): Promise<LogFileInfo[]> => {
   const logDir = APP_CONFIG.LOGGING.DIR;
-  const files: string[] = await glob("*.log*", { cwd: logDir });
+  const files = await listLogFiles(logDir);
 
   const fileInfos: LogFileInfo[] = [];
   for (const file of files) {
@@ -95,7 +105,7 @@ const getLogFiles = async (): Promise<LogFileInfo[]> => {
  */
 export async function cleanupOldLogs(logDir: string, maxDays: number): Promise<void> {
   try {
-    const files: string[] = await glob("*.log*", { cwd: logDir });
+    const files = await listLogFiles(logDir);
 
     const now = Date.now();
     const maxAge = maxDays * 24 * 60 * 60 * 1000;
