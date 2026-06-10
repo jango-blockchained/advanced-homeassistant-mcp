@@ -10,7 +10,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { logger } from "./logger.js";
-import { APP_CONFIG } from "../config/app.config.ts";
+import { APP_CONFIG } from "../config/app.config";
 import { unlink } from "fs/promises";
 import { join } from "path";
 

@@ -9,7 +9,7 @@
 
 import { Router } from "express";
 import { MCP_SCHEMA } from "../mcp/schema.js";
-import { APP_CONFIG } from "../config/app.config.ts";
+import { APP_CONFIG } from "../config/app.config";
 import { Tool } from "../types/index.js";
 
 /**

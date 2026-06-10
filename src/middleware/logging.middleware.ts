@@ -9,7 +9,7 @@
 
 import { Request, Response, NextFunction } from "express";
 import { logger } from "../utils/logger.js";
-import { APP_CONFIG } from "../config/app.config.ts";
+import { APP_CONFIG } from "../config/app.config";
 
 /**
  * Interface for extended request object with timing information
