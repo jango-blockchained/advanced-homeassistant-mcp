@@ -24,9 +24,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 --gid 1001 bunjs
+# Create a non-root user. The oven/bun base image is
+# Debian-based, so we use the shadow suite (groupadd/useradd)
+# instead of the BusyBox-style addgroup/adduser. The -r flag
+# creates a system account (no password, no home dir by
+# default, UID below 1000).
+RUN groupadd -r -g 1001 nodejs && \
+    useradd -r -u 1001 -g nodejs bunjs
 
 WORKDIR /app
 
