@@ -281,6 +281,10 @@ jobs:
       - name: Commit README update
         if: steps.diff.outputs.changed == 'true'
         run: |
+          # The checkout is on the tag (detached HEAD) with no
+          # local main branch ref. Create main from current HEAD
+          # so the subsequent push has a valid src refspec.
+          git checkout -B main
           git add README.md
           git commit -m "chore(release): update README for v${{ needs.create-release.outputs.version }}"
           git push origin main
