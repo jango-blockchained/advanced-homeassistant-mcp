@@ -23,6 +23,12 @@ on:
 
 permissions:
   contents: write
+  # Needed to dispatch the release.yml workflow from the
+  # bump-and-tag step (see the [skip ci] rationale in that
+  # step's comment: tag pushes from GITHUB_TOKEN in a workflow
+  # run do not trigger downstream workflow runs, so we
+  # explicitly call `gh workflow run`).
+  actions: write
 
 # Pin JavaScript actions to Node.js 24. Without this, the
 # checkout/setup-node actions run on Node 20 and emit
