@@ -4,88 +4,39 @@ FROM oven/bun:1-slim as builder
 # Set working directory
 WORKDIR /app
 
-# Install Python and other dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python3-venv \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create and activate virtual environment
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-ENV VIRTUAL_ENV="/opt/venv"
-
-# Upgrade pip in virtual environment
-RUN /opt/venv/bin/python -m pip install --upgrade pip
-
-# Install Python packages in virtual environment
-RUN /opt/venv/bin/python -m pip install --no-cache-dir numpy scipy
-
 # Copy package.json and bun.lock and install dependencies
 COPY package.json bun.lock ./
 RUN bun install --ignore-scripts
-
-# Install ts-node for running TypeScript directly
-RUN bun add ts-node --dev --ignore-scripts
 
 # Copy source files
 COPY src ./src
 COPY tsconfig*.json ./
 
 # Build the application (compile TypeScript to JavaScript)
-RUN bun run build && bun run build:node && bun run build:stdio && \
-    bun build ./src/http-server.ts --outdir ./dist --target node
+RUN bun run build && bun run build:node && bun run build:stdio && bun run build:http
 
 # Create a smaller production image
 FROM oven/bun:1-slim as runner
 
-# Install system dependencies
+# Install only the system deps we actually need at runtime
+# (curl for HEALTHCHECK; no Python/audio — those belong in docker-compose.speech.yml)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    python3 \
-    python3-pip \
-    python3-venv \
-    alsa-utils \
-    pulseaudio \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure ALSA
-COPY docker/speech/asound.conf /etc/asound.conf
-
-# Create and activate virtual environment
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-ENV VIRTUAL_ENV="/opt/venv"
-
-# Upgrade pip in virtual environment
-RUN /opt/venv/bin/python -m pip install --upgrade pip
-
-# Install Python packages in virtual environment
-RUN /opt/venv/bin/python -m pip install --no-cache-dir numpy scipy
-
-# Create a non-root user and add to audio group
+# Create a non-root user
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 --gid 1001 bunjs && \
-    adduser bunjs audio
+    adduser --system --uid 1001 --gid 1001 bunjs
 
 WORKDIR /app
 
-# Copy dist from builder
+# Copy built artifacts and production node_modules from builder
 COPY --from=builder --chown=bunjs:nodejs /app/dist ./dist
-
-# Copy source files
-COPY --chown=bunjs:nodejs . .
-
-# Copy only the necessary files from builder (skip dist since we're not compiling)
 COPY --from=builder --chown=bunjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=bunjs:nodejs /app/package.json ./package.json
 
-# Ensure audio setup script is executable
-RUN chmod +x /app/docker/speech/setup-audio.sh
-
-# Create logs and audio directories with proper permissions
-RUN mkdir -p /app/logs /app/audio && chown -R bunjs:nodejs /app/logs /app/audio
+# Create logs directory with proper permissions
+RUN mkdir -p /app/logs && chown -R bunjs:nodejs /app/logs
 
 # Switch to non-root user
 USER bunjs
@@ -100,5 +51,5 @@ ENV HOST=0.0.0.0
 # Expose port (default 7123 for Smithery, can be overridden)
 EXPOSE ${PORT:-7123}
 
-# Start the HTTP MCP server (for Smithery deployment)
-CMD ["bun", "run", "dist/http-server.js"]
+# Start the HTTP MCP server
+CMD ["bun", "run", "dist/http-server.mjs"]

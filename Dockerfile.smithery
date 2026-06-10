@@ -4,11 +4,18 @@ FROM node:20-slim
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json ./
+# Install Bun for fast dependency installation and to match dev workflow
+RUN apt-get update && apt-get install -y --no-install-recommends curl unzip ca-certificates \
+    && curl -fsSL https://bun.sh/install | bash \
+    && rm -rf /var/lib/apt/lists/*
+ENV PATH="/root/.bun/bin:$PATH"
 
-# Install dependencies (including devDependencies for esbuild)
-RUN npm ci
+# Copy package files (use bun.lock as canonical, fall back to package-lock.json)
+COPY package.json bun.lock ./
+COPY package.json package-lock.json* ./
+
+# Install production dependencies only
+RUN bun install --production
 
 # Copy all source files
 COPY src ./src
@@ -16,8 +23,13 @@ COPY tsconfig.json ./
 COPY smithery.config.js ./
 
 # Build http-simple server for container runtime
-# Create dist directory and use node to run esbuild directly
-RUN mkdir -p dist && node node_modules/esbuild/bin/esbuild ./src/http-simple.ts --bundle --platform=node --format=esm --outfile=./dist/http-simple.mjs --external:winston --external:winston-daily-rotate-file --external:express --external:better-sqlite3 --external:ws --external:zod --external:zod-to-json-schema --external:@valibot/to-json-schema --external:valibot --external:jsonwebtoken --external:sanitize-html --external:helmet --external:cors --external:fastmcp --external:undici
+# Use bun build (matches dev workflow), target node for compatibility
+RUN bun build ./src/http-simple.ts --target node --outfile=./dist/http-simple.mjs \
+    --external winston --external winston-daily-rotate-file --external express \
+    --external better-sqlite3 --external ws --external zod --external zod-to-json-schema \
+    --external @valibot/to-json-schema --external valibot --external jsonwebtoken \
+    --external sanitize-html --external helmet --external cors --external fastmcp \
+    --external undici --external dotenv --external express-rate-limit --external @anthropic-ai/sdk
 
 # Expose port
 EXPOSE 7123
@@ -25,6 +37,9 @@ EXPOSE 7123
 # Health check - note: Smithery runtime will handle the /health endpoint
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:7123/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1); })"
+
+# Run as non-root user
+USER node
 
 # Start the simple HTTP server (ESM format)
 CMD ["node", "dist/http-simple.mjs"]
