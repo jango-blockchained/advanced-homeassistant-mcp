@@ -113,6 +113,24 @@ export class MCPServer extends EventEmitter {
   }
 
   /**
+   * Reset the singleton. Use in tests (to ensure a clean instance per
+   * test) and in production shutdown paths that need to fully tear down
+   * the server (otherwise getInstance() would return a zombie with
+   * empty tools/middlewares after a shutdown()).
+   */
+  public static resetInstance(): void {
+    if (MCPServer.instance) {
+      // Best-effort async shutdown; we don't await because resetInstance
+      // is sync (matches the rest of the static API). Callers that need
+      // guaranteed cleanup should call shutdown() explicitly first.
+      void MCPServer.instance.shutdown().catch((err) => {
+        logger.error("Error during resetInstance shutdown:", err);
+      });
+    }
+    MCPServer.instance = null as unknown as MCPServer;
+  }
+
+  /**
    * Update server configuration
    */
   public configure(config: Partial<MCPConfig>): void {
@@ -591,6 +609,14 @@ export class MCPServer extends EventEmitter {
     this.middlewares = [];
     this.transports = [];
     this.resources.clear();
+
+    // Reset the static singleton so a subsequent getInstance() returns
+    // a fresh server with empty state, not a zombie. Without this, tests
+    // that call getInstance() after a shutdown() would get a server with
+    // no tools but still initialized.
+    if (MCPServer.instance === this) {
+      MCPServer.instance = null as unknown as MCPServer;
+    }
 
     this.emit(MCPServerEvents.SHUTDOWN);
     this.removeAllListeners();
