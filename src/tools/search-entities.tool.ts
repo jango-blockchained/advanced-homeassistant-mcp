@@ -14,12 +14,8 @@ import { Tool } from "../types/index.js";
 // Attribute filter schema
 const attributeFilterSchema = z.object({
   key: z.string().describe("Attribute name (e.g., 'battery_level', 'brightness', 'person')"),
-  op: z
-    .enum(["=", "!=", "<", ">", "<=", ">=", "contains"])
-    .describe("Comparison operator"),
-  value: z
-    .union([z.string(), z.number(), z.boolean()])
-    .describe("Value to compare against"),
+  op: z.enum(["=", "!=", "<", ">", "<=", ">=", "contains"]).describe("Comparison operator"),
+  value: z.union([z.string(), z.number(), z.boolean()]).describe("Value to compare against"),
 });
 
 // Main schema
@@ -35,7 +31,9 @@ const searchEntitiesSchema = z.object({
   state: z
     .string()
     .optional()
-    .describe("Filter by state - exact match ('on', 'off') or comparison ('>50', '<20', '!=unavailable')"),
+    .describe(
+      "Filter by state - exact match ('on', 'off') or comparison ('>50', '<20', '!=unavailable')",
+    ),
   area: z
     .union([z.string(), z.array(z.string())])
     .optional()
@@ -43,38 +41,34 @@ const searchEntitiesSchema = z.object({
   pattern: z
     .string()
     .optional()
-    .describe("Glob pattern to match entity_id or friendly_name (e.g., '*motion*', 'sensor.frigate*', '*chad*person*')"),
+    .describe(
+      "Glob pattern to match entity_id or friendly_name (e.g., '*motion*', 'sensor.frigate*', '*chad*person*')",
+    ),
   attributes: z
     .array(attributeFilterSchema)
     .optional()
-    .describe("Attribute conditions with AND logic (e.g., [{key: 'battery_level', op: '<', value: 20}])"),
+    .describe(
+      "Attribute conditions with AND logic (e.g., [{key: 'battery_level', op: '<', value: 20}])",
+    ),
   changed_within: z
     .string()
     .optional()
     .describe("Filter entities changed within duration (e.g., '5m', '1h', '24h')"),
-  changed_after: z
-    .string()
-    .optional()
-    .describe("Filter entities changed after ISO timestamp"),
+  changed_after: z.string().optional().describe("Filter entities changed after ISO timestamp"),
   output: z
     .enum(["minimal", "summary", "full"])
     .optional()
     .default("summary")
-    .describe("Output mode: 'minimal' (entity_ids only), 'summary' (id, state, name, device_class, last_changed), 'full' (all attributes)"),
+    .describe(
+      "Output mode: 'minimal' (entity_ids only), 'summary' (id, state, name, device_class, last_changed), 'full' (all attributes)",
+    ),
   sort_by: z
     .enum(["last_changed", "last_updated", "entity_id", "state"])
     .optional()
     .default("entity_id")
     .describe("Sort results by field"),
-  sort_order: z
-    .enum(["asc", "desc"])
-    .optional()
-    .default("asc")
-    .describe("Sort order"),
-  limit: z
-    .number()
-    .optional()
-    .describe("Maximum number of results to return"),
+  sort_order: z.enum(["asc", "desc"]).optional().default("asc").describe("Sort order"),
+  limit: z.number().optional().describe("Maximum number of results to return"),
 });
 
 type SearchEntitiesParams = z.infer<typeof searchEntitiesSchema>;
@@ -86,7 +80,9 @@ type AttributeFilter = z.infer<typeof attributeFilterSchema>;
 function parseDuration(duration: string): number {
   const match = duration.match(/^(\d+)(s|m|h|d)$/);
   if (!match) {
-    throw new UserError(`Invalid duration format: ${duration}. Use format like '5m', '1h', '24h', '7d'`);
+    throw new UserError(
+      `Invalid duration format: ${duration}. Use format like '5m', '1h', '24h', '7d'`,
+    );
   }
   const value = parseInt(match[1], 10);
   const unit = match[2];
@@ -176,7 +172,7 @@ async function executeSearchEntitiesLogic(params: SearchEntitiesParams): Promise
     // Apply device_class filter
     if (params.device_class) {
       entities = entities.filter((e) =>
-        matchesFilter(e.attributes?.device_class, params.device_class)
+        matchesFilter(e.attributes?.device_class, params.device_class),
       );
     }
 
@@ -188,9 +184,7 @@ async function executeSearchEntitiesLogic(params: SearchEntitiesParams): Promise
 
     // Apply area filter
     if (params.area) {
-      entities = entities.filter((e) =>
-        matchesFilter(e.attributes?.area_id, params.area)
-      );
+      entities = entities.filter((e) => matchesFilter(e.attributes?.area_id, params.area));
     }
 
     // Apply pattern filter
@@ -218,7 +212,9 @@ async function executeSearchEntitiesLogic(params: SearchEntitiesParams): Promise
       const durationMs = parseDuration(params.changed_within);
       const cutoff = new Date(Date.now() - durationMs);
       entities = entities.filter((e) => {
-        const changed = new Date(e.last_changed);
+        // `last_changed` is a Home Assistant ISO timestamp; cast to
+        // string to bridge `string | undefined` in the entity type.
+        const changed = new Date(e.last_changed as string);
         return changed >= cutoff;
       });
     }
@@ -229,7 +225,9 @@ async function executeSearchEntitiesLogic(params: SearchEntitiesParams): Promise
         throw new UserError(`Invalid date format: ${params.changed_after}`);
       }
       entities = entities.filter((e) => {
-        const changed = new Date(e.last_changed);
+        // `last_changed` is a Home Assistant ISO timestamp; cast to
+        // string to bridge `string | undefined` in the entity type.
+        const changed = new Date(e.last_changed as string);
         return changed >= afterDate;
       });
     }
@@ -243,12 +241,15 @@ async function executeSearchEntitiesLogic(params: SearchEntitiesParams): Promise
 
       switch (sortBy) {
         case "last_changed":
-          aVal = new Date(a.last_changed).getTime();
-          bVal = new Date(b.last_changed).getTime();
+          // Home Assistant always returns last_changed/last_updated as
+          // ISO strings on entity objects; the type allows undefined
+          // for partial updates, so assert non-null.
+          aVal = new Date(a.last_changed as string).getTime();
+          bVal = new Date(b.last_changed as string).getTime();
           break;
         case "last_updated":
-          aVal = new Date(a.last_updated).getTime();
-          bVal = new Date(b.last_updated).getTime();
+          aVal = new Date(a.last_updated as string).getTime();
+          bVal = new Date(b.last_updated as string).getTime();
           break;
         case "state":
           aVal = a.state;
