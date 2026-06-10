@@ -110,6 +110,15 @@ jobs:
   # README update) still succeeds — once the user adds NPM_TOKEN
   # under repo Settings > Secrets, the next release will publish
   # automatically.
+  #
+  # Note: the secret check happens at runtime in the step, not
+  # via `if: ${{ secrets.X != '' }}` on each step. The reason
+  # is that this workflow is also triggered via workflow_dispatch
+  # (from auto-release.yml), and on dispatch triggers the
+  # `secrets` context is NOT exposed to `if:` expressions
+  # (GitHub returns HTTP 422 'Unrecognized named-value: secrets'
+  # if you try). The runtime check via a `run:` step works on
+  # both trigger types.
   publish-npm:
     name: Publish to npm
     runs-on: ubuntu-latest
@@ -129,44 +138,34 @@ jobs:
       - name: Build package
         run: bun run build:all
 
-      - name: Setup Node.js for npm publish
-        if: ${{ secrets.NPM_TOKEN != '' }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
-
-      - name: Verify package version matches tag
-        if: ${{ secrets.NPM_TOKEN != '' }}
+      - name: Publish to npm (or skip if NPM_TOKEN not configured)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TAG_VERSION: ${{ needs.create-release.outputs.version }}
         run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::warning::npm publish skipped: NPM_TOKEN secret not configured on this repo."
+            echo "## npm publish skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The \`NPM_TOKEN\` secret is not set on this repository." >> "$GITHUB_STEP_SUMMARY"
+            echo "The rest of the release (GitHub release, Docker push, README update) still happened." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "To enable npm publish, add an \`NPM_TOKEN\` (Automation) token at:" >> "$GITHUB_STEP_SUMMARY"
+            echo "  https://github.com/${{ github.repository }}/settings/secrets/actions" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Local one-off: \`NPM_TOKEN=xxx npm publish --access public\` from the repo root after a \`bun run build:all\`." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "Verifying package version matches tag..."
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          TAG_VERSION="${{ needs.create-release.outputs.version }}"
-          echo "Package version: $PACKAGE_VERSION"
-          echo "Tag version: $TAG_VERSION"
           if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
             echo "Error: Package version ($PACKAGE_VERSION) does not match tag version ($TAG_VERSION)"
             exit 1
           fi
 
-      - name: Publish to npm
-        if: ${{ secrets.NPM_TOKEN != '' }}
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Skip npm publish (NPM_TOKEN not configured)
-        if: ${{ secrets.NPM_TOKEN == '' }}
-        run: |
-          echo "## npm publish skipped" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "The \`NPM_TOKEN\` secret is not set on this repository." >> "$GITHUB_STEP_SUMMARY"
-          echo "The rest of the release (GitHub release, Docker push, README update) still happened." >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "To enable npm publish, add an \`NPM_TOKEN\` (Automation) token at:" >> "$GITHUB_STEP_SUMMARY"
-          echo "  https://github.com/${{ github.repository }}/settings/secrets/actions" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Local one-off: \`NPM_TOKEN=xxx npm publish --access public\` from the repo root after a \`bun run build:all\`." >> "$GITHUB_STEP_SUMMARY"
-          echo "::warning::npm publish skipped: NPM_TOKEN secret not configured. Other release steps (GitHub release, Docker push, README update) proceeded normally."
+          echo "Publishing to npm..."
+          npm publish --access public
 
   # Job 3: Build and Push Docker Image
   build-docker:
