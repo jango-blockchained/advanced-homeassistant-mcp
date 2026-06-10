@@ -23,6 +23,9 @@ export interface ToolOptions<P = unknown, R = unknown> {
   parameters?: z.ZodType<P, z.ZodTypeDef, any>;
   returnType?: z.ZodType<R>;
   metadata?: Partial<ToolMetadata>;
+  // Convenience: allow callers to pass `version` at the top level
+  // (it's stored in metadata.version by the constructor).
+  version?: string;
 }
 
 /**
@@ -52,10 +55,12 @@ export abstract class BaseTool<P = unknown, R = unknown> implements ToolDefiniti
     this.parameters = options.parameters;
     this.returnType = options.returnType;
 
-    // Set default metadata
+    // Set default metadata. `version` may be supplied at the top level
+    // (common in tool definitions) or inside `metadata`; top-level
+    // wins to match the most-used call shape.
     this.metadata = {
       category: "general",
-      version: "1.0.0",
+      version: options.version ?? options.metadata?.version ?? "1.0.0",
       ...options.metadata,
     };
   }

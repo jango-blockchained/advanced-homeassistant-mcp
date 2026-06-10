@@ -7,7 +7,7 @@
 
 import { z } from "zod";
 import { BaseTool } from "../../mcp/BaseTool.js";
-import { MCPResponseStream } from "../../mcp/types.js";
+import { MCPContext, MCPResponseStream } from "../../mcp/types.js";
 
 // Schema for the stream generator parameters
 const streamGeneratorSchema = z.object({
@@ -64,12 +64,16 @@ export class StreamGeneratorTool extends BaseTool<StreamGeneratorParams, StreamG
   }
 
   /**
-   * Execute the tool and stream results back to the client
+   * Execute the tool and stream results back to the client.
+   * The second arg is the MCP context; the `stream` field on it (if
+   * present) is used for streaming. This matches the base class
+   * signature `execute(params: P, context: MCPContext)`.
    */
   async execute(
     params: StreamGeneratorParams,
-    stream?: MCPResponseStream,
+    context: MCPContext & { stream?: MCPResponseStream },
   ): Promise<StreamGeneratorResult> {
+    const stream = context?.stream;
     const { count, delay, includeTimestamp, failAfter } = params;
     const items: string[] = [];
 
