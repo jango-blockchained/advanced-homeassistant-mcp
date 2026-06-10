@@ -1,0 +1,20 @@
+{
+  "id": "09-configuration",
+  "seq": 9,
+  "title": "Write Configuration pages (3 MDX)",
+  "depends_on": ["07-getting-started"],
+  "parallel": true,
+  "context_files": [],
+  "reference_files": ["src/config/app.config.ts", "src/types/index.ts"],
+  "files_touched": [
+    "docs-site/src/content/docs/environment-variables.mdx",
+    "docs-site/src/content/docs/tool-annotations.mdx",
+    "docs-site/src/content/docs/rate-limiting.mdx"
+  ],
+  "deliverables": [
+    "environment-variables.mdx: full table of real env vars from src/config/app.config.ts Zod schema",
+    "tool-annotations.mdx: readOnlyHint, destructiveHint, openWorldHint on ToolAnnotations",
+    "rate-limiting.mdx: RATE_LIMIT.windowMs/RATE_LIMIT.max, per-IP vs per-token, api/auth limiters"
+  ],
+  "commit_message": "feat(docs): write Configuration pages (env vars, annotations, rate limiting)"
+}

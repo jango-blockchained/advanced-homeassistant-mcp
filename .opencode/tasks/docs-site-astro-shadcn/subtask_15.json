@@ -1,0 +1,16 @@
+{
+  "id": "15-agents-md",
+  "seq": 15,
+  "title": "Update AGENTS.md with new docs build commands",
+  "depends_on": ["02-bootstrap"],
+  "parallel": true,
+  "context_files": [],
+  "reference_files": ["AGENTS.md", "docs-site/package.json"],
+  "files_touched": ["AGENTS.md"],
+  "deliverables": [
+    "Add Documentation section: bun --cwd docs-site run dev|build|preview",
+    "Document the new deploy flow (Pages workflow on push to main)",
+    "Link to the live docs URL"
+  ],
+  "commit_message": "docs(AGENTS): document new docs build commands and deploy flow"
+}

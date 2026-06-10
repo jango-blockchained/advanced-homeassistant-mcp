@@ -1,0 +1,30 @@
+{
+  "id": "02-bootstrap",
+  "seq": 2,
+  "title": "Bootstrap Astro project skeleton in docs-site/",
+  "depends_on": ["01-teardown"],
+  "parallel": false,
+  "context_files": [],
+  "reference_files": ["AGENTS.md", "package.json"],
+  "files_touched": [
+    "docs-site/package.json",
+    "docs-site/bun.lock",
+    "docs-site/tsconfig.json",
+    "docs-site/astro.config.mjs",
+    "docs-site/components.json",
+    "docs-site/src/styles/global.css",
+    "docs-site/src/lib/utils.ts",
+    "docs-site/src/env.d.ts",
+    "docs-site/src/pages/index.astro",
+    "docs-site/README.md",
+    "docs-site/.gitignore"
+  ],
+  "deliverables": [
+    "Astro v5 + @astrojs/mdx + @astrojs/sitemap + Tailwind v4 installed via bun",
+    "Strict TypeScript, base path /advanced-homeassistant-mcp",
+    "shadcn-style CSS variable tokens in global.css (grayscale + indigo accent)",
+    "cn() utility (lib/utils.ts) for class composition",
+    "Empty pages/index.astro placeholder rendering the theme"
+  ],
+  "commit_message": "feat(docs): bootstrap Astro + MDX + Tailwind v4 + shadcn theme tokens"
+}

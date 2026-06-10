@@ -1,0 +1,29 @@
+{
+  "id": "04-layout-shell",
+  "seq": 4,
+  "title": "Build layout shell (BaseLayout, Sidebar, TopNav, ModeToggle)",
+  "depends_on": ["03-shadcn-components"],
+  "parallel": false,
+  "context_files": [],
+  "reference_files": [
+    "docs-site/src/styles/global.css",
+    "docs-site/src/components/ui/*"
+  ],
+  "files_touched": [
+    "docs-site/src/layouts/BaseLayout.astro",
+    "docs-site/src/components/Sidebar.astro",
+    "docs-site/src/components/TopNav.astro",
+    "docs-site/src/components/ModeToggle.astro",
+    "docs-site/src/components/PageHead.astro",
+    "docs-site/src/nav.ts"
+  ],
+  "deliverables": [
+    "BaseLayout.astro sets <html>/<head>/<body>, loads global.css, mounts Sidebar+TopNav",
+    "Inline script reads localStorage.theme and applies .dark before paint (no FOUC)",
+    "Sidebar.astro renders grouped nav from src/nav.ts",
+    "TopNav.astro has current-section label + search button + theme toggle + GitHub link",
+    "ModeToggle.astro is a single button with sun/moon icon, inline script toggles .dark",
+    "PageHead.astro wraps <head> with title, meta description, OG tags, favicon"
+  ],
+  "commit_message": "feat(docs): add layout shell (BaseLayout, Sidebar, TopNav, ModeToggle)"
+}

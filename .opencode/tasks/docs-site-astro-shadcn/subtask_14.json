@@ -1,0 +1,18 @@
+{
+  "id": "14-deploy-workflow",
+  "seq": 14,
+  "title": "Replace deploy workflow with Astro Pages workflow",
+  "depends_on": ["02-bootstrap"],
+  "parallel": true,
+  "context_files": [],
+  "reference_files": [
+    ".github/workflows/deploy-docs.yml (old)",
+    "docs-site/package.json"
+  ],
+  "files_touched": [".github/workflows/deploy-docs.yml"],
+  "deliverables": [
+    "New workflow: bun install -> bun run build -> upload pages artifact -> deploy to GitHub Pages",
+    "Triggers on push to main with docs-site/** changes, plus manual dispatch"
+  ],
+  "commit_message": "ci(docs): replace mkdocs deploy with Astro Pages workflow"
+}

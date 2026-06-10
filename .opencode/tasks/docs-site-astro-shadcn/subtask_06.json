@@ -1,0 +1,14 @@
+{
+  "id": "06-content-schema",
+  "seq": 6,
+  "title": "Define content collection schema",
+  "depends_on": ["02-bootstrap"],
+  "parallel": true,
+  "context_files": [],
+  "reference_files": ["AGENTS.md"],
+  "files_touched": ["docs-site/src/content.config.ts"],
+  "deliverables": [
+    "Typed schema for /src/content/docs/* with title, description, section, order, draft"
+  ],
+  "commit_message": "feat(docs): add typed content collection schema for MDX docs"
+}

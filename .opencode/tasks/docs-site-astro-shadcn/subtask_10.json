@@ -1,0 +1,22 @@
+{
+  "id": "10-tools-reference",
+  "seq": 10,
+  "title": "Write Tools Reference pages (2 MDX)",
+  "depends_on": ["07-getting-started"],
+  "parallel": true,
+  "context_files": [],
+  "reference_files": [
+    "src/tools/",
+    "src/tools/homeassistant/",
+    "src/tools/index.ts"
+  ],
+  "files_touched": [
+    "docs-site/src/content/docs/generic-tools.mdx",
+    "docs-site/src/content/docs/homeassistant-tools.mdx"
+  ],
+  "deliverables": [
+    "generic-tools.mdx: Card grid for each generic tool (search-entities, control, history, dashboard, template, error-log, sse-stats, subscribe-events, addon, package, automation-config, entity-state)",
+    "homeassistant-tools.mdx: Card grid for HA-specific tools grouped by domain (light, climate, cover, media, fan, lock, scene, switch, vacuum, todo, alarm, automation, voice, etc.)"
+  ],
+  "commit_message": "feat(docs): write Tools Reference pages (generic + Home Assistant)"
+}

@@ -1,0 +1,31 @@
+{
+  "id": "01-teardown",
+  "seq": 1,
+  "title": "Tear down old MkDocs pipeline",
+  "depends_on": [],
+  "parallel": false,
+  "context_files": [],
+  "reference_files": [
+    "mkdocs.yml",
+    ".github/workflows/deploy-docs.yml",
+    "docs/",
+    "README.md",
+    "AGENTS.md"
+  ],
+  "files_touched": [
+    "mkdocs.yml (delete)",
+    "docs/*.md (delete 24 files)",
+    "docs/requirements.txt (delete)",
+    "site/ (delete if present)",
+    ".github/workflows/deploy-docs.yml (delete)",
+    "README.md (prune docs section)",
+    ".gitignore (add docs-site/ ignores)"
+  ],
+  "deliverables": [
+    "All old markdown and mkdocs config deleted",
+    "Deploy workflow deleted (will be replaced in subtask 14)",
+    "README.md docs section pruned (replace broken links with one line)",
+    ".gitignore updated with docs-site/dist, docs-site/.astro, docs-site/node_modules"
+  ],
+  "commit_message": "chore(docs): remove mkdocs pipeline and old markdown"
+}

@@ -1,0 +1,31 @@
+{
+  "id": "07-getting-started",
+  "seq": 7,
+  "title": "Write Getting Started pages (4 MDX)",
+  "depends_on": [
+    "04-layout-shell",
+    "05-prose-and-codeblock",
+    "06-content-schema"
+  ],
+  "parallel": true,
+  "context_files": [],
+  "reference_files": [
+    "AGENTS.md",
+    "package.json",
+    "Dockerfile",
+    "src/config/app.config.ts"
+  ],
+  "files_touched": [
+    "docs-site/src/content/docs/index.mdx",
+    "docs-site/src/content/docs/installation.mdx",
+    "docs-site/src/content/docs/quick-start.mdx",
+    "docs-site/src/content/docs/first-conversation.mdx"
+  ],
+  "deliverables": [
+    "index.mdx: intro, three entry points, three build outputs (dist/index.cjs, .mjs, .mjs)",
+    "installation.mdx: bun/Node prereqs, HA >=2024.x, HASS_HOST/HASS_TOKEN/JWT_SECRET >=32 chars",
+    "quick-start.mdx: clone -> install -> configure -> build -> run, in 5 steps",
+    "first-conversation.mdx: Claude Desktop / Cursor config, first list_devices call"
+  ],
+  "commit_message": "feat(docs): write Getting Started pages (intro, install, quick start, first conversation)"
+}

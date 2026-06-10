@@ -1,0 +1,31 @@
+{
+  "id": "03-shadcn-components",
+  "seq": 3,
+  "title": "Install shadcn/ui components",
+  "depends_on": ["02-bootstrap"],
+  "parallel": false,
+  "context_files": [],
+  "reference_files": [
+    "docs-site/src/styles/global.css",
+    "docs-site/components.json"
+  ],
+  "files_touched": [
+    "docs-site/src/components/ui/button.astro",
+    "docs-site/src/components/ui/card.astro",
+    "docs-site/src/components/ui/badge.astro",
+    "docs-site/src/components/ui/separator.astro",
+    "docs-site/src/components/ui/tabs.astro",
+    "docs-site/src/components/ui/accordion.astro",
+    "docs-site/src/components/ui/kbd.astro",
+    "docs-site/src/components/ui/sheet.tsx",
+    "docs-site/src/components/ui/dropdown-menu.tsx",
+    "docs-site/src/components/ui/command.tsx"
+  ],
+  "deliverables": [
+    "Components installed: button, card, badge, separator, tabs, accordion, kbd (HTML-first .astro)",
+    "Interactive: sheet, dropdown-menu, command (.tsx React islands)",
+    "Each component file reviewed to confirm Astro compatibility",
+    "Import aliases resolve to @/components/ui/*"
+  ],
+  "commit_message": "feat(docs): add shadcn UI components (Button, Card, Tabs, etc.)"
+}

@@ -1,0 +1,24 @@
+{
+  "id": "13-pagefind-search",
+  "seq": 13,
+  "title": "Integrate Pagefind search (Cmd+K modal)",
+  "depends_on": ["04-layout-shell"],
+  "parallel": false,
+  "context_files": [],
+  "reference_files": [
+    "docs-site/astro.config.mjs",
+    "docs-site/src/components/TopNav.astro"
+  ],
+  "files_touched": [
+    "docs-site/src/components/Search.astro",
+    "docs-site/src/components/SearchModal.tsx",
+    "docs-site/astro.config.mjs (pagefind integration)",
+    "docs-site/package.json (pagefind dep)"
+  ],
+  "deliverables": [
+    "Pagefind runs at end of astro build, index in dist/pagefind/",
+    "SearchModal.tsx is a small React island that loads the index, filters results, renders as a list using shadcn command",
+    "TopNav search button opens the modal, Cmd+K shortcut works"
+  ],
+  "commit_message": "feat(docs): integrate Pagefind search (Cmd+K modal)"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "12-reference-and-guides",
+  "seq": 12,
+  "title": "Write Reference + Guides pages (5 MDX)",
+  "depends_on": ["07-getting-started"],
+  "parallel": true,
+  "context_files": [],
+  "reference_files": [
+    "src/index.ts",
+    "src/api/routes.ts",
+    "CHANGELOG.md",
+    "bunfig.toml",
+    "AGENTS.md"
+  ],
+  "files_touched": [
+    "docs-site/src/content/docs/api-endpoints.mdx",
+    "docs-site/src/content/docs/troubleshooting.mdx",
+    "docs-site/src/content/docs/contributing.mdx",
+    "docs-site/src/content/docs/faq.mdx",
+    "docs-site/src/content/docs/changelog.mdx"
+  ],
+  "deliverables": [
+    "api-endpoints.mdx: HTTP surface from src/index.ts (GET /health, GET /api/tools Swagger, MCP JSON-RPC, /sse)",
+    "troubleshooting.mdx: JWT_SECRET too short, HASS_TOKEN wrong, port in use, CORS, debug log levels",
+    "contributing.mdx: bun install/test/lint/format, test conventions, 80%/70% coverage, commit style",
+    "faq.mdx: 10-15 Q&A based on common GitHub issues",
+    "changelog.mdx: port CHANGELOG.md into MDX, format for docs site"
+  ],
+  "commit_message": "feat(docs): write Reference + Guides pages (API, troubleshooting, contributing, FAQ, changelog)"
+}

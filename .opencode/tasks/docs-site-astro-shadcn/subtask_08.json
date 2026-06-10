@@ -1,0 +1,32 @@
+{
+  "id": "08-architecture",
+  "seq": 8,
+  "title": "Write Architecture pages (4 MDX)",
+  "depends_on": ["07-getting-started"],
+  "parallel": true,
+  "context_files": [],
+  "reference_files": [
+    "AGENTS.md",
+    "src/mcp/MCPServer.ts",
+    "src/mcp/transports/",
+    "src/stdio-server.ts",
+    "src/http-server.ts",
+    "src/mcp/BaseTool.ts",
+    "src/types/index.ts",
+    "src/security/",
+    "src/sse/"
+  ],
+  "files_touched": [
+    "docs-site/src/content/docs/architecture.mdx",
+    "docs-site/src/content/docs/transports.mdx",
+    "docs-site/src/content/docs/tools.mdx",
+    "docs-site/src/content/docs/security.mdx"
+  ],
+  "deliverables": [
+    "architecture.mdx: layer diagram (Transport -> Middleware -> Tools -> HA Client), key files, request lifecycle",
+    "transports.mdx: HTTP+WS (custom MCPServer, Express, SSE), STDIO (FastMCP v3), HTTP (FastMCP v3)",
+    "tools.mdx: Tool interface (Zod-validated, BaseTool generic), registration, execute flow, Zod-to-JSON-Schema bridge",
+    "security.mdx: JWT_SECRET >=32 chars no default, TokenManager, rate limit (windowMs/max), helmet, sanitize-html, expired-token lockout"
+  ],
+  "commit_message": "feat(docs): write Architecture pages (overview, transports, tools, security)"
+}

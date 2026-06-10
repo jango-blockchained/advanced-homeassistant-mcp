@@ -1,0 +1,33 @@
+{
+  "id": "17-final-validation",
+  "seq": 17,
+  "title": "Final validation (astro check + build + smoke test)",
+  "depends_on": [
+    "02-bootstrap",
+    "03-shadcn-components",
+    "04-layout-shell",
+    "05-prose-and-codeblock",
+    "06-content-schema",
+    "07-getting-started",
+    "08-architecture",
+    "09-configuration",
+    "10-tools-reference",
+    "11-deployment",
+    "12-reference-and-guides",
+    "13-pagefind-search",
+    "14-deploy-workflow",
+    "15-agents-md",
+    "16-readme"
+  ],
+  "parallel": false,
+  "context_files": [],
+  "reference_files": [],
+  "files_touched": [],
+  "deliverables": [
+    "bun x astro check: 0 errors",
+    "bun run build: succeeds, dist/ has all 19 pages",
+    "bun run preview: manual smoke test (sidebar, dark mode, Cmd+K, no 404s, no console errors)",
+    "git status clean"
+  ],
+  "commit_message": "(no commit - validation only)"
+}

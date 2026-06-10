@@ -1,0 +1,15 @@
+{
+  "id": "16-readme",
+  "seq": 16,
+  "title": "Update README.md to point to new docs site",
+  "depends_on": ["01-teardown"],
+  "parallel": true,
+  "context_files": [],
+  "reference_files": ["README.md"],
+  "files_touched": ["README.md"],
+  "deliverables": [
+    "Prune broken/missing docs links (AUTOMATED_RELEASES, etc.)",
+    "Replace entire Documentation section with one paragraph + the new site URL"
+  ],
+  "commit_message": "docs(README): point to new Astro docs site"
+}

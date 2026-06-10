@@ -1,0 +1,28 @@
+{
+  "id": "11-deployment",
+  "seq": 11,
+  "title": "Write Deployment pages (3 MDX)",
+  "depends_on": ["07-getting-started"],
+  "parallel": true,
+  "context_files": [],
+  "reference_files": [
+    "Dockerfile",
+    "Dockerfile.smithery",
+    "docker-compose.yml",
+    "docker-compose.dev.yml",
+    "docker-compose.speech.yml",
+    "src/smithery-sdk.ts",
+    "package.json"
+  ],
+  "files_touched": [
+    "docs-site/src/content/docs/docker.mdx",
+    "docs-site/src/content/docs/smithery.mdx",
+    "docs-site/src/content/docs/standalone.mdx"
+  ],
+  "deliverables": [
+    "docker.mdx: Dockerfile (slim Bun image, no Python/audio by default), compose patterns, env injection, health checks",
+    "smithery.mdx: bun run smithery:build -> dist/smithery.js, Dockerfile.smithery, playground command",
+    "standalone.mdx: node dist/index.cjs (prod), bun run start:http, bun run start:stdio"
+  ],
+  "commit_message": "feat(docs): write Deployment pages (Docker, Smithery, Standalone)"
+}

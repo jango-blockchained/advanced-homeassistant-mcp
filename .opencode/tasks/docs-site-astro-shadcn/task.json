@@ -1,0 +1,358 @@
+{
+  "id": "docs-site-astro-shadcn",
+  "name": "Replace MkDocs with Astro + shadcn (B/W) docs site",
+  "session": ".opencode/sessions/2026-06-10-docs-site-astro-shadcn/",
+  "status": "in_progress",
+  "created": "2026-06-10",
+  "updated": "2026-06-10",
+  "owner": "OpenCoder (delegated to CoderAgent for content batches)",
+  "context": {
+    "context_md": ".opencode/sessions/2026-06-10-docs-site-astro-shadcn/context.md",
+    "plan_md": ".opencode/sessions/2026-06-10-docs-site-astro-shadcn/plan.md"
+  },
+  "exit_criteria": [
+    "All old docs (mkdocs.yml, docs/*.md, deploy-docs.yml, site/) deleted",
+    "docs-site/ builds cleanly with bun run build",
+    "shadcn grayscale B/W + indigo theme is in effect on all pages",
+    "Sidebar + top nav renders with grouped nav across all routes",
+    "At least 15 MDX pages written, all using the real codebase state",
+    "Cmd+K search modal works (Pagefind index generated at build)",
+    "New .github/workflows/deploy-docs.yml deploys to GitHub Pages",
+    "Dark mode toggle works",
+    "README.md updated to link to the new docs site",
+    "AGENTS.md documents the new docs build/dev commands",
+    "Each edit committed atomically with a focused message",
+    "bun x astro check passes with 0 errors",
+    "bun run build in docs-site passes with 0 errors and 0 warnings"
+  ],
+  "subtasks": [
+    {
+      "id": "01-teardown",
+      "seq": 1,
+      "title": "Tear down old MkDocs pipeline",
+      "depends_on": [],
+      "parallel": false,
+      "files_touched": [
+        "mkdocs.yml",
+        "docs/ (all 24 .md files)",
+        "docs/requirements.txt",
+        "site/",
+        ".github/workflows/deploy-docs.yml",
+        "README.md",
+        ".gitignore"
+      ],
+      "deliverables": [
+        "All old markdown and mkdocs config deleted",
+        "Deploy workflow deleted (will be replaced in subtask 15)",
+        "README.md docs section pruned",
+        ".gitignore updated to ignore new docs-site/ artifacts"
+      ],
+      "commit_message": "chore(docs): remove mkdocs pipeline and old markdown"
+    },
+    {
+      "id": "02-bootstrap",
+      "seq": 2,
+      "title": "Bootstrap Astro project skeleton in docs-site/",
+      "depends_on": ["01-teardown"],
+      "parallel": false,
+      "files_touched": [
+        "docs-site/package.json",
+        "docs-site/bun.lock",
+        "docs-site/tsconfig.json",
+        "docs-site/astro.config.mjs",
+        "docs-site/components.json",
+        "docs-site/src/styles/global.css",
+        "docs-site/src/lib/utils.ts",
+        "docs-site/src/env.d.ts",
+        "docs-site/README.md"
+      ],
+      "deliverables": [
+        "Astro v5 + @astrojs/mdx + @astrojs/sitemap + Tailwind v4 installed via bun",
+        "Strict TypeScript, base path /advanced-homeassistant-mcp",
+        "shadcn-style CSS variable tokens in global.css (grayscale + indigo accent)",
+        "cn() utility (lib/utils.ts) for class composition",
+        "Empty pages/index.astro placeholder"
+      ],
+      "commit_message": "feat(docs): bootstrap Astro + MDX + Tailwind v4 + shadcn theme tokens"
+    },
+    {
+      "id": "03-shadcn-components",
+      "seq": 3,
+      "title": "Install shadcn/ui components",
+      "depends_on": ["02-bootstrap"],
+      "parallel": false,
+      "files_touched": [
+        "docs-site/src/components/ui/*.astro (or .tsx where React is needed)",
+        "docs-site/src/lib/utils.ts (cn() already there, verify export)"
+      ],
+      "deliverables": [
+        "Components installed: button, card, tabs, accordion, badge, separator, tooltip, kbd",
+        "For interactive: dropdown-menu, sheet, command (these will be React islands in .tsx)",
+        "Each component file reviewed to confirm Astro compatibility",
+        "Import aliases resolve to @/components/ui/*"
+      ],
+      "commit_message": "feat(docs): add shadcn UI components (Button, Card, Tabs, etc.)"
+    },
+    {
+      "id": "04-layout-shell",
+      "seq": 4,
+      "title": "Build layout shell (BaseLayout, Sidebar, TopNav, ModeToggle)",
+      "depends_on": ["03-shadcn-components"],
+      "parallel": false,
+      "files_touched": [
+        "docs-site/src/layouts/BaseLayout.astro",
+        "docs-site/src/components/Sidebar.astro",
+        "docs-site/src/components/TopNav.astro",
+        "docs-site/src/components/ModeToggle.astro",
+        "docs-site/src/components/PageHead.astro",
+        "docs-site/src/nav.ts"
+      ],
+      "deliverables": [
+        "BaseLayout.astro sets <html>/<head>/<body>, loads global.css, mounts Sidebar+TopNav",
+        "Inline script reads localStorage.theme and applies .dark before paint (no FOUC)",
+        "Sidebar.astro renders grouped nav from src/nav.ts",
+        "TopNav.astro has current-section label + search button + theme toggle + GitHub link",
+        "ModeToggle.astro is a single button with sun/moon icon, inline script toggles .dark",
+        "PageHead.astro wraps <head> with title, meta description, OG tags, favicon"
+      ],
+      "commit_message": "feat(docs): add layout shell (BaseLayout, Sidebar, TopNav, ModeToggle)"
+    },
+    {
+      "id": "05-prose-and-codeblock",
+      "seq": 5,
+      "title": "Add Prose and CodeBlock components for MDX content",
+      "depends_on": ["03-shadcn-components"],
+      "parallel": true,
+      "files_touched": [
+        "docs-site/src/components/Prose.astro",
+        "docs-site/src/components/CodeBlock.astro",
+        "docs-site/astro.config.mjs (shiki config)"
+      ],
+      "deliverables": [
+        "Prose.astro wraps MDX content with max-width, headings, lists, links, tables, callouts, blockquotes",
+        "CodeBlock.astro wraps <pre><code> with copy button (inline script, no React)",
+        "Shiki configured with multiple languages (ts, tsx, js, bash, json, yaml, docker, mdx, toml)"
+      ],
+      "commit_message": "feat(docs): add Prose and CodeBlock components for MDX content"
+    },
+    {
+      "id": "06-content-schema",
+      "seq": 6,
+      "title": "Define content collection schema",
+      "depends_on": ["02-bootstrap"],
+      "parallel": true,
+      "files_touched": ["docs-site/src/content.config.ts"],
+      "deliverables": [
+        "Typed schema for /src/content/docs/* with title, description, section, order, draft"
+      ],
+      "commit_message": "feat(docs): add typed content collection schema for MDX docs"
+    },
+    {
+      "id": "07-getting-started",
+      "seq": 7,
+      "title": "Write Getting Started pages (4 MDX)",
+      "depends_on": [
+        "04-layout-shell",
+        "05-prose-and-codeblock",
+        "06-content-schema"
+      ],
+      "parallel": true,
+      "files_touched": [
+        "docs-site/src/content/docs/index.mdx",
+        "docs-site/src/content/docs/installation.mdx",
+        "docs-site/src/content/docs/quick-start.mdx",
+        "docs-site/src/content/docs/first-conversation.mdx"
+      ],
+      "deliverables": [
+        "index.mdx: intro, three entry points, three build outputs (dist/index.cjs, .mjs, .mjs)",
+        "installation.mdx: bun/Node prereqs, HA >=2024.x, HASS_HOST/HASS_TOKEN/JWT_SECRET >=32 chars",
+        "quick-start.mdx: clone -> install -> configure -> build -> run, in 5 steps",
+        "first-conversation.mdx: Claude Desktop / Cursor config, first list_devices call"
+      ],
+      "commit_message": "feat(docs): write Getting Started pages (intro, install, quick start, first conversation)"
+    },
+    {
+      "id": "08-architecture",
+      "seq": 8,
+      "title": "Write Architecture pages (4 MDX)",
+      "depends_on": ["07-getting-started"],
+      "parallel": true,
+      "files_touched": [
+        "docs-site/src/content/docs/architecture.mdx",
+        "docs-site/src/content/docs/transports.mdx",
+        "docs-site/src/content/docs/tools.mdx",
+        "docs-site/src/content/docs/security.mdx"
+      ],
+      "deliverables": [
+        "architecture.mdx: layer diagram (Transport -> Middleware -> Tools -> HA Client), key files, request lifecycle",
+        "transports.mdx: HTTP+WS (custom MCPServer, Express, SSE), STDIO (FastMCP v3), HTTP (FastMCP v3)",
+        "tools.mdx: Tool interface (Zod-validated, BaseTool generic), registration, execute flow, Zod-to-JSON-Schema bridge",
+        "security.mdx: JWT_SECRET >=32 chars no default, TokenManager, rate limit (windowMs/max), helmet, sanitize-html, expired-token lockout"
+      ],
+      "commit_message": "feat(docs): write Architecture pages (overview, transports, tools, security)"
+    },
+    {
+      "id": "09-configuration",
+      "seq": 9,
+      "title": "Write Configuration pages (3 MDX)",
+      "depends_on": ["07-getting-started"],
+      "parallel": true,
+      "files_touched": [
+        "docs-site/src/content/docs/environment-variables.mdx",
+        "docs-site/src/content/docs/tool-annotations.mdx",
+        "docs-site/src/content/docs/rate-limiting.mdx"
+      ],
+      "deliverables": [
+        "environment-variables.mdx: full table of real env vars from src/config/app.config.ts Zod schema",
+        "tool-annotations.mdx: readOnlyHint, destructiveHint, openWorldHint on ToolAnnotations",
+        "rate-limiting.mdx: RATE_LIMIT.windowMs/RATE_LIMIT.max, per-IP vs per-token, api/auth limiters"
+      ],
+      "commit_message": "feat(docs): write Configuration pages (env vars, annotations, rate limiting)"
+    },
+    {
+      "id": "10-tools-reference",
+      "seq": 10,
+      "title": "Write Tools Reference pages (2 MDX)",
+      "depends_on": ["07-getting-started"],
+      "parallel": true,
+      "files_touched": [
+        "docs-site/src/content/docs/generic-tools.mdx",
+        "docs-site/src/content/docs/homeassistant-tools.mdx"
+      ],
+      "deliverables": [
+        "generic-tools.mdx: Card grid for each generic tool (search-entities, control, history, dashboard, template, error-log, sse-stats, subscribe-events, addon, package, automation-config, entity-state)",
+        "homeassistant-tools.mdx: Card grid for HA-specific tools grouped by domain (light, climate, cover, media, fan, lock, scene, switch, vacuum, todo, alarm, automation, voice, etc.)"
+      ],
+      "commit_message": "feat(docs): write Tools Reference pages (generic + Home Assistant)"
+    },
+    {
+      "id": "11-deployment",
+      "seq": 11,
+      "title": "Write Deployment pages (3 MDX)",
+      "depends_on": ["07-getting-started"],
+      "parallel": true,
+      "files_touched": [
+        "docs-site/src/content/docs/docker.mdx",
+        "docs-site/src/content/docs/smithery.mdx",
+        "docs-site/src/content/docs/standalone.mdx"
+      ],
+      "deliverables": [
+        "docker.mdx: Dockerfile (slim Bun image, no Python/audio by default), compose patterns, env injection, health checks",
+        "smithery.mdx: bun run smithery:build -> dist/smithery.js, Dockerfile.smithery, playground command",
+        "standalone.mdx: node dist/index.cjs (prod), bun run start:http, bun run start:stdio"
+      ],
+      "commit_message": "feat(docs): write Deployment pages (Docker, Smithery, Standalone)"
+    },
+    {
+      "id": "12-reference-and-guides",
+      "seq": 12,
+      "title": "Write Reference + Guides pages (5 MDX)",
+      "depends_on": ["07-getting-started"],
+      "parallel": true,
+      "files_touched": [
+        "docs-site/src/content/docs/api-endpoints.mdx",
+        "docs-site/src/content/docs/troubleshooting.mdx",
+        "docs-site/src/content/docs/contributing.mdx",
+        "docs-site/src/content/docs/faq.mdx",
+        "docs-site/src/content/docs/changelog.mdx"
+      ],
+      "deliverables": [
+        "api-endpoints.mdx: HTTP surface from src/index.ts (GET /health, GET /api/tools Swagger, MCP JSON-RPC, /sse)",
+        "troubleshooting.mdx: JWT_SECRET too short, HASS_TOKEN wrong, port in use, CORS, debug log levels",
+        "contributing.mdx: bun install/test/lint/format, test conventions, 80%/70% coverage, commit style",
+        "faq.mdx: 10-15 Q&A based on common GitHub issues",
+        "changelog.mdx: port CHANGELOG.md into MDX, format for docs site"
+      ],
+      "commit_message": "feat(docs): write Reference + Guides pages (API, troubleshooting, contributing, FAQ, changelog)"
+    },
+    {
+      "id": "13-pagefind-search",
+      "seq": 13,
+      "title": "Integrate Pagefind search (Cmd+K modal)",
+      "depends_on": ["04-layout-shell"],
+      "parallel": false,
+      "files_touched": [
+        "docs-site/src/components/Search.astro",
+        "docs-site/src/components/SearchModal.tsx",
+        "docs-site/astro.config.mjs (pagefind integration)"
+      ],
+      "deliverables": [
+        "Pagefind runs at end of astro build, index in dist/pagefind/",
+        "SearchModal.tsx is a small React island that loads the index, filters results, renders as a list using shadcn command",
+        "TopNav search button opens the modal, Cmd+K shortcut works"
+      ],
+      "commit_message": "feat(docs): integrate Pagefind search (Cmd+K modal)"
+    },
+    {
+      "id": "14-deploy-workflow",
+      "seq": 14,
+      "title": "Replace deploy workflow with Astro Pages workflow",
+      "depends_on": ["02-bootstrap"],
+      "parallel": true,
+      "files_touched": [".github/workflows/deploy-docs.yml"],
+      "deliverables": [
+        "New workflow: bun install -> bun run build -> upload pages artifact -> deploy to GitHub Pages",
+        "Triggers on push to main with docs-site/** changes, plus manual dispatch"
+      ],
+      "commit_message": "ci(docs): replace mkdocs deploy with Astro Pages workflow"
+    },
+    {
+      "id": "15-agents-md",
+      "seq": 15,
+      "title": "Update AGENTS.md with new docs build commands",
+      "depends_on": ["02-bootstrap"],
+      "parallel": true,
+      "files_touched": ["AGENTS.md"],
+      "deliverables": [
+        "Add Documentation section: bun --cwd docs-site run dev|build|preview",
+        "Document the new deploy flow (Pages workflow on push to main)",
+        "Link to the live docs URL"
+      ],
+      "commit_message": "docs(AGENTS): document new docs build commands and deploy flow"
+    },
+    {
+      "id": "16-readme",
+      "seq": 16,
+      "title": "Update README.md to point to new docs site",
+      "depends_on": ["01-teardown"],
+      "parallel": true,
+      "files_touched": ["README.md"],
+      "deliverables": [
+        "Prune broken/missing docs links (AUTOMATED_RELEASES, etc.)",
+        "Replace entire Documentation section with one paragraph + the new site URL"
+      ],
+      "commit_message": "docs(README): point to new Astro docs site"
+    },
+    {
+      "id": "17-final-validation",
+      "seq": 17,
+      "title": "Final validation (astro check + build + smoke test)",
+      "depends_on": [
+        "02-bootstrap",
+        "03-shadcn-components",
+        "04-layout-shell",
+        "05-prose-and-codeblock",
+        "06-content-schema",
+        "07-getting-started",
+        "08-architecture",
+        "09-configuration",
+        "10-tools-reference",
+        "11-deployment",
+        "12-reference-and-guides",
+        "13-pagefind-search",
+        "14-deploy-workflow",
+        "15-agents-md",
+        "16-readme"
+      ],
+      "parallel": false,
+      "files_touched": [],
+      "deliverables": [
+        "bun x astro check: 0 errors",
+        "bun run build: succeeds, dist/ has all 19 pages",
+        "bun run preview: manual smoke test (sidebar, dark mode, Cmd+K, no 404s, no console errors)",
+        "git status clean"
+      ],
+      "commit_message": "(no commit - validation only)"
+    }
+  ]
+}

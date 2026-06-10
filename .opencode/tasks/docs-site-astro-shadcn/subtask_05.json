@@ -1,0 +1,20 @@
+{
+  "id": "05-prose-and-codeblock",
+  "seq": 5,
+  "title": "Add Prose and CodeBlock components for MDX content",
+  "depends_on": ["03-shadcn-components"],
+  "parallel": true,
+  "context_files": [],
+  "reference_files": ["docs-site/src/styles/global.css"],
+  "files_touched": [
+    "docs-site/src/components/Prose.astro",
+    "docs-site/src/components/CodeBlock.astro",
+    "docs-site/astro.config.mjs (shiki config)"
+  ],
+  "deliverables": [
+    "Prose.astro wraps MDX content with max-width, headings, lists, links, tables, callouts, blockquotes",
+    "CodeBlock.astro wraps <pre><code> with copy button (inline script, no React)",
+    "Shiki configured with multiple languages (ts, tsx, js, bash, json, yaml, docker, mdx, toml)"
+  ],
+  "commit_message": "feat(docs): add Prose and CodeBlock components for MDX content"
+}
