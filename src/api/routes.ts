@@ -5,7 +5,7 @@ import { sseManager } from "../sse/index.js";
 import { v4 as uuidv4 } from "uuid";
 import { TokenManager } from "../security/index.js";
 import { tools } from "../tools/index.js";
-import { Tool } from "../interfaces/index.js";
+import { Tool } from "../types/index.js";
 
 const router = Router();
 
