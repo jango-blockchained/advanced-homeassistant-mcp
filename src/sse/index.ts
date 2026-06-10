@@ -52,6 +52,11 @@ export class SSEManager extends EventEmitter {
   private readonly pingInterval: number;
   private readonly cleanupInterval: number;
   private readonly maxConnectionAge: number;
+  // Track interval handles so shutdown() can clear them. Without this,
+  // the intervals keep the event loop alive and prevent process exit
+  // (and stack more intervals each time the singleton is re-created).
+  private pingTimer: NodeJS.Timeout | null = null;
+  private cleanupTimer: NodeJS.Timeout | null = null;
   private readonly rateLimit: typeof DEFAULT_RATE_LIMIT;
 
   constructor(
@@ -76,10 +81,17 @@ export class SSEManager extends EventEmitter {
 
   private startMaintenanceTasks(): void {
     // Send periodic pings to keep connections alive
-    setInterval(() => {
+    this.pingTimer = setInterval(() => {
       this.clients.forEach((client) => {
         if (!this.isRateLimited(client)) {
           try {
+            // Skip if the underlying response has already ended (the
+            // 'close' event hasn't fired yet but the socket is gone).
+            const anyClient = client as unknown as { res?: { writableEnded?: boolean } };
+            if (anyClient.res?.writableEnded) {
+              this.removeClient(client.id);
+              return;
+            }
             client.send(
               JSON.stringify({
                 type: "ping",
@@ -96,18 +108,45 @@ export class SSEManager extends EventEmitter {
     }, this.pingInterval);
 
     // Cleanup inactive or expired connections
-    setInterval(() => {
+    this.cleanupTimer = setInterval(() => {
       const now = Date.now();
       this.clients.forEach((client, clientId) => {
         const connectionAge = now - client.connectedAt.getTime();
         const lastPingAge = client.lastPingAt ? now - client.lastPingAt.getTime() : 0;
 
         if (connectionAge > this.maxConnectionAge || lastPingAge > this.pingInterval * 2) {
-          logger.info(`Removing inactive client ${clientId}`);
+          // Demoted to debug — this fires every cleanupInterval (60s)
+          // and creates one log line per removed client. At scale, with
+          // 1000 clients cycling, this could be 1000 INFO lines/min.
+          logger.debug(`Removing inactive client ${clientId}`);
           this.removeClient(clientId);
         }
       });
     }, this.cleanupInterval);
+  }
+
+  /**
+   * Stop the maintenance intervals and clear all clients. Without
+   * shutdown(), the intervals keep the event loop alive and the
+   * singleton's state is never released.
+   */
+  public shutdown(): void {
+    if (this.pingTimer) {
+      clearInterval(this.pingTimer);
+      this.pingTimer = null;
+    }
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
+    for (const clientId of Array.from(this.clients.keys())) {
+      this.removeClient(clientId);
+    }
+    if (SSEManager.instance === this) {
+      SSEManager.instance = null;
+    }
+    this.removeAllListeners();
+    logger.info("SSE Manager shut down");
   }
 
   static getInstance(): SSEManager {
@@ -291,7 +330,7 @@ export class SSEManager extends EventEmitter {
       timestamp: new Date().toISOString(),
     };
 
-    logger.info(`Broadcasting state change for ${entity.entity_id}`);
+    logger.debug(`Broadcasting state change for ${entity.entity_id}`);
 
     // Serialize message once for all clients (performance optimization)
     let serializedMessage: string | null = null;
@@ -324,7 +363,7 @@ export class SSEManager extends EventEmitter {
       timestamp: new Date().toISOString(),
     };
 
-    logger.info(`Broadcasting event: ${event.event_type}`);
+    logger.debug(`Broadcasting event: ${event.event_type}`);
 
     // Serialize message once for all clients (performance optimization)
     let serializedMessage: string | null = null;
@@ -396,14 +435,14 @@ export class SSEManager extends EventEmitter {
    */
   private sendToClientPreSerialized(client: SSEClient, serializedData: string): void {
     try {
-      logger.info(`Attempting to send data to client ${client.id}`);
+      logger.debug(`Attempting to send data to client ${client.id}`);
       client.send(serializedData);
       this.updateRateLimit(client);
     } catch (error) {
       logger.error(`Failed to send data to client ${client.id}:`, error);
-      logger.info(`Removing client ${client.id} due to send error`);
+      logger.debug(`Removing client ${client.id} due to send error`);
       this.removeClient(client.id);
-      logger.info(`Client count after removal: ${this.clients.size}`);
+      logger.debug(`Client count after removal: ${this.clients.size}`);
     }
   }
 
@@ -417,14 +456,14 @@ export class SSEManager extends EventEmitter {
       return;
     }
     try {
-      logger.info(`Attempting to send data to client ${client.id}`);
+      logger.debug(`Attempting to send data to client ${client.id}`);
       client.send(JSON.stringify(data));
       this.updateRateLimit(client);
     } catch (error) {
       logger.error(`Failed to send data to client ${client.id}:`, error);
-      logger.info(`Removing client ${client.id} due to send error`);
+      logger.debug(`Removing client ${client.id} due to send error`);
       this.removeClient(client.id);
-      logger.info(`Client count after removal: ${this.clients.size}`);
+      logger.debug(`Client count after removal: ${this.clients.size}`);
     }
   }
 }
