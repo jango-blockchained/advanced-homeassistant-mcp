@@ -1,13 +1,10 @@
 ---
 /**
- * Docs site index. Will be replaced by the proper layout (BaseLayout +
- * Sidebar + TopNav) in subtask 4 of the docs-site rewrite plan. For
- * now this is a minimal landing page that proves the Tailwind v4
- * theme tokens, the grayscale B/W + indigo accent, and the shadcn
- * components are wired up.
+ * Docs site index. The real landing page; uses BaseLayout for the
+ * sidebar + topnav shell. Per-page content is intentionally minimal
+ * here — the focus is the navigation.
  */
-import "@/styles/global.css";
-import Button from "@/components/ui/button.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
 import Card from "@/components/ui/card.astro";
 import CardHeader from "@/components/ui/card-header.astro";
 import CardTitle from "@/components/ui/card-title.astro";
@@ -17,60 +14,82 @@ import Badge from "@/components/ui/badge.astro";
 import Kbd from "@/components/ui/kbd.astro";
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Home Assistant MCP — Docs</title>
-    <meta
-      name="description"
-      content="Documentation for the Home Assistant MCP server. Bridge your AI assistant and your smart home."
-    />
-  </head>
-  <body>
-    <main class="mx-auto max-w-3xl px-6 py-20">
-      <h1>Home Assistant MCP</h1>
-      <p class="text-muted-foreground mt-3 text-lg">
-        Documentation site. Content is being rewritten — see the
-        <a href="https://github.com/jango-blockchained/advanced-homeassistant-mcp">
-          project repository
-        </a> for the current MCP server source.
-      </p>
+<BaseLayout
+  title="Home Assistant MCP"
+  description="Bridge your AI assistant and Home Assistant. 40+ tools, three transports, zero config."
+>
+  <div class="mb-8 flex flex-col gap-2">
+    <h1>Home Assistant MCP</h1>
+    <p class="text-muted-foreground text-lg">
+      Bridge your AI assistant and your smart home. 40+ tools, three transports,
+      zero config.
+    </p>
+    <div class="mt-2 flex flex-wrap items-center gap-2">
+      <Badge>v1.0</Badge>
+      <Badge variant="secondary">stable</Badge>
+      <Badge variant="outline">draft docs</Badge>
+    </div>
+  </div>
 
-      <div class="mt-6 flex flex-wrap items-center gap-2">
-        <Badge>v1.0</Badge>
-        <Badge variant="secondary">stable</Badge>
-        <Badge variant="outline">draft</Badge>
-        <span class="ml-2 text-sm">Press <Kbd>Cmd</Kbd> + <Kbd>K</Kbd> for search</span>
-      </div>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <Card>
+      <CardHeader>
+        <CardTitle>Getting Started</CardTitle>
+        <CardDescription>Install, connect, and start talking to your house.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul class="text-muted-foreground list-inside list-disc text-sm">
+          <li><a href="/getting-started/installation/">Installation</a></li>
+          <li><a href="/getting-started/first-connection/">First Connection</a></li>
+          <li><a href="/getting-started/connect-your-ai/">Connect Your AI</a></li>
+        </ul>
+      </CardContent>
+    </Card>
 
-      <h2 class="mt-10">Theme check</h2>
-      <p>
-        If you can see this in grayscale with an indigo focus ring on
-        interactive elements, the theme is wired up correctly.
-      </p>
+    <Card>
+      <CardHeader>
+        <CardTitle>Architecture</CardTitle>
+        <CardDescription>How the three entry points, the tool system, and the HA client fit together.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul class="text-muted-foreground list-inside list-disc text-sm">
+          <li><a href="/architecture/overview/">Overview</a></li>
+          <li><a href="/architecture/entry-points/">Entry Points</a></li>
+          <li><a href="/architecture/tool-system/">Tool System</a></li>
+        </ul>
+      </CardContent>
+    </Card>
 
-      <Card class="mt-6">
-        <CardHeader>
-          <CardTitle>Components live</CardTitle>
-          <CardDescription>shadcn-style components on Astro + Tailwind v4</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div class="flex flex-wrap gap-2">
-            <Button>Default</Button>
-            <Button variant="secondary">Secondary</Button>
-            <Button variant="outline">Outline</Button>
-            <Button variant="ghost">Ghost</Button>
-            <Button variant="destructive">Destructive</Button>
-            <Button variant="link">Link</Button>
-          </div>
-        </CardContent>
-      </Card>
+    <Card>
+      <CardHeader>
+        <CardTitle>Tools Reference</CardTitle>
+        <CardDescription>The 40+ tools your AI can call.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul class="text-muted-foreground list-inside list-disc text-sm">
+          <li><a href="/tools/ha-tools/">HA Tools</a></li>
+          <li><a href="/tools/generic-tools/">Generic Tools</a></li>
+        </ul>
+      </CardContent>
+    </Card>
 
-      <p class="mt-10 text-sm text-muted-foreground">
-        Next: layout shell, sidebar, search.
-      </p>
-    </main>
-  </body>
-</html>
+    <Card>
+      <CardHeader>
+        <CardTitle>Deployment</CardTitle>
+        <CardDescription>Run the server over HTTP+WS, STDIO, or Smithery.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul class="text-muted-foreground list-inside list-disc text-sm">
+          <li><a href="/deployment/http/">HTTP+WS</a></li>
+          <li><a href="/deployment/stdio/">STDIO</a></li>
+          <li><a href="/deployment/smithery/">Smithery</a></li>
+        </ul>
+      </CardContent>
+    </Card>
+  </div>
+
+  <p class="text-muted-foreground mt-12 text-sm">
+    Use the sidebar to browse all 19 pages, or press
+    <Kbd>Cmd</Kbd> + <Kbd>K</Kbd> for search.
+  </p>
+</BaseLayout>

@@ -1,0 +1,60 @@
+---
+/**
+ * BaseLayout — wraps every page with <html>/<head>/<body>, the
+ * PageHead (title/meta), Sidebar, and TopNav. The content slot
+ * goes in the main column.
+ *
+ * Layout structure:
+ *   <html class="dark|">
+ *     <PageHead />     <- <title>, meta, theme init
+ *     <body>
+ *       <div flex>
+ *         <Sidebar />  <- left rail, scrollable
+ *         <div flex col>
+ *           <TopNav /> <- sticky top bar
+ *           <main>    <- content slot
+ *         </div>
+ *       </div>
+ *     </body>
+ *   </html>
+ */
+import "@/styles/global.css";
+import PageHead from "@/components/PageHead.astro";
+import Sidebar from "@/components/Sidebar.astro";
+import TopNav from "@/components/TopNav.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+  currentSection?: string;
+  /** Page path (with leading slash, no trailing) for OG. */
+  path?: string;
+}
+
+const { title, description, currentSection, path = "/" } = Astro.props;
+const currentPath = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <PageHead
+      title={title}
+      description={description}
+      path={path}
+    />
+  </head>
+  <body class="bg-background text-foreground min-h-screen">
+    <div class="flex min-h-screen">
+      <Sidebar currentPath={currentPath} />
+      <div class="flex min-h-screen min-w-0 flex-1 flex-col">
+        <TopNav currentSection={currentSection} />
+        <main class="flex-1 px-6 py-10">
+          <article class="mx-auto max-w-3xl">
+            <slot />
+          </article>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

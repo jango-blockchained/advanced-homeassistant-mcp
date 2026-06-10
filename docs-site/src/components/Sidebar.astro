@@ -1,0 +1,64 @@
+---
+/**
+ * Sidebar — the navigation column on the left. Iterates NAV groups
+ * from src/nav.ts and renders the section heading + a list of links.
+ * The current page is highlighted via data-active (true/false) and
+ * uses the `sidebar-accent` token.
+ */
+import { NAV } from "@/nav";
+import { cn } from "@/lib/utils";
+
+interface Props {
+  /** Current page URL path (e.g. "/getting-started/installation/"). */
+  currentPath: string;
+}
+const { currentPath } = Astro.props;
+
+function isActive(slug: string): boolean {
+  return currentPath === `/${slug}/` || currentPath === `/${slug}`;
+}
+---
+
+<nav
+  class="bg-sidebar text-sidebar-foreground flex h-full w-64 shrink-0 flex-col gap-6 overflow-y-auto border-r border-sidebar-border p-6 text-sm"
+  aria-label="Documentation navigation"
+>
+  <a
+    href="/"
+    class="text-foreground text-base font-semibold tracking-tight no-underline"
+  >
+    Home Assistant MCP
+  </a>
+
+  {
+    NAV.map((section) => (
+      <div>
+        <h3 class="text-sidebar-foreground/70 mb-2 text-xs font-semibold uppercase tracking-wider">
+          {section.title}
+        </h3>
+        <ul class="flex flex-col gap-0.5">
+          {section.items.map((item) => {
+            const active = isActive(item.slug);
+            return (
+              <li>
+                <a
+                  href={item.external ? undefined : `/${item.slug}/`}
+                  target={item.external ? "_blank" : undefined}
+                  rel={item.external ? "noopener noreferrer" : undefined}
+                  class={cn(
+                    "block rounded-md px-2 py-1.5 no-underline transition-colors",
+                    active
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                  )}
+                >
+                  {item.label}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    ))
+  }
+</nav>

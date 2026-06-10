@@ -1,0 +1,64 @@
+---
+/**
+ * PageHead — small wrapper around the <head> element for content
+ * pages. Title and description are always overridden; Open Graph /
+ * Twitter tags use sensible defaults that pages can override via
+ * props.
+ */
+import "@/styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Path-style URL for OG tag (e.g. "/getting-started/"). */
+  path?: string;
+}
+
+const {
+  title,
+  description = "Documentation for the Home Assistant MCP server.",
+  path = "/",
+} = Astro.props;
+
+const siteName = "Home Assistant MCP";
+const fullTitle = title === siteName ? title : `${title} — ${siteName}`;
+const siteUrl = Astro.site?.toString().replace(/\/$/, "") ?? "";
+const ogUrl = `${siteUrl}${path}`;
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="generator" content={Astro.generator} />
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={ogUrl} />
+<meta property="og:site_name" content={siteName} />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+
+<!-- Theme init: applied before paint to prevent flash of wrong theme. -->
+<script is:inline>
+  (function () {
+    try {
+      const stored = localStorage.getItem("theme");
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      ).matches;
+      const theme = stored ?? (prefersDark ? "dark" : "light");
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+    } catch (_e) {
+      /* localStorage unavailable: fall back to OS preference via CSS */
+    }
+  })();
+</script>
