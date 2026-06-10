@@ -28,6 +28,7 @@ const { currentSection } = Astro.props;
   <button
     type="button"
     data-search-trigger
+    onclick="document.dispatchEvent(new CustomEvent('open-search'))"
     class={cn(
       "border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground inline-flex h-9 w-72 items-center gap-2 rounded-md border px-3 text-sm transition-colors",
     )}
