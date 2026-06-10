@@ -76,7 +76,13 @@ export interface MCPRequest {
  */
 export interface MCPResponse {
   jsonrpc?: string;
-  id?: string | number;
+  /**
+   * Per JSON-RPC 2.0:
+   * - For a Response to a Request, this MUST be the same as the Request's id.
+   * - For a Response to a Notification, this MUST be null (the Notification
+   *   itself had id === null).
+   */
+  id?: string | number | null;
   result?: unknown;
   error?: MCPError;
 }

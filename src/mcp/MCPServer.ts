@@ -228,7 +228,7 @@ export class MCPServer extends EventEmitter {
       return response;
     } catch (error) {
       const errorResponse: MCPResponse = {
-        id: request.id ?? undefined,
+        id: request.id ?? null,
         error: {
           code: MCPErrorCode.INTERNAL_ERROR,
           message: error instanceof Error ? error.message : String(error),
@@ -248,7 +248,7 @@ export class MCPServer extends EventEmitter {
     // Handle MCP initialize request
     if (method === "initialize") {
       return {
-        id: request.id ?? undefined,
+        id: request.id ?? null,
         result: {
           protocolVersion: "2024-11-05",
           capabilities: {
@@ -270,7 +270,7 @@ export class MCPServer extends EventEmitter {
     // Handle MCP tools/list request
     if (method === "tools/list") {
       return {
-        id: request.id ?? undefined,
+        id: request.id ?? null,
         result: {
           tools: Array.from(this.tools.values()).map((tool) => {
             interface JSONSchema {
@@ -317,7 +317,7 @@ export class MCPServer extends EventEmitter {
     // Special case for internal context retrieval (used by transports for initialization)
     if (method === "_internal_getContext") {
       return {
-        id: request.id ?? undefined,
+        id: request.id ?? null,
         result: {
           context: context,
           tools: Array.from(this.tools.values()).map((tool) => ({
@@ -337,7 +337,7 @@ export class MCPServer extends EventEmitter {
       const tool = this.tools.get(toolName);
       if (!tool) {
         return {
-          id: request.id ?? undefined,
+          id: request.id ?? null,
           error: {
             code: MCPErrorCode.METHOD_NOT_FOUND,
             message: `Tool not found: ${toolName}`,
@@ -350,13 +350,13 @@ export class MCPServer extends EventEmitter {
         // Return result directly - MCP clients expect raw object/array responses
         // Do NOT wrap in content format for tools/call responses
         return {
-          id: request.id ?? undefined,
+          id: request.id ?? null,
           result: result,
         };
       } catch (error) {
         logger.error(`Error executing tool ${toolName}:`, error);
         return {
-          id: request.id ?? undefined,
+          id: request.id ?? null,
           error: {
             code: MCPErrorCode.TOOL_EXECUTION_ERROR,
             message: error instanceof Error ? error.message : String(error),
@@ -369,7 +369,7 @@ export class MCPServer extends EventEmitter {
     const tool = this.tools.get(method);
     if (!tool) {
       return {
-        id: request.id ?? undefined,
+        id: request.id ?? null,
         error: {
           code: MCPErrorCode.METHOD_NOT_FOUND,
           message: `Method not found: ${method}`,
@@ -381,13 +381,13 @@ export class MCPServer extends EventEmitter {
       const result = await tool.execute(params, context);
       // Return result directly without content wrapping
       return {
-        id: request.id ?? undefined,
+        id: request.id ?? null,
         result: result,
       };
     } catch (error) {
       logger.error(`Error executing tool ${method}:`, error);
       return {
-        id: request.id ?? undefined,
+        id: request.id ?? null,
         error: {
           code: MCPErrorCode.TOOL_EXECUTION_ERROR,
           message: error instanceof Error ? error.message : String(error),
@@ -424,7 +424,7 @@ export class MCPServer extends EventEmitter {
     const tool = this.tools.get(method);
     if (!tool) {
       return {
-        id: request.id ?? undefined,
+        id: request.id ?? null,
         error: {
           code: MCPErrorCode.METHOD_NOT_FOUND,
           message: `Method not found: ${method}`,
@@ -440,7 +440,7 @@ export class MCPServer extends EventEmitter {
         request.params = validParams as Record<string, unknown>;
       } catch (validationError) {
         return {
-          id: request.id ?? undefined,
+          id: request.id ?? null,
           error: {
             code: MCPErrorCode.INVALID_PARAMS,
             message: "Invalid parameters",
@@ -467,7 +467,7 @@ export class MCPServer extends EventEmitter {
     } catch (error) {
       logger.error(`Uncaught error in request pipeline:`, error);
       return {
-        id: request.id ?? undefined,
+        id: request.id ?? null,
         error: {
           code: MCPErrorCode.INTERNAL_ERROR,
           message: error instanceof Error ? error.message : "An unknown error occurred",
