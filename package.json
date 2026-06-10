@@ -92,7 +92,7 @@
     "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
-    "@smithery/cli": "^1.6.3",
+    "@smithery/cli": "^4.11.1",
     "@types/bun": "latest",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
