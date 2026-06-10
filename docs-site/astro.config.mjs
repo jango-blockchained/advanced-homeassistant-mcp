@@ -18,6 +18,11 @@ export default defineConfig({
   },
   markdown: {
     shikiConfig: {
+      // Shiki auto-detects languages from the ```lang fence. We don't
+      // restrict the langs list here (Astro's TS types expect
+      // LanguageRegistration objects, not strings, and listing the
+      // common ones would still leave gaps). All languages Shiki
+      // ships with are supported out of the box.
       theme: "github-dark-dimmed",
       wrap: true,
     },

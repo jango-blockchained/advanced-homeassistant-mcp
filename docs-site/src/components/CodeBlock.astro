@@ -1,0 +1,91 @@
+---
+/**
+ * CodeBlock — wraps a code block with a copy-to-clipboard button.
+ *
+ * In MDX:
+ *   <CodeBlock lang="bash" code={`npm install`} />
+ *
+ * Or with raw children:
+ *   <CodeBlock lang="ts">
+ *     const x: number = 1;
+ *   </CodeBlock>
+ */
+import { cn } from "@/lib/utils";
+
+interface Props {
+  /** Language hint (displayed in the chip). */
+  lang?: string;
+  /** Raw code string. If omitted, uses the slot. */
+  code?: string;
+  class?: string;
+}
+const { lang, code, class: className } = Astro.props as Props;
+const rawCode = code ?? "";
+const blockId = `code-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<figure
+  data-code-block
+  data-code-id={blockId}
+  class={cn(
+    "bg-muted text-foreground relative my-4 overflow-hidden rounded-lg border",
+    className,
+  )}
+>
+  {
+    lang && (
+      <div class="bg-muted/50 text-muted-foreground flex items-center justify-between border-b px-4 py-1.5 font-mono text-xs">
+        <span>{lang}</span>
+        <button
+          type="button"
+          data-copy-btn
+          data-target={blockId}
+          class="hover:text-foreground focus-visible:ring-ring rounded-sm px-2 py-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2"
+        >
+          Copy
+        </button>
+      </div>
+    )
+  }
+  <pre
+    data-code-target={blockId}
+    class="overflow-x-auto p-4 text-sm leading-relaxed"
+  ><code>{rawCode}<slot /></code></pre>
+</figure>
+
+<script>
+  function initCopyButtons() {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      "[data-copy-btn]",
+    );
+    buttons.forEach((btn) => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.target;
+        const pre = document.querySelector<HTMLPreElement>(
+          `[data-code-target="${id}"]`,
+        );
+        if (!pre) return;
+        const text = pre.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = btn.textContent;
+          btn.textContent = "Copied";
+          setTimeout(() => {
+            btn.textContent = original;
+          }, 1500);
+        } catch (_err) {
+          // Fallback: select the text
+          const range = document.createRange();
+          range.selectNodeContents(pre);
+          const sel = window.getSelection();
+          sel?.removeAllRanges();
+          sel?.addRange(range);
+        }
+      });
+    });
+  }
+  initCopyButtons();
+  document.addEventListener("astro:page-load", initCopyButtons);
+</script>

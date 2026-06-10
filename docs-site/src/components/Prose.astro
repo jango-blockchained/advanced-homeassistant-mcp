@@ -1,0 +1,159 @@
+---
+/**
+ * Prose — wraps MDX content with typography styles. Apply to the
+ * root of any content page so headings, lists, links, tables, and
+ * callouts look consistent across the site.
+ *
+ * Usage in MDX:
+ *   ---
+ *   import Prose from "@/components/Prose.astro";
+ *   ---
+ *   <Prose>
+ *     <h1>...</h1>
+ *     <p>...</p>
+ *   </Prose>
+ */
+import { cn } from "@/lib/utils";
+
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<div class={cn("prose-root", className)}>
+  <slot />
+</div>
+
+<style is:global>
+  .prose-root {
+    color: hsl(var(--foreground));
+    max-width: 100%;
+    line-height: 1.7;
+  }
+  .prose-root > * + * {
+    margin-top: 1rem;
+  }
+  .prose-root h1,
+  .prose-root h2,
+  .prose-root h3,
+  .prose-root h4,
+  .prose-root h5,
+  .prose-root h6 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: hsl(var(--foreground));
+    line-height: 1.25;
+  }
+  .prose-root h1 {
+    font-size: 2.25rem;
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+  .prose-root h2 {
+    font-size: 1.75rem;
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .prose-root h3 {
+    font-size: 1.35rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  .prose-root h4 {
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .prose-root p {
+    margin-block: 1rem;
+  }
+  .prose-root a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: hsl(var(--border));
+    transition: text-decoration-color 150ms;
+  }
+  .prose-root a:hover {
+    text-decoration-color: hsl(var(--ring));
+  }
+  .prose-root strong {
+    color: hsl(var(--foreground));
+    font-weight: 600;
+  }
+  .prose-root ul,
+  .prose-root ol {
+    padding-left: 1.5rem;
+  }
+  .prose-root ul {
+    list-style: disc;
+  }
+  .prose-root ol {
+    list-style: decimal;
+  }
+  .prose-root li {
+    margin-block: 0.25rem;
+  }
+  .prose-root li > p {
+    margin-block: 0.25rem;
+  }
+  .prose-root blockquote {
+    border-left: 3px solid hsl(var(--ring));
+    padding: 0.25rem 0 0.25rem 1rem;
+    color: hsl(var(--muted-foreground));
+    font-style: italic;
+    margin-block: 1rem;
+  }
+  .prose-root code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    background-color: hsl(var(--muted));
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+  }
+  .prose-root pre {
+    background-color: hsl(var(--muted));
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin-block: 1rem;
+    border: 1px solid hsl(var(--border));
+  }
+  .prose-root pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+    border-radius: 0;
+  }
+  .prose-root table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin-block: 1rem;
+  }
+  .prose-root th,
+  .prose-root td {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .prose-root th {
+    font-weight: 600;
+    background-color: hsl(var(--muted) / 0.5);
+  }
+  .prose-root hr {
+    border: 0;
+    border-top: 1px solid hsl(var(--border));
+    margin-block: 2rem;
+  }
+  .prose-root img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+  }
+</style>
