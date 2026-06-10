@@ -1,0 +1,72 @@
+---
+title: Authentication
+description: JWT, the token manager, expired-token lockout, and how authentication differs per entry point.
+section: Configuration
+order: 2
+---
+
+The custom HTTP entry point (`src/index.ts`) layers a session-token system on top of the JSON-RPC interface. STDIO and `fastmcp` HTTP skip this — they trust the local process or the network boundary, respectively. This page is about the custom stack.
+
+## Token lifecycle
+
+1. **Client connects.** A new request to `/mcp` without a token is rejected with `401 Unauthorized`.
+2. **Login.** The client posts `HASS_TOKEN` to `/api/auth/login` (over HTTPS in production). The server verifies the token by opening a WebSocket to HA and trying to authenticate with it. If HA accepts, the server mints a JWT (`HS256` with `JWT_SECRET`) that expires in 24 hours.
+3. **Bearer.** Subsequent requests carry `Authorization: Bearer <jwt>`. The middleware verifies the signature, checks the expiry, and attaches the user info to the request context.
+4. **Refresh.** When a JWT is within an hour of expiry, the response includes a refreshed token in the `X-Refresh-Token` header. The client should pick it up and start using it for the next request.
+5. **Logout.** The client deletes its token. The server has no session table to clean up — JWT is stateless.
+
+## The token manager
+
+`src/security/TokenManager.ts` is the in-memory store for active tokens and the lockout state. It holds:
+
+- The set of revoked JWTs (so a logout propagates across instances... well, across the one instance — see below).
+- The set of `HASS_TOKEN` strings that have been seen and the last time they were used.
+- The failed-login counter per IP.
+
+A failed login (HA rejects the token, or the WebSocket fails to open) increments the counter. After 5 failed attempts from the same IP in a 15-minute window, the IP is locked out for 15 minutes. The lockout is in-memory and resets on process restart, which is fine — its purpose is to slow down brute-force token guessing, not to be a security boundary.
+
+## Expired-token lockout
+
+If a request arrives with an expired or tampered token, the middleware returns `401 Unauthorized` with a `WWW-Authenticate: Bearer error="invalid_token"` header. The client should re-login. The server does not automatically retry with a different token, because there is no different token to retry with — JWT is stateless.
+
+## Per-entry-point differences
+
+| Entry point                             | Auth                                            | Why                                                         |
+| --------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------- |
+| `src/index.ts` (custom HTTP)            | JWT, login endpoint, rate limit per IP, lockout | The "production" stack; assumes untrusted network.          |
+| `src/stdio-server.ts` (`fastmcp` STDIO) | None beyond the local process boundary          | The client is a local editor with no remote surface.        |
+| `src/http-server.ts` (`fastmcp` HTTP)   | None (or whatever the `fastmcp` SDK adds)       | Useful for trusted-network or behind-reverse-proxy deploys. |
+
+If you put the custom HTTP entry on the public internet, terminate TLS at a reverse proxy (Caddy, nginx, Cloudflare Tunnel, ...) and put an additional auth layer in front — JWT alone is not enough.
+
+## CSRF
+
+The custom stack uses bearer tokens in the `Authorization` header, so CSRF is not a concern (no cookies). If you add cookie-based auth in the future, add a CSRF token and an `Origin` check.
+
+## Helmet + sanitize-html
+
+The middleware chain (`src/security/enhanced-middleware.ts`) also applies:
+
+- **`helmet`** with a strict CSP. The default policy allows inline scripts for the docs site's theme init; in production, tighten it.
+- **`sanitize-html`** on every text body before it's handed to a tool. This prevents an attacker from smuggling HTML into a `description` field that a downstream UI might render.
+
+## Generating a `JWT_SECRET`
+
+In production, generate a fresh secret and store it as a secret in your platform of choice (GitHub Actions secret, Docker secret, k8s Secret, Vault, ...). Never reuse the example value from `.env.example`.
+
+```bash
+openssl rand -base64 48
+```
+
+Or with Bun:
+
+```bash
+bun -e 'console.log(crypto.randomUUID() + crypto.randomUUID() + crypto.randomUUID())'
+```
+
+The schema enforces `min(32)` so the bare minimum is 32 characters, but 48+ gives you margin to rotate.
+
+## Next
+
+- [Tools](/configuration/tools/) — how individual tools can declare read-only or destructive hints.
+- [Deployment > HTTP+WS](/deployment/http/) — putting this behind a reverse proxy in production.

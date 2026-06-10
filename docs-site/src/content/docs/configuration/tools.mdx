@@ -1,0 +1,118 @@
+---
+title: Tools
+description: Per-tool configuration, MCP annotations, and the read-only / destructive / open-world hints.
+section: Configuration
+order: 3
+---
+
+Tools can carry extra metadata that MCP clients use to decide whether to call them automatically. The `ToolAnnotations` interface (defined in `src/types/index.ts`) is the standard way to expose it.
+
+## The four annotations
+
+| Field             | Type    | Meaning                                                                                         |
+| ----------------- | ------- | ----------------------------------------------------------------------------------------------- |
+| `readOnlyHint`    | boolean | `true` means the tool doesn't change any state. Clients can call it freely.                     |
+| `destructiveHint` | boolean | `true` means the tool mutates state in a way the user might want to confirm.                    |
+| `openWorldHint`   | boolean | `true` means the tool talks to something beyond the local process (network, file system, etc.). |
+| `title`           | string  | A human-friendly title for the tool. Some clients render this instead of `name`.                |
+
+All four are optional. A tool with no annotations is treated as: read-write, possibly destructive, talks to the outside world, use the `name` as the title.
+
+## How a tool declares them
+
+A typical example from `src/tools/homeassistant/list-devices.tool.ts`:
+
+```typescript
+export class ListDevicesTool extends BaseTool<...> {
+  name = "list_devices";
+  description = "List Home Assistant devices, optionally filtered by domain or area.";
+  annotations: ToolAnnotations = {
+    readOnlyHint: true,
+    openWorldHint: true,
+  };
+  inputSchema = z.object({ ... });
+  async execute(input, context) { ... }
+}
+```
+
+A control tool (e.g. `control_light`) gets:
+
+```typescript
+annotations: ToolAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: true, // could change device state the user didn't intend
+  openWorldHint: true,
+};
+```
+
+A pure-computation tool that's all in-process (e.g. a `template` tool that runs a Handlebars template against cached state) gets:
+
+```typescript
+annotations: ToolAnnotations = {
+  readOnlyHint: true,
+  openWorldHint: false,
+};
+```
+
+## Why clients care
+
+The MCP spec is deliberately quiet about how a client _uses_ the annotations. In practice, the common interpretations are:
+
+- **`readOnlyHint: true`**: safe to call proactively when the model wants context (e.g. "list the lights so I can mention them in my answer").
+- **`destructiveHint: true`**: surface a confirmation prompt or require an explicit user instruction. Some clients will simply refuse to call these tools without a "yes".
+- **`openWorldHint: true`**: inform the model that the tool might fail in environment-specific ways (network down, token revoked, etc.). This is a hint to be more careful about error messages.
+
+Set them honestly. If a tool reads from the network, mark it `openWorldHint: true`. If it deletes data, mark it `destructiveHint: true`. Over-marking trains users to dismiss the warnings.
+
+## Disabling a tool at runtime
+
+The `TOOL_<NAME>_DISABLED` env var pattern lets you flip a tool off without redeploying. The check lives in `src/mcp/MCPServer.registerTool`:
+
+```typescript
+if (process.env[`TOOL_${tool.name.toUpperCase()}_DISABLED`] === "true") {
+  logger.info(`Tool ${tool.name} disabled via env var`);
+  return;
+}
+```
+
+For example, to disable the speech tools without removing them from the registry:
+
+```bash
+TOOL_TEXT_TO_SPEECH_DISABLED=true \
+TOOL_VOICE_COMMAND_PARSER_DISABLED=true \
+bun run start:stdio
+```
+
+The tool is omitted from the `tools/list` response, so clients can't call it. Flip the env var back to remove the disable, no rebuild required.
+
+## Rate-limited tools
+
+The `RATE_LIMIT_MAX` global applies to the `/mcp` endpoint, but a small number of expensive tools (e.g. `analyze_audio`, `profile_devices`) apply their own per-tool limit via a custom field on `ToolAnnotations`:
+
+```typescript
+annotations: ToolAnnotations = {
+  // ...
+  custom: { rateLimit: { windowMs: 60_000, max: 5 } },
+};
+```
+
+This is custom (not in the spec) and read by the per-tool rate-limit middleware. Five calls per minute is plenty for an interactive model and prevents a runaway loop from hammering HA.
+
+## Verifying the manifest
+
+To see exactly what the running server advertises, hit `POST /mcp` with:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/list"
+}
+```
+
+The response includes each tool's `name`, `description`, `inputSchema`, and `annotations`. If a tool is missing, it was disabled by env var (see above) or excluded from the registry (rebuild required).
+
+## Next
+
+- [Tools Reference > HA Tools](/tools/ha-tools/) — concrete examples of the annotation pattern across the 40+ tools.
+- [Architecture > Tool System](/architecture/tool-system/) — the underlying class structure.

@@ -1,0 +1,103 @@
+---
+title: Environment
+description: Every environment variable the server reads, with defaults and security notes.
+section: Configuration
+order: 1
+---
+
+All configuration is loaded by `src/config/app.config.ts` from environment variables, validated with a Zod schema, and exposed as a typed `APP_CONFIG` object. The schema is the single source of truth — this page mirrors it verbatim.
+
+## Required variables
+
+| Variable     | Default                           | Notes                                                                                                                                                                                                      |
+| ------------ | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HASS_HOST`  | `http://homeassistant.local:8123` | Base URL of your Home Assistant instance. Override in production to your real host.                                                                                                                        |
+| `HASS_TOKEN` | —                                 | Long-lived access token from HA. **Required for any tool call** to succeed. The server refuses to start in production without it.                                                                          |
+| `JWT_SECRET` | —                                 | At least 32 characters. Used by the custom HTTP entry point to sign session tokens. **No default** in production; the schema throws if it's missing or too short. Generate with `openssl rand -base64 48`. |
+
+## Optional variables
+
+### Server
+
+| Variable   | Default       | Notes                                                                                              |
+| ---------- | ------------- | -------------------------------------------------------------------------------------------------- |
+| `PORT`     | `4000`        | HTTP listen port.                                                                                  |
+| `NODE_ENV` | `development` | `development` / `production` / `test`. The server relaxes some checks in `development` and `test`. |
+
+### Logging
+
+| Variable       | Default | Notes                                                                                      |
+| -------------- | ------- | ------------------------------------------------------------------------------------------ |
+| `LOG_LEVEL`    | `info`  | `error` / `warn` / `info` / `debug` / `trace`.                                             |
+| `LOG_DIR`      | `logs`  | Directory for rotated log files.                                                           |
+| `LOG_MAX_SIZE` | `20m`   | Size before rotation. Accepts the `s`/`m`/`h`/`d` units used by winston-daily-rotate-file. |
+| `LOG_MAX_DAYS` | `14d`   | How long to keep old log files.                                                            |
+| `LOG_COMPRESS` | `false` | Whether to gzip rotated files. Set to `true` to save disk on busy servers.                 |
+| `LOG_REQUESTS` | `false` | If `true`, the HTTP middleware logs every request. Off by default to keep stdout quiet.    |
+
+### Rate limiting
+
+| Variable            | Default        | Notes                                                                                      |
+| ------------------- | -------------- | ------------------------------------------------------------------------------------------ |
+| `RATE_LIMIT_WINDOW` | `15` (minutes) | Sliding window size. The rate limiter is per-IP, applied to the `/mcp` endpoint.           |
+| `RATE_LIMIT_MAX`    | `100`          | Max requests per window per IP. Set higher on a single-user LAN, lower on a public deploy. |
+
+### Server-Sent Events
+
+| Variable            | Default      | Notes                                                                                                      |
+| ------------------- | ------------ | ---------------------------------------------------------------------------------------------------------- |
+| `SSE_MAX_CLIENTS`   | `1000`       | Max concurrent SSE clients (the WebSocket stream). The server starts rejecting new connections above this. |
+| `SSE_PING_INTERVAL` | `30000` (ms) | How often to send a ping to keep idle connections open.                                                    |
+
+### Speech features
+
+The speech subsystem is opt-in. Setting `ENABLE_SPEECH_FEATURES=true` turns on the wake-word, STT, and TTS tools. Each can be enabled independently.
+
+| Variable                 | Default   | Notes                                                               |
+| ------------------------ | --------- | ------------------------------------------------------------------- |
+| `ENABLE_SPEECH_FEATURES` | `false`   | Master switch. Must be `true` to use any speech tool.               |
+| `ENABLE_WAKE_WORD`       | `false`   | Listens for a wake word locally (uses Porcupine).                   |
+| `ENABLE_SPEECH_TO_TEXT`  | `false`   | Whisper-based STT.                                                  |
+| `WHISPER_MODEL_PATH`     | `/models` | Directory containing the Whisper weights.                           |
+| `WHISPER_MODEL_TYPE`     | `base`    | Whisper model size: `tiny` / `base` / `small` / `medium` / `large`. |
+
+## Where the values land in code
+
+The Zod-parsed `APP_CONFIG` is re-exported from `src/config/app.config.ts` and imported wherever typed access is needed:
+
+```typescript
+import { APP_CONFIG } from "@/config/app.config";
+
+const port = APP_CONFIG.PORT; // number, defaulted
+const token = APP_CONFIG.HASS_TOKEN; // string | undefined
+```
+
+A handful of legacy call sites read `process.env` directly (the rate limit, the speech flags). Those are documented inline. New code should import from `APP_CONFIG` so the Zod defaults apply consistently.
+
+## Validation behavior
+
+`app.config.ts` performs an additional check at module load:
+
+- If `SMITHERY_SCAN=true`, skip `HASS_TOKEN` validation. This is the env var Smithery sets while it's probing the server's tool manifest, so the server can boot without credentials.
+- If `HASS_TOKEN` is empty or undefined, also skip the check (the so-called "discovery mode" — tools can be listed but not called).
+- Otherwise, throw if any required env var is missing.
+
+This is what lets Smithery and the build pipeline list tools without provisioning HA.
+
+## Loading from .env
+
+`dotenv` is loaded by the entry points (`src/index.ts`, `src/stdio-server.ts`, `src/http-server.ts`) before the config is read. Put a `.env` file in the project root for local development:
+
+```bash
+HASS_HOST=http://192.168.1.50:8123
+HASS_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+JWT_SECRET=$(openssl rand -base64 48)
+PORT=4000
+```
+
+The `.env` file is git-ignored. Never commit a real token.
+
+## Next
+
+- [Authentication](/configuration/authentication/) — how JWT and the token manager work.
+- [Tools](/configuration/tools/) — tool-level configuration (annotations, read-only mode, etc.).
