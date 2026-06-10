@@ -118,9 +118,11 @@ export const traceTool: Tool = {
 };
 
 /**
- * TraceTool class extending BaseTool (for compatibility with src/index.ts)
+ * TraceTool class extending BaseTool (for compatibility with src/index.ts).
+ * Generic <P, R> lets validateParams() return the typed P instead of
+ * `unknown`, so the logic function below accepts the result.
  */
-export class TraceTool extends BaseTool {
+export class TraceTool extends BaseTool<TraceParams, string> {
   constructor() {
     super({
       name: traceTool.name,

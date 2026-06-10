@@ -630,8 +630,10 @@ export const smartScenariosTool: Tool = {
   execute: executeSmartScenariosLogic,
 };
 
-// Export class for compatibility
-export class SmartScenariosTool extends BaseTool {
+// Export class for compatibility. Generic <P, R> lets validateParams()
+// return the typed P instead of `unknown`, so the logic function below
+// accepts the result.
+export class SmartScenariosTool extends BaseTool<SmartScenariosParams, string> {
   constructor() {
     super({
       name: smartScenariosTool.name,

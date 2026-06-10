@@ -162,8 +162,10 @@ export const todoControlTool: Tool = {
   },
 };
 
-// BaseTool class for compatibility
-export class TodoControlTool extends BaseTool {
+// BaseTool class for compatibility. Generic <P, R> lets validateParams()
+// return the typed P instead of `unknown`, so the logic function below
+// accepts the result.
+export class TodoControlTool extends BaseTool<TodoControlParams, string> {
   constructor() {
     super({
       name: todoControlTool.name,

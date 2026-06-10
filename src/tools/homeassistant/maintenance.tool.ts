@@ -535,7 +535,8 @@ export const maintenanceTool: Tool = {
     "Perform maintenance tasks: find orphaned devices, analyze light usage and energy consumption, device health checks",
   annotations: {
     title: "System Maintenance",
-    description: "Monitor and maintain Home Assistant system health - identify issues, unused devices, and optimization opportunities",
+    description:
+      "Monitor and maintain Home Assistant system health - identify issues, unused devices, and optimization opportunities",
     readOnlyHint: false,
     destructiveHint: true,
     idempotentHint: true,
@@ -545,8 +546,10 @@ export const maintenanceTool: Tool = {
   execute: executeMaintenanceLogic,
 };
 
-// Export class for compatibility
-export class MaintenanceTool extends BaseTool {
+// Export class for compatibility. Generic <P, R> lets validateParams()
+// return the typed P instead of `unknown`, so the logic function below
+// accepts the result.
+export class MaintenanceTool extends BaseTool<MaintenanceParams, string> {
   constructor() {
     super({
       name: maintenanceTool.name,

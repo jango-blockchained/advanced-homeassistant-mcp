@@ -8,13 +8,7 @@
 
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
-import {
-  ToolDefinition,
-  ToolMetadata,
-  MCPContext,
-  MCPStreamPart,
-  MCPErrorCode,
-} from "./types.js";
+import { ToolDefinition, ToolMetadata, MCPContext, MCPStreamPart, MCPErrorCode } from "./types.js";
 
 /**
  * Configuration options for creating a tool
@@ -22,7 +16,11 @@ import {
 export interface ToolOptions<P = unknown, R = unknown> {
   name: string;
   description: string;
-  parameters?: z.ZodType<P>;
+  // The third generic on ZodType is the *input* shape. We use `any` to
+  // allow tools to pass a schema whose input type differs from the
+  // parsed output type — common when `.default()` or `.optional()` is
+  // used, since the input is `T | undefined` and the output is `T`.
+  parameters?: z.ZodType<P, z.ZodTypeDef, any>;
   returnType?: z.ZodType<R>;
   metadata?: Partial<ToolMetadata>;
 }
@@ -41,7 +39,7 @@ export interface ToolOptions<P = unknown, R = unknown> {
 export abstract class BaseTool<P = unknown, R = unknown> implements ToolDefinition<P, R> {
   public readonly name: string;
   public readonly description: string;
-  public readonly parameters?: z.ZodType<P>;
+  public readonly parameters?: z.ZodType<P, z.ZodTypeDef, any>;
   public readonly returnType?: z.ZodType<R>;
   public readonly metadata: ToolMetadata;
 
@@ -154,10 +152,10 @@ export abstract class BaseTool<P = unknown, R = unknown> implements ToolDefiniti
     const { requestId, server } = context;
 
     // Get active transports with streaming support
-    const transports = server["transports"] as Array<{ sendStreamPart?: (part: MCPStreamPart) => void }>;
-    const streamingTransports = transports.filter(
-      (transport) => !!transport.sendStreamPart,
-    );
+    const transports = server["transports"] as Array<{
+      sendStreamPart?: (part: MCPStreamPart) => void;
+    }>;
+    const streamingTransports = transports.filter((transport) => !!transport.sendStreamPart);
 
     if (streamingTransports.length === 0) {
       context.logger.warn(

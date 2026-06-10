@@ -184,8 +184,10 @@ export const switchControlTool: Tool = {
   },
 };
 
-// BaseTool class for compatibility
-export class SwitchControlTool extends BaseTool {
+// BaseTool class for compatibility. Generic params <P, R> let
+// validateParams() return the typed P instead of `unknown`, so
+// downstream logic functions accept the result.
+export class SwitchControlTool extends BaseTool<SwitchControlParams, string> {
   constructor() {
     super({
       name: switchControlTool.name,

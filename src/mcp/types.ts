@@ -24,12 +24,19 @@ export interface MCPConfig {
 export { MCPErrorCode, MCPServerEvents };
 
 /**
- * Tool definition interface
+ * Tool definition interface.
+ *
+ * The third generic on ZodType is the *input* shape. We use `any` to
+ * allow tools to pass a schema whose input type differs from the
+ * parsed output type — common when `.default()` or `.optional()` is
+ * used, since the input is `T | undefined` and the output is `T`.
+ * (Without this, `z.ZodType<P>` is invariant and a schema with a
+ * defaulted field is not assignable to it.)
  */
 export interface ToolDefinition<TParams = unknown, TReturn = unknown> {
   name: string;
   description: string;
-  parameters?: z.ZodType<TParams>;
+  parameters?: z.ZodType<TParams, z.ZodTypeDef, any>;
   returnType?: z.ZodType<TReturn>;
   execute: (params: TParams, context: MCPContext) => Promise<TReturn>;
   metadata?: ToolMetadata;
