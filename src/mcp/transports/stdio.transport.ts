@@ -33,6 +33,10 @@ export class StdioTransport extends BaseTransport {
   private silent: boolean;
   private debug: boolean;
   private server: MCPServer | null = null;
+  /** Maximum bytes per line (DoS protection). 1 MB by default. */
+  private readonly maxLineBytes: number = 1024 * 1024;
+  /** readline interface for newline-delimited JSON framing. */
+  private readlineInterface: import("node:readline").Interface | null = null;
 
   constructor(options: StdioTransportOptions = {}) {
     super();
@@ -139,84 +143,66 @@ export class StdioTransport extends BaseTransport {
   }
 
   /**
-   * Set up the input handling for JSON-RPC requests
+   * Set up the input handling for JSON-RPC requests.
+   *
+   * Uses Node's readline for newline-delimited JSON framing (the de-facto
+   * JSON-RPC over stdio convention). Replaces the previous custom
+   * brace-counting parser which:
+   *   - Did not respect brackets (e.g. {"foo":[1,2,3]} was rejected
+   *     because openBraces reached 0 at the wrong bracket)
+   *   - Had no max-buffer guard (a client sending a 10MB incomplete
+   *     frame would OOM the process)
+   *   - Did not respect JSON-RPC newline-delimited framing
+   *
+   * Lines exceeding MAX_LINE_BYTES are rejected with a parse error
+   * (the client gets a JSON-RPC error response and can recover).
    */
   private setupInputHandling(): void {
-    let buffer = "";
-
-    process.stdin.on("data", (chunk: string) => {
-      buffer += chunk;
-
-      try {
-        // Look for complete JSON objects by matching opening and closing braces
-        let startIndex = 0;
-        let openBraces = 0;
-        let inString = false;
-        let escapeNext = false;
-
-        for (let i = 0; i < buffer.length; i++) {
-          const char = buffer[i];
-
-          if (escapeNext) {
-            escapeNext = false;
-            continue;
-          }
-
-          if (char === "\\" && inString) {
-            escapeNext = true;
-            continue;
-          }
-
-          if (char === '"' && !escapeNext) {
-            inString = !inString;
-            continue;
-          }
-
-          if (!inString) {
-            if (char === "{") {
-              if (openBraces === 0) {
-                startIndex = i;
-              }
-              openBraces++;
-            } else if (char === "}") {
-              openBraces--;
-
-              if (openBraces === 0) {
-                // We have a complete JSON object
-                const jsonStr = buffer.substring(startIndex, i + 1);
-                // Fire-and-forget: handleJsonRequest writes the response
-                // to stdout itself; we just want it scheduled. `void`
-                // marks the promise as intentionally not-awaited.
-                void this.handleJsonRequest(jsonStr);
-
-                // Remove the processed part from the buffer
-                buffer = buffer.substring(i + 1);
-
-                // Reset the parser to start from the beginning of the new buffer
-                i = -1;
-              }
-            }
-          }
-        }
-      } catch (error) {
-        if (this.debug) {
-          logger.error("Error processing JSON-RPC input", error);
-        }
-
-        this.sendErrorResponse(null, new JSONRPCError.ParseError("Invalid JSON"));
-      }
+    // Lazy import so the module loads even if readline is mocked in tests.
+    const readline = require("node:readline") as typeof import("node:readline");
+    const rl = readline.createInterface({
+      input: process.stdin,
+      crlfDelay: Infinity,
     });
 
-    process.stdin.on("end", () => {
+    this.readlineInterface = rl;
+
+    rl.on("line", (line) => {
+      // Strip leading/trailing whitespace; ignore empty lines.
+      const trimmed = line.trim();
+      if (!trimmed) return;
+
+      if (Buffer.byteLength(trimmed, "utf8") > this.maxLineBytes) {
+        // Reject the oversized line. Send a parse error and continue.
+        // Do NOT process the line (would risk memory blowup if the
+        // client keeps sending huge lines).
+        this.sendErrorResponse(
+          null,
+          new JSONRPCError.ParseError(`Line exceeds maximum size of ${this.maxLineBytes} bytes`),
+        );
+        return;
+      }
+
+      // Fire-and-forget: handleJsonRequest writes the response to stdout
+      // itself; we just want it scheduled. `void` marks the promise as
+      // intentionally not-awaited.
+      void this.handleJsonRequest(trimmed);
+    });
+
+    rl.on("close", () => {
       if (!this.silent) {
-        logger.info("Stdio transport: stdin ended");
+        logger.info("Stdio transport: stdin closed");
       }
-      process.exit(0);
+      // Do NOT call process.exit here — let the runtime decide.
+      // The previous behavior (process.exit(0)) made the transport
+      // untestable in harnesses that need to keep the process alive.
     });
 
+    // Keep the legacy 'end'/'error' listeners as belt-and-suspenders, but
+    // they should not fire because readline now owns the stream.
     process.stdin.on("error", (error) => {
       logger.error("Stdio transport: stdin error", error);
-      process.exit(1);
+      // Don't process.exit — let the supervisor handle it.
     });
   }
 
@@ -252,7 +238,7 @@ export class StdioTransport extends BaseTransport {
 
       if (!this.server) {
         return this.sendErrorResponse(
-          request.id,
+          request.id ?? null,
           new JSONRPCError.InternalError("Server not available"),
         );
       }
