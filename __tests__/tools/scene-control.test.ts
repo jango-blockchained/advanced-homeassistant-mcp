@@ -70,8 +70,9 @@ describe("scene tool", () => {
     expect(result.success).toBe(true);
     expect(result.scene_id).toBe("scene.movie_night");
 
-    const url = fetchMock.mock.calls[0]?.[0] as unknown as string;
-    const init = fetchMock.mock.calls[0]?.[1] as unknown as RequestInit;
+    const sceneCalls = fetchMock.mock.calls as unknown as Array<[string, RequestInit?]>;
+    const url = sceneCalls[0]?.[0] as string;
+    const init = sceneCalls[0]?.[1] as RequestInit;
     expect(url).toContain("/api/services/scene/turn_on");
     expect(JSON.parse(init.body as string)).toEqual({ entity_id: "scene.movie_night" });
   });

@@ -73,9 +73,9 @@ describe("automation tool", () => {
     expect(result.action).toBe("toggle");
     expect(result.automation_id).toBe("automation.morning_lights");
 
-    const calls = fetchMock.mock.calls;
-    const url = calls[0]?.[0] as unknown as string;
-    const init = calls[0]?.[1] as unknown as RequestInit;
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit?]>;
+    const url = calls[0]?.[0] as string;
+    const init = calls[0]?.[1] as RequestInit;
     expect(url).toContain("/api/services/automation/toggle");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body as string)).toEqual({ entity_id: "automation.morning_lights" });
@@ -94,9 +94,8 @@ describe("automation tool", () => {
 
     expect(result.success).toBe(true);
     expect(result.action).toBe("trigger");
-    expect((fetchMock.mock.calls[0]?.[0] as unknown as string)).toContain(
-      "/api/services/automation/trigger",
-    );
+    const triggerCalls = fetchMock.mock.calls as unknown as Array<[string, RequestInit?]>;
+    expect(triggerCalls[0]?.[0]).toContain("/api/services/automation/trigger");
   });
 
   test("toggle/trigger without automation_id returns success:false with a clear message", async () => {
