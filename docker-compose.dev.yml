@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # MCP Server - Development mode with hot reload
@@ -26,7 +26,7 @@ services:
     env_file:
       - .env
       - .env.development
-    command: ["sh", "-c", "npm run build:all && node dist/http-server.js"]
+    command: ["sh", "-c", "bun run build:all && bun run dist/http-server.mjs"]
 
 volumes:
   logs:

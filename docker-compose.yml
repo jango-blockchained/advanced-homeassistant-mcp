@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # MCP Server - Model Context Protocol HTTP transport for Smithery deployment
@@ -13,7 +13,7 @@ services:
       - NODE_ENV=production
       - DEBUG=${DEBUG:-false}
       - LOG_LEVEL=${LOG_LEVEL:-info}
-      - HASS_HOST=${HASS_HOST:-http://192.168.178.63:8123}
+      - HASS_HOST=${HASS_HOST:-http://homeassistant.local:8123}
       - HASS_TOKEN=${HASS_TOKEN}
     ports:
       - "${PORT:-7123}:${PORT:-7123}"
@@ -23,7 +23,6 @@ services:
       - homeassistant-mcp-network
     env_file:
       - .env
-      - .env.${NODE_ENV:-production}
 
 volumes:
   logs:
