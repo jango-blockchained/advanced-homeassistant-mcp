@@ -13,35 +13,20 @@
 import { z } from "zod";
 import { UserError } from "fastmcp";
 import { logger } from "../../utils/logger.js";
-import { BaseTool } from "../../mcp/BaseTool.js";
-import { MCPContext } from "../../mcp/types.js";
 import { get_hass, call_service } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
 
-// Define the schema for smart scenarios
-const smartScenariosSchema = z.object({
+// Read-only detection actions
+const smartScenariosReadSchema = z.object({
+  action: z.enum(["detect_scenarios", "detect_issues"]).describe("The detection action to perform"),
+});
+
+// Mutating apply actions (actuate devices, send notifications)
+const smartScenariosActivateSchema = z.object({
   action: z
-    .enum([
-      "detect_scenarios",
-      "apply_nobody_home",
-      "apply_window_heating_check",
-      "apply_motion_lighting",
-      "apply_energy_saving",
-      "apply_night_mode",
-      "apply_arrival_home",
-      "detect_issues",
-      "create_automation",
-    ])
-    .describe("The smart scenario action to perform"),
-
-  mode: z
-    .enum(["detect", "apply", "auto"])
-    .optional()
-    .default("detect")
-    .describe("detect=only report, apply=execute actions, auto=create automation"),
-
+    .enum(["apply_nobody_home", "apply_window_heating_check"])
+    .describe("The scenario to apply"),
   rooms: z.array(z.string()).optional().describe("Specific rooms/areas to apply scenario to"),
-
   temperature_reduction: z
     .number()
     .min(1)
@@ -49,15 +34,20 @@ const smartScenariosSchema = z.object({
     .optional()
     .default(3)
     .describe("Temperature reduction in degrees for climate control (default: 3)"),
-
   enable_notifications: z
     .boolean()
     .optional()
     .default(true)
-    .describe("Send notifications about scenario detection/actions"),
+    .describe("Send notifications about actions taken"),
+  mode: z
+    .enum(["detect", "apply", "auto"])
+    .optional()
+    .default("apply")
+    .describe("For apply_window_heating_check: 'apply' executes, 'detect' reports only"),
 });
 
-type SmartScenariosParams = z.infer<typeof smartScenariosSchema>;
+type SmartScenariosReadParams = z.infer<typeof smartScenariosReadSchema>;
+type SmartScenariosParams = z.infer<typeof smartScenariosActivateSchema>;
 
 interface ScenarioDetection {
   scenario_type: string;
@@ -541,12 +531,10 @@ class SmartScenariosService {
 // Singleton instance
 const smartScenariosService = new SmartScenariosService();
 
-// Execute smart scenarios logic
-async function executeSmartScenariosLogic(params: SmartScenariosParams): Promise<string> {
-  logger.debug(`Executing smart scenarios action: ${params.action}`);
-
-  switch (params.action) {
-    case "detect_scenarios": {
+async function executeSmartScenariosRead(params: SmartScenariosReadParams): Promise<string> {
+  logger.debug(`Executing smart scenarios read action: ${params.action}`);
+  try {
+    if (params.action === "detect_scenarios") {
       const nobodyHome = await smartScenariosService.detectNobodyHome();
       const windowConflicts = await smartScenariosService.detectWindowHeatingConflict();
       const energySaving = await smartScenariosService.detectEnergySavingOpportunities();
@@ -572,89 +560,73 @@ async function executeSmartScenariosLogic(params: SmartScenariosParams): Promise
       );
     }
 
-    case "apply_nobody_home": {
-      const result = await smartScenariosService.applyNobodyHomeScenario(params);
-      return JSON.stringify(result, null, 2);
-    }
-
-    case "apply_window_heating_check": {
-      const result = await smartScenariosService.applyWindowHeatingCheck(params);
-      return JSON.stringify(result, null, 2);
-    }
-
-    case "detect_issues": {
-      const windowConflicts = await smartScenariosService.detectWindowHeatingConflict();
-      const energySaving = await smartScenariosService.detectEnergySavingOpportunities();
-
-      return JSON.stringify(
-        {
-          action: params.action,
-          timestamp: new Date().toISOString(),
-          issues: [...windowConflicts, ...energySaving],
-          total_issues: windowConflicts.length + energySaving.length,
-        },
-        null,
-        2,
-      );
-    }
-
-    case "create_automation": {
-      throw new UserError(
-        "Automatic automation creation is not yet implemented. " +
-          "Use the 'detect_scenarios' action to get automation configs, " +
-          "then create them manually or use the automation_config tool.",
-      );
-    }
-
-    default:
-      throw new UserError(
-        `Action ${params.action} is not yet implemented. Available: detect_scenarios, apply_nobody_home, apply_window_heating_check, detect_issues`,
-      );
+    // detect_issues
+    const windowConflicts = await smartScenariosService.detectWindowHeatingConflict();
+    const energySaving = await smartScenariosService.detectEnergySavingOpportunities();
+    return JSON.stringify(
+      {
+        action: params.action,
+        timestamp: new Date().toISOString(),
+        issues: [...windowConflicts, ...energySaving],
+        total_issues: windowConflicts.length + energySaving.length,
+      },
+      null,
+      2,
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`smart_scenarios read failed: ${message}`);
+    throw new UserError(message);
   }
 }
 
-// Export the tool
+async function executeSmartScenariosActivate(params: SmartScenariosParams): Promise<string> {
+  logger.debug(`Executing smart scenarios activate action: ${params.action}`);
+  try {
+    if (params.action === "apply_nobody_home") {
+      const result = await smartScenariosService.applyNobodyHomeScenario(params);
+      return JSON.stringify(result, null, 2);
+    }
+    if (params.action === "apply_window_heating_check") {
+      const result = await smartScenariosService.applyWindowHeatingCheck(params);
+      return JSON.stringify(result, null, 2);
+    }
+    throw new UserError(`Unknown apply action: ${(params as { action: string }).action}`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`smart_scenarios activate failed: ${message}`);
+    throw new UserError(message);
+  }
+}
+
 export const smartScenariosTool: Tool = {
   name: "smart_scenarios",
   description:
-    "Detect and manage smart home scenarios: nobody home, window/heating conflicts, energy saving, and more",
+    "Detect common smart home scenarios (nobody home, window/heating conflicts, energy-saving opportunities). Read-only analysis.",
   annotations: {
-    title: "Smart Scenarios",
-    description: "Intelligent scenario detection and management for common smart home use cases",
+    title: "Smart Scenarios Detect",
+    description: "Detect smart home scenarios and energy issues",
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  },
+  parameters: smartScenariosReadSchema,
+  execute: executeSmartScenariosRead,
+};
+
+export const smartScenariosActivateTool: Tool = {
+  name: "smart_scenarios_activate",
+  description:
+    "Apply smart home scenarios: turn off lights and adjust climate when nobody is home, or turn off heating when windows are open. Actuates devices and sends notifications.",
+  annotations: {
+    title: "Smart Scenarios Apply",
+    description: "Apply smart home scenarios (actuates devices, sends notifications)",
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: true,
     openWorldHint: true,
   },
-  parameters: smartScenariosSchema,
-  execute: executeSmartScenariosLogic,
+  parameters: smartScenariosActivateSchema,
+  execute: executeSmartScenariosActivate,
 };
-
-// Export class for compatibility. Generic <P, R> lets validateParams()
-// return the typed P instead of `unknown`, so the logic function below
-// accepts the result.
-export class SmartScenariosTool extends BaseTool<SmartScenariosParams, string> {
-  constructor() {
-    super({
-      name: smartScenariosTool.name,
-      description: smartScenariosTool.description,
-      parameters: smartScenariosSchema,
-      metadata: {
-        category: "automation",
-        version: "1.0.0",
-        tags: ["smart_home", "scenarios", "automation", "energy"],
-      },
-    });
-  }
-
-  public async execute(params: SmartScenariosParams, context: MCPContext): Promise<string> {
-    logger.debug(`Executing SmartScenariosTool with params: ${JSON.stringify(params)}`);
-    try {
-      const validatedParams = this.validateParams(params);
-      return await executeSmartScenariosLogic(validatedParams);
-    } catch (error) {
-      logger.error(`Error in SmartScenariosTool: ${String(error)}`);
-      throw error;
-    }
-  }
-}

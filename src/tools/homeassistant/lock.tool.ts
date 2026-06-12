@@ -1,8 +1,9 @@
 /**
- * Lock Control Tool for Home Assistant
+ * Lock tools for Home Assistant
  *
- * This tool allows controlling locks in Home Assistant.
- * Supports locking, unlocking, and opening locks.
+ * Split into:
+ * - `locks` (read-only): list, get
+ * - `locks_activate`: lock, unlock, open  (destructive — unlocks physical doors)
  */
 
 import { z } from "zod";
@@ -10,7 +11,6 @@ import { logger } from "../../utils/logger.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
 
-// Real Home Assistant API service
 class HomeAssistantLockService {
   async getLocks(): Promise<Record<string, unknown>[]> {
     try {
@@ -51,8 +51,7 @@ class HomeAssistantLockService {
   ): Promise<boolean> {
     try {
       const hass = await get_hass();
-      const serviceData = { entity_id, ...data };
-      await hass.callService("lock", service, serviceData);
+      await hass.callService("lock", service, { entity_id, ...data });
       return true;
     } catch (error) {
       logger.error(`Failed to call service ${service} on ${entity_id}:`, error);
@@ -61,77 +60,49 @@ class HomeAssistantLockService {
   }
 }
 
-// Singleton instance
 const haLockService = new HomeAssistantLockService();
 
-// Define the schema for our tool parameters using Zod
-const lockControlSchema = z.object({
-  action: z.enum(["list", "get", "lock", "unlock", "open"]).describe("The action to perform"),
-  entity_id: z
-    .string()
-    .optional()
-    .describe("The entity ID of the lock (required for most actions)"),
-  code: z.string().optional().describe("Optional code for locks that require a PIN/code"),
+const locksReadSchema = z.object({
+  action: z.enum(["list", "get"]).describe("Read action"),
+  entity_id: z.string().optional().describe("Lock entity_id (required for 'get')"),
 });
 
-type LockControlInput = z.infer<typeof lockControlSchema>;
+const locksActivateSchema = z.object({
+  action: z.enum(["lock", "unlock", "open"]).describe("Activation action"),
+  entity_id: z.string().describe("Lock entity_id"),
+  code: z.string().optional().describe("Optional PIN/code"),
+});
 
-// Main tool execution function
-async function execute(params: LockControlInput): Promise<string> {
-  const { action, entity_id, code } = params;
+type LocksReadParams = z.infer<typeof locksReadSchema>;
+type LocksActivateParams = z.infer<typeof locksActivateSchema>;
 
+async function executeLocksRead(params: LocksReadParams): Promise<string> {
+  if (params.action === "list") {
+    const locks = await haLockService.getLocks();
+    return JSON.stringify({ success: true, locks, count: locks.length }, null, 2);
+  }
+  if (!params.entity_id) {
+    return JSON.stringify({ success: false, error: "entity_id is required for get action" });
+  }
+  const lock = await haLockService.getLock(params.entity_id);
+  if (!lock) {
+    return JSON.stringify({ success: false, error: `Lock ${params.entity_id} not found` });
+  }
+  return JSON.stringify({ success: true, lock }, null, 2);
+}
+
+async function executeLocksActivate(params: LocksActivateParams): Promise<string> {
   try {
-    switch (action) {
-      case "list": {
-        const locks = await haLockService.getLocks();
-        return JSON.stringify(
-          {
-            success: true,
-            locks: locks,
-            count: locks.length,
-          },
-          null,
-          2,
-        );
-      }
-
-      case "get": {
-        if (!entity_id) {
-          return JSON.stringify({ success: false, error: "entity_id is required for get action" });
-        }
-        const lock = await haLockService.getLock(entity_id);
-        if (!lock) {
-          return JSON.stringify({ success: false, error: `Lock ${entity_id} not found` });
-        }
-        return JSON.stringify({ success: true, lock: lock }, null, 2);
-      }
-
-      case "lock":
-      case "unlock":
-      case "open": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: `entity_id is required for ${action} action`,
-          });
-        }
-        const serviceData = code ? { code } : {};
-        const success = await haLockService.callService(action, entity_id, serviceData);
-        return JSON.stringify({
-          success,
-          message: success
-            ? `Successfully executed ${action} on ${entity_id}`
-            : `Failed to execute ${action} on ${entity_id}`,
-        });
-      }
-
-      default:
-        // `action` narrows to never after the exhaustive switch; cast to
-        // string for the runtime-fallback message.
-        return JSON.stringify({ success: false, error: `Unknown action: ${String(action)}` });
-    }
+    const serviceData = params.code ? { code: params.code } : {};
+    const success = await haLockService.callService(params.action, params.entity_id, serviceData);
+    return JSON.stringify({
+      success,
+      message: success
+        ? `Successfully executed ${params.action} on ${params.entity_id}`
+        : `Failed to execute ${params.action} on ${params.entity_id}`,
+    });
   } catch (error) {
-    logger.error("Error in lock control tool:", error);
+    logger.error("Error in lock activate tool:", error);
     return JSON.stringify({
       success: false,
       error: error instanceof Error ? error.message : "Unknown error occurred",
@@ -139,19 +110,33 @@ async function execute(params: LockControlInput): Promise<string> {
   }
 }
 
-// Export the tool object
-export const lockControlTool: Tool = {
-  name: "lock_control",
-  description:
-    "Control locks in Home Assistant. Supports locking, unlocking, and opening locks. Some locks may require a code/PIN. Actions include: list (get all locks), get (get specific lock info), lock, unlock, and open (for locks that support unlatching).",
+export const locksTool: Tool = {
+  name: "locks",
+  description: "List all locks or get the state of a specific lock.",
   annotations: {
-    title: "Lock Control",
-    description: "Manage smart locks - lock, unlock, and check status with optional security codes",
+    title: "Locks Inventory",
+    description: "Read-only access to lock entities",
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  },
+  parameters: locksReadSchema,
+  execute: executeLocksRead,
+};
+
+export const locksActivateTool: Tool = {
+  name: "locks_activate",
+  description:
+    "Lock, unlock, or open (unlatch) physical locks. Unlocking is a security-sensitive operation.",
+  annotations: {
+    title: "Locks Activate",
+    description: "Actuate physical locks (security-sensitive)",
     readOnlyHint: false,
     destructiveHint: true,
     idempotentHint: true,
     openWorldHint: true,
   },
-  parameters: lockControlSchema,
-  execute,
+  parameters: locksActivateSchema,
+  execute: executeLocksActivate,
 };

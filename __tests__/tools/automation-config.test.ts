@@ -12,7 +12,7 @@ interface ParsedTextPayload {
   automation_id?: string;
 }
 
-const automationConfigTool = tools.find((t) => t.name === "automation_config")!;
+const automationConfigTool = tools.find((t) => t.name === "automation_config_modify")!;
 
 // The automation_config tool returns FastMCP-style `{content: [{type, text}]}`,
 // where `text` is a JSON-encoded payload. This helper handles both the FastMCP
@@ -26,7 +26,7 @@ function extractPayload(result: unknown): ParsedTextPayload {
   return result as ParsedTextPayload;
 }
 
-describe("automation_config tool", () => {
+describe("automation_config_modify tool", () => {
   beforeEach(() => {
     globalThis.fetch = mock(() =>
       Promise.resolve(createMockResponse({})),
@@ -35,7 +35,7 @@ describe("automation_config tool", () => {
 
   test("the tool is registered", () => {
     expect(automationConfigTool).toBeDefined();
-    expect(automationConfigTool.name).toBe("automation_config");
+    expect(automationConfigTool.name).toBe("automation_config_modify");
   });
 
   test("create requires a config object", async () => {

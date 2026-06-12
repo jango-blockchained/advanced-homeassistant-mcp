@@ -1,8 +1,9 @@
 /**
- * Media Player Control Tool for Home Assistant
+ * Media Player tools for Home Assistant
  *
- * This tool allows controlling media players in Home Assistant.
- * Supports play, pause, volume control, source selection, and media search.
+ * Split into:
+ * - `media_players` (read-only): list, get
+ * - `media_players_activate`: turn_on/off, toggle, playback control, volume, source, sound mode, play media
  */
 
 import { z } from "zod";
@@ -10,7 +11,6 @@ import { logger } from "../../utils/logger.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
 
-// Real Home Assistant API service
 class HomeAssistantMediaPlayerService {
   async getMediaPlayers(): Promise<Record<string, unknown>[]> {
     try {
@@ -51,8 +51,7 @@ class HomeAssistantMediaPlayerService {
   ): Promise<boolean> {
     try {
       const hass = await get_hass();
-      const serviceData = { entity_id, ...data };
-      await hass.callService("media_player", service, serviceData);
+      await hass.callService("media_player", service, { entity_id, ...data });
       return true;
     } catch (error) {
       logger.error(`Failed to call service ${service} on ${entity_id}:`, error);
@@ -61,15 +60,16 @@ class HomeAssistantMediaPlayerService {
   }
 }
 
-// Singleton instance
 const haMediaPlayerService = new HomeAssistantMediaPlayerService();
 
-// Define the schema for our tool parameters using Zod
-const mediaPlayerControlSchema = z.object({
+const mediaPlayersReadSchema = z.object({
+  action: z.enum(["list", "get"]).describe("Read action"),
+  entity_id: z.string().optional().describe("Media player entity_id (required for 'get')"),
+});
+
+const mediaPlayersActivateSchema = z.object({
   action: z
     .enum([
-      "list",
-      "get",
       "turn_on",
       "turn_off",
       "toggle",
@@ -86,31 +86,45 @@ const mediaPlayerControlSchema = z.object({
       "select_source",
       "select_sound_mode",
     ])
-    .describe("The action to perform"),
-  entity_id: z
-    .string()
-    .optional()
-    .describe("The entity ID of the media player (required for most actions)"),
-  volume_level: z
-    .number()
-    .min(0)
-    .max(1)
-    .optional()
-    .describe("Volume level between 0 and 1 (for volume_set)"),
-  is_volume_muted: z.boolean().optional().describe("Mute state (for volume_mute)"),
-  media_content_id: z.string().optional().describe("Media content ID or URL (for play_media)"),
+    .describe("Activation action"),
+  entity_id: z.string().describe("Media player entity_id"),
+  volume_level: z.number().min(0).max(1).optional().describe("Volume 0-1 (volume_set)"),
+  is_volume_muted: z.boolean().optional().describe("Mute state (volume_mute)"),
+  media_content_id: z.string().optional().describe("Media content ID/URL (play_media)"),
   media_content_type: z
     .string()
     .optional()
-    .describe("Media content type like 'music', 'video', 'playlist' (for play_media)"),
-  source: z.string().optional().describe("Input source name (for select_source)"),
-  sound_mode: z.string().optional().describe("Sound mode name (for select_sound_mode)"),
+    .describe("Media type: music/video/playlist (play_media)"),
+  source: z.string().optional().describe("Input source (select_source)"),
+  sound_mode: z.string().optional().describe("Sound mode (select_sound_mode)"),
 });
 
-type MediaPlayerControlInput = z.infer<typeof mediaPlayerControlSchema>;
+type MediaPlayersReadParams = z.infer<typeof mediaPlayersReadSchema>;
+type MediaPlayersActivateParams = z.infer<typeof mediaPlayersActivateSchema>;
 
-// Main tool execution function
-async function execute(params: MediaPlayerControlInput): Promise<string> {
+async function executeMediaPlayersRead(params: MediaPlayersReadParams): Promise<string> {
+  if (params.action === "list") {
+    const players = await haMediaPlayerService.getMediaPlayers();
+    return JSON.stringify(
+      { success: true, media_players: players, count: players.length },
+      null,
+      2,
+    );
+  }
+  if (!params.entity_id) {
+    return JSON.stringify({ success: false, error: "entity_id is required for get action" });
+  }
+  const player = await haMediaPlayerService.getMediaPlayer(params.entity_id);
+  if (!player) {
+    return JSON.stringify({
+      success: false,
+      error: `Media player ${params.entity_id} not found`,
+    });
+  }
+  return JSON.stringify({ success: true, media_player: player }, null, 2);
+}
+
+async function executeMediaPlayersActivate(params: MediaPlayersActivateParams): Promise<string> {
   const {
     action,
     entity_id,
@@ -124,30 +138,6 @@ async function execute(params: MediaPlayerControlInput): Promise<string> {
 
   try {
     switch (action) {
-      case "list": {
-        const players = await haMediaPlayerService.getMediaPlayers();
-        return JSON.stringify(
-          {
-            success: true,
-            media_players: players,
-            count: players.length,
-          },
-          null,
-          2,
-        );
-      }
-
-      case "get": {
-        if (!entity_id) {
-          return JSON.stringify({ success: false, error: "entity_id is required for get action" });
-        }
-        const player = await haMediaPlayerService.getMediaPlayer(entity_id);
-        if (!player) {
-          return JSON.stringify({ success: false, error: `Media player ${entity_id} not found` });
-        }
-        return JSON.stringify({ success: true, media_player: player }, null, 2);
-      }
-
       case "turn_on":
       case "turn_off":
       case "toggle":
@@ -158,12 +148,6 @@ async function execute(params: MediaPlayerControlInput): Promise<string> {
       case "media_previous_track":
       case "volume_up":
       case "volume_down": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: `entity_id is required for ${action} action`,
-          });
-        }
         const success = await haMediaPlayerService.callService(action, entity_id);
         return JSON.stringify({
           success,
@@ -172,14 +156,7 @@ async function execute(params: MediaPlayerControlInput): Promise<string> {
             : `Failed to execute ${action} on ${entity_id}`,
         });
       }
-
       case "volume_set": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: "entity_id is required for volume_set action",
-          });
-        }
         if (volume_level === undefined) {
           return JSON.stringify({
             success: false,
@@ -196,14 +173,7 @@ async function execute(params: MediaPlayerControlInput): Promise<string> {
             : `Failed to set volume on ${entity_id}`,
         });
       }
-
       case "volume_mute": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: "entity_id is required for volume_mute action",
-          });
-        }
         if (is_volume_muted === undefined) {
           return JSON.stringify({
             success: false,
@@ -220,14 +190,7 @@ async function execute(params: MediaPlayerControlInput): Promise<string> {
             : `Failed to mute/unmute ${entity_id}`,
         });
       }
-
       case "play_media": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: "entity_id is required for play_media action",
-          });
-        }
         if (!media_content_id || !media_content_type) {
           return JSON.stringify({
             success: false,
@@ -245,14 +208,7 @@ async function execute(params: MediaPlayerControlInput): Promise<string> {
             : `Failed to play media on ${entity_id}`,
         });
       }
-
       case "select_source": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: "entity_id is required for select_source action",
-          });
-        }
         if (!source) {
           return JSON.stringify({
             success: false,
@@ -269,14 +225,7 @@ async function execute(params: MediaPlayerControlInput): Promise<string> {
             : `Failed to select source on ${entity_id}`,
         });
       }
-
       case "select_sound_mode": {
-        if (!entity_id) {
-          return JSON.stringify({
-            success: false,
-            error: "entity_id is required for select_sound_mode action",
-          });
-        }
         if (!sound_mode) {
           return JSON.stringify({
             success: false,
@@ -293,14 +242,9 @@ async function execute(params: MediaPlayerControlInput): Promise<string> {
             : `Failed to select sound mode on ${entity_id}`,
         });
       }
-
-      default:
-        // `action` narrows to never after the exhaustive switch; cast to
-        // string for the runtime-fallback message.
-        return JSON.stringify({ success: false, error: `Unknown action: ${String(action)}` });
     }
   } catch (error) {
-    logger.error("Error in media player control tool:", error);
+    logger.error("Error in media player activate tool:", error);
     return JSON.stringify({
       success: false,
       error: error instanceof Error ? error.message : "Unknown error occurred",
@@ -308,19 +252,33 @@ async function execute(params: MediaPlayerControlInput): Promise<string> {
   }
 }
 
-// Export the tool object
-export const mediaPlayerControlTool: Tool = {
-  name: "media_player_control",
-  description:
-    "Control media players in Home Assistant. Supports playback control, volume adjustment, source selection, and media playing. Actions include: list (get all media players), get (get specific player info), turn_on/turn_off/toggle, play/pause/stop, next/previous track, volume controls, source and sound mode selection.",
+export const mediaPlayersTool: Tool = {
+  name: "media_players",
+  description: "List all media players or get the state of a specific media player.",
   annotations: {
-    title: "Media Player Control",
-    description: "Control media playback - play, pause, volume, source selection on TVs and speakers",
-    readOnlyHint: false,
+    title: "Media Players Inventory",
+    description: "Read-only access to media player entities",
+    readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
     openWorldHint: true,
   },
-  parameters: mediaPlayerControlSchema,
-  execute,
+  parameters: mediaPlayersReadSchema,
+  execute: executeMediaPlayersRead,
+};
+
+export const mediaPlayersActivateTool: Tool = {
+  name: "media_players_activate",
+  description:
+    "Control media players: playback, volume, source/sound mode selection, play media on TVs and speakers.",
+  annotations: {
+    title: "Media Players Activate",
+    description: "Actuate media players (audio/video output)",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+  },
+  parameters: mediaPlayersActivateSchema,
+  execute: executeMediaPlayersActivate,
 };

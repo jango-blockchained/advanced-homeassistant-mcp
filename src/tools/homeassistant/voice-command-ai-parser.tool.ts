@@ -251,16 +251,16 @@ interface AIParseCommandResult {
 }
 
 // Export the tool object
-export const voiceCommandAIParserTool: Tool = {
-  name: "voice_command_ai_parser",
+export const voiceCommandAIParserActivateTool: Tool = {
+  name: "voice_command_ai_parser_activate",
   description:
-    "Parse voice commands using AI (Claude). Better understanding of natural language, context, and complex phrasing. Falls back gracefully if AI not available.",
+    "Parse voice commands using AI (Claude). Makes an outbound API call to api.anthropic.com (consumes API credits, sends transcript to a third party). Falls back gracefully if AI not available.",
   annotations: {
     title: "AI Voice Parser",
     description: "Use Claude AI for advanced natural language understanding of voice commands",
-    readOnlyHint: true,
+    readOnlyHint: false,
     destructiveHint: false,
-    idempotentHint: true,
+    idempotentHint: false,
     openWorldHint: true,
   },
   parameters: voiceCommandAIParserSchema,
@@ -275,8 +275,8 @@ export const voiceCommandAIParserTool: Tool = {
 export class VoiceCommandAIParserTool extends BaseTool {
   constructor() {
     super({
-      name: voiceCommandAIParserTool.name,
-      description: voiceCommandAIParserTool.description,
+      name: voiceCommandAIParserActivateTool.name,
+      description: voiceCommandAIParserActivateTool.description,
       parameters: voiceCommandAIParserSchema,
       metadata: {
         category: "speech",

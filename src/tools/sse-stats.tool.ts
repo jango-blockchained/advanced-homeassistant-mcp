@@ -11,7 +11,7 @@ export const getSSEStatsTool: Tool = {
     description: "View metrics and diagnostics for active SSE connections and subscriptions",
     readOnlyHint: true,
     destructiveHint: false,
-    idempotentHint: true,
+    idempotentHint: false,
     openWorldHint: false,
   },
   parameters: z.object({

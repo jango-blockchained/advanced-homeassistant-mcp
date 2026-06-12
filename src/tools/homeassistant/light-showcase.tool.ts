@@ -12,15 +12,17 @@ const LightShowcaseParamsSchema = z.object({
 
 type LightShowcaseParams = z.infer<typeof LightShowcaseParamsSchema>;
 
-export const lightShowcaseTool: Tool = {
-    name: "light_showcase",
+export const lightShowcaseActivateTool: Tool = {
+    name: "light_showcase_activate",
     description: "Run a choreographed light showcase that calls various moods and custom palettes to demonstrate system capabilities.",
     parameters: LightShowcaseParamsSchema,
     annotations: {
         title: "Light Showcase",
         description: "Demo mode: Cycles through Sunrise, Forest, Ocean, Romance, Cyberpunk, and Chill",
+        readOnlyHint: false,
         destructiveHint: false,
         idempotentHint: false,
+        openWorldHint: true,
     },
     execute: async (params: LightShowcaseParams) => {
         const { target, loops } = params;

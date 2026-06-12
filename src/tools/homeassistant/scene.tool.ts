@@ -1,66 +1,48 @@
 /**
- * Scene Tool for Home Assistant
+ * Scene Tools for Home Assistant
  *
- * This tool manages Home Assistant scenes - list and activate.
+ * Split into:
+ * - `scene` (read-only): list
+ * - `scene_activate`: activate (calls scene.turn_on, real-world effects via lights/climate)
  */
 
 import { z } from "zod";
 import { logger } from "../../utils/logger.js";
 
-import { MCPContext } from "../../mcp/types.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
 
-// Define the schema for our tool parameters
-const sceneSchema = z.object({
-  action: z.enum(["list", "activate"]).describe("Action to perform with scenes"),
-  scene_id: z.string().optional().describe("Scene ID to activate (required for activate action)"),
+const sceneReadSchema = z.object({
+  action: z.literal("list").describe("List configured scenes"),
 });
 
-// Infer the type from the schema
-type SceneParams = z.infer<typeof sceneSchema>;
+const sceneActivateSchema = z.object({
+  action: z.literal("activate").describe("Activate a scene"),
+  scene_id: z.string().describe("Scene entity ID to activate"),
+});
 
-// Shared execution logic
-async function executeSceneLogic(params: SceneParams): Promise<string> {
-  logger.debug(`Executing scene logic with params: ${JSON.stringify(params)}`);
+type SceneReadParams = z.infer<typeof sceneReadSchema>;
+type SceneActivateParams = z.infer<typeof sceneActivateSchema>;
 
+async function executeSceneRead(_params: SceneReadParams): Promise<string> {
   try {
     const hass = await get_hass();
+    const states = await hass.getStates();
+    const scenes = states
+      .filter((state) => state.entity_id.startsWith("scene."))
+      .map((scene) => ({
+        entity_id: scene.entity_id,
+        name: scene.attributes?.friendly_name || scene.entity_id.split(".")[1],
+        description: scene.attributes?.description,
+      }));
 
-    if (params.action === "list") {
-      const states = await hass.getStates();
-      const scenes = states
-        .filter((state) => state.entity_id.startsWith("scene."))
-        .map((scene) => ({
-          entity_id: scene.entity_id,
-          name: scene.attributes?.friendly_name || scene.entity_id.split(".")[1],
-          description: scene.attributes?.description,
-        }));
-
-      return JSON.stringify({
-        success: true,
-        scenes,
-        total_count: scenes.length,
-      });
-    } else if (params.action === "activate") {
-      if (!params.scene_id) {
-        throw new Error("Scene ID is required for activate action");
-      }
-
-      await hass.callService("scene", "turn_on", {
-        entity_id: params.scene_id,
-      });
-
-      return JSON.stringify({
-        success: true,
-        message: `Successfully activated scene ${params.scene_id}`,
-        scene_id: params.scene_id,
-      });
-    }
-
-    throw new Error("Invalid action specified");
+    return JSON.stringify({
+      success: true,
+      scenes,
+      total_count: scenes.length,
+    });
   } catch (error) {
-    logger.error(`Error in scene logic: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`Error listing scenes: ${error instanceof Error ? error.message : String(error)}`);
     return JSON.stringify({
       success: false,
       message: error instanceof Error ? error.message : "Unknown error occurred",
@@ -68,20 +50,53 @@ async function executeSceneLogic(params: SceneParams): Promise<string> {
   }
 }
 
-// Tool object export (for FastMCP)
+async function executeSceneActivate(params: SceneActivateParams): Promise<string> {
+  try {
+    const hass = await get_hass();
+    await hass.callService("scene", "turn_on", { entity_id: params.scene_id });
+    return JSON.stringify({
+      success: true,
+      message: `Successfully activated scene ${params.scene_id}`,
+      scene_id: params.scene_id,
+    });
+  } catch (error) {
+    logger.error(
+      `Error activating scene: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return JSON.stringify({
+      success: false,
+      message: error instanceof Error ? error.message : "Unknown error occurred",
+    });
+  }
+}
+
 export const sceneTool: Tool = {
   name: "scene",
-  description: "Manage and activate Home Assistant scenes",
+  description: "List Home Assistant scenes.",
   annotations: {
-    title: "Scene Management",
-    description: "List and activate pre-configured Home Assistant scenes for quick environment setup",
+    title: "Scene Inventory",
+    description: "Read-only listing of configured scenes",
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  },
+  parameters: sceneReadSchema,
+  execute: executeSceneRead,
+};
+
+export const sceneActivateTool: Tool = {
+  name: "scene_activate",
+  description:
+    "Activate a pre-configured Home Assistant scene (calls scene.turn_on, actuates the underlying devices).",
+  annotations: {
+    title: "Scene Activate",
+    description: "Activate a scene — actuates the devices it controls",
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: true,
     openWorldHint: true,
   },
-  parameters: sceneSchema,
-  execute: executeSceneLogic,
+  parameters: sceneActivateSchema,
+  execute: executeSceneActivate,
 };
-
-

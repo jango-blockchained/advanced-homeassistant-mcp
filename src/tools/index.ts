@@ -1,42 +1,52 @@
 import { Tool } from "../types/index";
-import { controlTool } from "./control.tool";
+import { controlActivateTool } from "./control.tool";
 import { historyTool } from "./history.tool";
-import { addonTool } from "./addon.tool";
-import { packageTool } from "./package.tool";
-import { automationConfigTool } from "./automation-config.tool";
+import { addonTool, addonModifyTool } from "./addon.tool";
+import { packageTool, packageModifyTool } from "./package.tool";
+import { automationConfigModifyTool } from "./automation-config.tool";
 import { subscribeEventsTool } from "./subscribe-events.tool";
 import { getSSEStatsTool } from "./sse-stats.tool";
 
-// Import Tool objects (not classes) from homeassistant directory
-import { lightsControlTool } from "./homeassistant/lights.tool";
-import { climateControlTool } from "./homeassistant/climate.tool";
-import { automationTool } from "./homeassistant/automation.tool";
+// Domain device tools — each split into <domain> (read-only) + <domain>_activate
+import { lightsTool, lightsActivateTool } from "./homeassistant/lights.tool";
+import { climateTool, climateActivateTool } from "./homeassistant/climate.tool";
+import {
+  automationTool,
+  automationModifyTool,
+  automationActivateTool,
+} from "./homeassistant/automation.tool";
 import { listDevicesTool } from "./homeassistant/list-devices.tool";
-import { notifyTool } from "./homeassistant/notify.tool";
-import { sceneTool } from "./homeassistant/scene.tool";
-import { mediaPlayerControlTool } from "./homeassistant/media-player.tool";
-import { coverControlTool } from "./homeassistant/cover.tool";
-import { lockControlTool } from "./homeassistant/lock.tool";
-import { fanControlTool } from "./homeassistant/fan.tool";
-import { vacuumControlTool } from "./homeassistant/vacuum.tool";
-import { alarmControlTool } from "./homeassistant/alarm.tool";
-import { switchControlTool } from "./homeassistant/switch.tool";
-import { todoControlTool } from "./homeassistant/todo.tool";
+import { notifyActivateTool } from "./homeassistant/notify.tool";
+import { sceneTool, sceneActivateTool } from "./homeassistant/scene.tool";
+import { mediaPlayersTool, mediaPlayersActivateTool } from "./homeassistant/media-player.tool";
+import { coversTool, coversActivateTool } from "./homeassistant/cover.tool";
+import { locksTool, locksActivateTool } from "./homeassistant/lock.tool";
+import { fansTool, fansActivateTool } from "./homeassistant/fan.tool";
+import { vacuumsTool, vacuumsActivateTool } from "./homeassistant/vacuum.tool";
+import { alarmsTool, alarmsActivateTool } from "./homeassistant/alarm.tool";
+import { switchesTool, switchesActivateTool } from "./homeassistant/switch.tool";
+import { todoTool, todoModifyTool } from "./homeassistant/todo.tool";
 import { maintenanceTool } from "./homeassistant/maintenance.tool";
-import { smartScenariosTool } from "./homeassistant/smart-scenarios.tool";
-import { lightAnimationTool } from "./homeassistant/light-animation.tool";
-import { lightScenarioTool } from "./homeassistant/light-scenario.tool";
-import { lightShowcaseTool } from "./homeassistant/light-showcase.tool";
-import { animationControlTool } from "./homeassistant/animation-control.tool";
-// Import voice tools
+import {
+  smartScenariosTool,
+  smartScenariosActivateTool,
+} from "./homeassistant/smart-scenarios.tool";
+import { lightAnimationActivateTool } from "./homeassistant/light-animation.tool";
+import { lightScenarioActivateTool } from "./homeassistant/light-scenario.tool";
+import { lightShowcaseActivateTool } from "./homeassistant/light-showcase.tool";
+import {
+  animationControlTool,
+  animationControlActivateTool,
+} from "./homeassistant/animation-control.tool";
+// Voice tools
 import { voiceCommandParserTool } from "./homeassistant/voice-command-parser.tool";
-import { voiceCommandExecutorTool } from "./homeassistant/voice-command-executor.tool";
-import { voiceCommandAIParserTool } from "./homeassistant/voice-command-ai-parser.tool";
+import { voiceCommandExecutorActivateTool } from "./homeassistant/voice-command-executor.tool";
+import { voiceCommandAIParserActivateTool } from "./homeassistant/voice-command-ai-parser.tool";
 import { traceTool } from "./homeassistant/trace.tool";
 import { entityStateTool } from "./entity-state.tool";
 import { searchEntitiesTool } from "./search-entities.tool";
 import { errorLogTool } from "./error-log.tool";
-import { dashboardTool } from "./dashboard.tool";
+import { dashboardTool, dashboardModifyTool } from "./dashboard.tool";
 import { renderTemplateTool } from "./template.tool";
 
 // Tool category types
@@ -63,52 +73,92 @@ interface _ToolMetadata {
   };
 }
 
-// Array to track all tools
+// Array to track all tools. Naming convention:
+//   - no suffix:  read-only (local HA queries or in-process)
+//   - _modify:    mutates HA config/state (no hardware actuation, no outbound messages)
+//   - _activate:  actuates hardware, sends messages, or makes remote (non-HA) API calls
 export const tools: Tool[] = [
-  controlTool,
+  // Universal control
+  controlActivateTool,
+
+  // History / events / SSE
   historyTool,
-  addonTool,
-  packageTool,
-  automationConfigTool,
   subscribeEventsTool,
   getSSEStatsTool,
-  // Home Assistant tools
-  lightsControlTool,
-  climateControlTool,
+
+  // Add-on / package management
+  addonTool,
+  addonModifyTool,
+  packageTool,
+  packageModifyTool,
+
+  // Automation
   automationTool,
+  automationModifyTool,
+  automationActivateTool,
+  automationConfigModifyTool,
+
+  // Generic entity / search / template / log
   listDevicesTool,
-  notifyTool,
+  entityStateTool,
+  searchEntitiesTool,
+  renderTemplateTool,
+  errorLogTool,
+
+  // Dashboard
+  dashboardTool,
+  dashboardModifyTool,
+
+  // Domain device tools (read-only + activate)
+  lightsTool,
+  lightsActivateTool,
+  climateTool,
+  climateActivateTool,
+  switchesTool,
+  switchesActivateTool,
+  coversTool,
+  coversActivateTool,
+  fansTool,
+  fansActivateTool,
+  locksTool,
+  locksActivateTool,
+  alarmsTool,
+  alarmsActivateTool,
+  mediaPlayersTool,
+  mediaPlayersActivateTool,
+  vacuumsTool,
+  vacuumsActivateTool,
+
+  // Scenes
   sceneTool,
-  mediaPlayerControlTool,
-  coverControlTool,
-  lockControlTool,
-  fanControlTool,
-  vacuumControlTool,
-  alarmControlTool,
-  switchControlTool,
-  todoControlTool,
+  sceneActivateTool,
+
+  // To-do lists
+  todoTool,
+  todoModifyTool,
+
+  // Notifications
+  notifyActivateTool,
+
+  // Maintenance / smart scenarios
   maintenanceTool,
   smartScenariosTool,
-  lightAnimationTool,
-  lightScenarioTool,
-  lightShowcaseTool,
+  smartScenariosActivateTool,
+
+  // Light animations / scenarios / showcase
+  lightAnimationActivateTool,
+  lightScenarioActivateTool,
+  lightShowcaseActivateTool,
   animationControlTool,
+  animationControlActivateTool,
+
   // Voice command tools
   voiceCommandParserTool,
-  voiceCommandExecutorTool,
-  voiceCommandAIParserTool,
-  // Trace tool (WebSocket-based)
+  voiceCommandExecutorActivateTool,
+  voiceCommandAIParserActivateTool,
+
+  // Trace
   traceTool,
-  // Generic entity state tool
-  entityStateTool,
-  // Powerful entity search
-  searchEntitiesTool,
-  // Error log
-  errorLogTool,
-  // Dashboard management
-  dashboardTool,
-  // Template evaluation
-  renderTemplateTool,
 ];
 
 // Function to get a tool by name
@@ -123,38 +173,55 @@ export function getAllTools(): Tool[] {
 
 // Export all tools individually
 export {
-  controlTool,
+  controlActivateTool,
   historyTool,
   addonTool,
+  addonModifyTool,
   packageTool,
-  automationConfigTool,
+  packageModifyTool,
+  automationConfigModifyTool,
   subscribeEventsTool,
   getSSEStatsTool,
   // Home Assistant tools
-  lightsControlTool,
-  climateControlTool,
+  lightsTool,
+  lightsActivateTool,
+  climateTool,
+  climateActivateTool,
   automationTool,
+  automationModifyTool,
+  automationActivateTool,
   listDevicesTool,
-  notifyTool,
+  notifyActivateTool,
   sceneTool,
-  mediaPlayerControlTool,
-  coverControlTool,
-  lockControlTool,
-  fanControlTool,
-  vacuumControlTool,
-  alarmControlTool,
-  switchControlTool,
-  todoControlTool,
+  sceneActivateTool,
+  mediaPlayersTool,
+  mediaPlayersActivateTool,
+  coversTool,
+  coversActivateTool,
+  locksTool,
+  locksActivateTool,
+  fansTool,
+  fansActivateTool,
+  vacuumsTool,
+  vacuumsActivateTool,
+  alarmsTool,
+  alarmsActivateTool,
+  switchesTool,
+  switchesActivateTool,
+  todoTool,
+  todoModifyTool,
   maintenanceTool,
   smartScenariosTool,
-  lightAnimationTool,
-  lightScenarioTool,
-  lightShowcaseTool,
+  smartScenariosActivateTool,
+  lightAnimationActivateTool,
+  lightScenarioActivateTool,
+  lightShowcaseActivateTool,
   animationControlTool,
+  animationControlActivateTool,
   // Voice command tools
   voiceCommandParserTool,
-  voiceCommandExecutorTool,
-  voiceCommandAIParserTool,
+  voiceCommandExecutorActivateTool,
+  voiceCommandAIParserActivateTool,
   // Trace tool
   traceTool,
   // Generic entity state
@@ -163,8 +230,9 @@ export {
   searchEntitiesTool,
   // Error log
   errorLogTool,
-  // Dashboard management
+  // Dashboard
   dashboardTool,
+  dashboardModifyTool,
   // Template evaluation
   renderTemplateTool,
 };

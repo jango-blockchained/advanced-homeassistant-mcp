@@ -456,8 +456,8 @@ async function resolveAndExecute(
 }
 
 // Export the tool object
-export const voiceCommandExecutorTool: Tool = {
-  name: "voice_command_executor",
+export const voiceCommandExecutorActivateTool: Tool = {
+  name: "voice_command_executor_activate",
   description:
     "Execute parsed voice commands through Home Assistant. Maps intents to service calls and controls devices.",
   annotations: {
@@ -480,8 +480,8 @@ export const voiceCommandExecutorTool: Tool = {
 export class VoiceCommandExecutorTool extends BaseTool {
   constructor() {
     super({
-      name: voiceCommandExecutorTool.name,
-      description: voiceCommandExecutorTool.description,
+      name: voiceCommandExecutorActivateTool.name,
+      description: voiceCommandExecutorActivateTool.description,
       parameters: voiceCommandExecutorSchema,
       metadata: {
         category: "speech",

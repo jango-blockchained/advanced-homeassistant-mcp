@@ -19,8 +19,8 @@ const allCommands = [
   "set_humidity",
 ] as const;
 
-export const controlTool: Tool = {
-  name: "control",
+export const controlActivateTool: Tool = {
+  name: "control_activate",
   description:
     "Control Home Assistant devices and services - universal control endpoint for turning on/off, toggling, setting positions, temperatures, and more",
   annotations: {

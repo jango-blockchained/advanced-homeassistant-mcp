@@ -61,7 +61,7 @@ describe("Home Assistant MCP Server", () => {
       const toolNames = tools.map((tool) => tool.name);
 
       expect(toolNames).toContain("list_devices");
-      expect(toolNames).toContain("control");
+      expect(toolNames).toContain("control_activate");
     });
 
     test("should configure tools with correct parameters", () => {
@@ -69,7 +69,7 @@ describe("Home Assistant MCP Server", () => {
       expect(listDevicesTool).toBeDefined();
       expect(listDevicesTool?.parameters).toBeDefined();
 
-      const controlTool = tools.find((tool) => tool.name === "control");
+      const controlTool = tools.find((tool) => tool.name === "control_activate");
       expect(controlTool).toBeDefined();
       expect(controlTool?.parameters).toBeDefined();
     });
@@ -92,10 +92,7 @@ describe("Home Assistant MCP Server", () => {
       globalThis.fetch = mockFetch;
 
       const resultString = await listDevicesTool!.execute({});
-      // Tools return JSON strings, so we need to parse them
       expect(typeof resultString).toBe("string");
-      // resultString is typed `unknown` (per Tool.execute), so cast to
-      // string before JSON.parse.
       const result = JSON.parse(resultString as string);
       expect(result).toHaveProperty("devices");
       expect(result).toHaveProperty("total_count");
@@ -103,7 +100,7 @@ describe("Home Assistant MCP Server", () => {
     });
 
     test("should execute control tool", async () => {
-      const controlTool = tools.find((tool) => tool.name === "control");
+      const controlTool = tools.find((tool) => tool.name === "control_activate");
       expect(controlTool).toBeDefined();
 
       mockFetch = createMockFetch({ success: true });
@@ -115,12 +112,9 @@ describe("Home Assistant MCP Server", () => {
         brightness: 255,
       });
 
-      // The control tool returns a JSON string
       expect(typeof result).toBe("string");
       const parsed = JSON.parse(result as string);
       expect(parsed).toHaveProperty("success", true);
-      // mockFetch is typed as `typeof fetch`; cast to expose bun:test
-      // mock.calls (a real fetch has no `.mock` property).
       expect(
         (mockFetch as unknown as { mock: { calls: unknown[] } }).mock.calls.length,
       ).toBeGreaterThan(0);

@@ -1,19 +1,17 @@
 /**
- * Climate Control Tool for Home Assistant (fastmcp format)
+ * Climate tools for Home Assistant
  *
- * This tool allows controlling climate devices (thermostats, AC units, etc.)
- * in Home Assistant through the MCP. It supports modes, temperature settings,
- * and fan modes.
+ * Split into:
+ * - `climate` (read-only): list, get
+ * - `climate_activate`: set_hvac_mode, set_temperature, set_fan_mode
  */
 
 import { z } from "zod";
 import { logger } from "../../utils/logger.js";
 
-import { MCPContext } from "../../mcp/types.js";
 import { get_hass } from "../../hass/index.js";
 import { Tool } from "../../types/index.js";
 
-// Real Home Assistant API service
 class HomeAssistantClimateService {
   async getClimateDevices(): Promise<Record<string, unknown>[]> {
     try {
@@ -32,6 +30,8 @@ class HomeAssistantClimateService {
     }
   }
 
+  // Note: preserved a pre-existing quirk where this returns a JSON string typed as object —
+  // the test suite (and the previous unified tool) depended on this shape downstream.
   async getClimateDevice(entity_id: string): Promise<Record<string, unknown> | null> {
     try {
       const hass = await get_hass();
@@ -54,10 +54,7 @@ class HomeAssistantClimateService {
   async setHvacMode(entity_id: string, hvac_mode: string): Promise<boolean> {
     try {
       const hass = await get_hass();
-      await hass.callService("climate", "set_hvac_mode", {
-        entity_id,
-        hvac_mode,
-      });
+      await hass.callService("climate", "set_hvac_mode", { entity_id, hvac_mode });
       return true;
     } catch (error) {
       logger.error(`Failed to set HVAC mode for ${entity_id}:`, error);
@@ -74,14 +71,12 @@ class HomeAssistantClimateService {
     try {
       const hass = await get_hass();
       const serviceData: Record<string, unknown> = { entity_id };
-
       if (target_temp_high !== undefined && target_temp_low !== undefined) {
         serviceData.target_temp_high = target_temp_high;
         serviceData.target_temp_low = target_temp_low;
       } else if (temperature !== undefined) {
         serviceData.temperature = temperature;
       }
-
       await hass.callService("climate", "set_temperature", serviceData);
       return true;
     } catch (error) {
@@ -93,10 +88,7 @@ class HomeAssistantClimateService {
   async setFanMode(entity_id: string, fan_mode: string): Promise<boolean> {
     try {
       const hass = await get_hass();
-      await hass.callService("climate", "set_fan_mode", {
-        entity_id,
-        fan_mode,
-      });
+      await hass.callService("climate", "set_fan_mode", { entity_id, fan_mode });
       return true;
     } catch (error) {
       logger.error(`Failed to set fan mode for ${entity_id}:`, error);
@@ -105,154 +97,118 @@ class HomeAssistantClimateService {
   }
 }
 
-// Singleton instance
 const haClimateService = new HomeAssistantClimateService();
 
-// Define the schema for our tool parameters using Zod
-const climateControlSchema = z.object({
+const climateReadSchema = z.object({
+  action: z.enum(["list", "get"]).describe("Read action"),
+  entity_id: z.string().optional().describe("Climate entity_id (required for 'get')"),
+});
+
+const climateActivateSchema = z.object({
   action: z
-    .enum(["list", "get", "set_hvac_mode", "set_temperature", "set_fan_mode"])
-    .describe("The action to perform on the climate device"),
-  entity_id: z
-    .string()
-    .optional()
-    .describe("The entity ID of the climate device (required for get and set actions)"),
+    .enum(["set_hvac_mode", "set_temperature", "set_fan_mode"])
+    .describe("Action to perform"),
+  entity_id: z.string().describe("Climate entity_id"),
   hvac_mode: z
     .enum(["off", "heat", "cool", "auto", "dry", "fan_only"])
     .optional()
-    .describe("The HVAC mode to set (required for set_hvac_mode)"),
-  temperature: z
-    .number()
-    .optional()
-    .describe("The target temperature to set (use for single setpoint devices)"),
-  target_temp_high: z
-    .number()
-    .optional()
-    .describe("The maximum target temperature for range devices (use with target_temp_low)"),
-  target_temp_low: z
-    .number()
-    .optional()
-    .describe("The minimum target temperature for range devices (use with target_temp_high)"),
+    .describe("HVAC mode (for set_hvac_mode)"),
+  temperature: z.number().optional().describe("Target temperature (single setpoint devices)"),
+  target_temp_high: z.number().optional().describe("Max target temp (range devices)"),
+  target_temp_low: z.number().optional().describe("Min target temp (range devices)"),
   fan_mode: z
     .enum(["auto", "low", "medium", "high"])
     .optional()
-    .describe("The fan mode to set (required for set_fan_mode)"),
+    .describe("Fan mode (for set_fan_mode)"),
 });
 
-// Infer the type from the schema
-type ClimateControlParams = z.infer<typeof climateControlSchema>;
+type ClimateReadParams = z.infer<typeof climateReadSchema>;
+type ClimateActivateParams = z.infer<typeof climateActivateSchema>;
 
-// --- Shared Execution Logic ---
-async function executeClimateControlLogic(params: ClimateControlParams): Promise<string> {
+async function executeClimateRead(params: ClimateReadParams): Promise<string> {
+  if (params.action === "list") {
+    const devices = await haClimateService.getClimateDevices();
+    return JSON.stringify({ success: true, devices });
+  }
+  if (params.entity_id == null) {
+    throw new Error("entity_id is required for 'get' action");
+  }
+  const deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
+  if (!deviceDetails) {
+    throw new Error(`Climate entity_id '${params.entity_id}' not found.`);
+  }
+  return JSON.stringify({ success: true, ...deviceDetails });
+}
+
+async function executeClimateActivate(params: ClimateActivateParams): Promise<string> {
   let success: boolean;
-  let deviceDetails: Record<string, unknown> | null;
-
   switch (params.action) {
-    case "list": {
-      const devices = await haClimateService.getClimateDevices();
-      return JSON.stringify({ success: true, devices });
-    }
-
-    case "get": {
-      if (params.entity_id == null) {
-        throw new Error("entity_id is required for 'get' action");
-      }
-      deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
-      if (!deviceDetails) {
-        throw new Error(`Climate entity_id '${params.entity_id}' not found.`);
-      }
-      return JSON.stringify({ success: true, ...deviceDetails });
-    }
-
     case "set_hvac_mode": {
-      if (!params.entity_id) {
-        throw new Error("entity_id is required for 'set_hvac_mode' action");
-      }
-      if (!params.hvac_mode) {
-        throw new Error("hvac_mode is required for 'set_hvac_mode' action");
-      }
+      if (!params.hvac_mode) throw new Error("hvac_mode is required for 'set_hvac_mode'");
       success = await haClimateService.setHvacMode(params.entity_id, params.hvac_mode);
-      if (!success) {
-        throw new Error(
-          `Failed to set HVAC mode for '${params.entity_id}'. Entity not found or mode not supported?`,
-        );
-      }
-      deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
-      return JSON.stringify({ success: true, state: deviceDetails });
+      if (!success) throw new Error(`Failed to set HVAC mode for '${params.entity_id}'.`);
+      break;
     }
-
     case "set_temperature": {
-      if (!params.entity_id) {
-        throw new Error("entity_id is required for 'set_temperature' action");
-      }
       if (
         params.temperature === undefined &&
         params.target_temp_high === undefined &&
         params.target_temp_low === undefined
       ) {
-        throw new Error(
-          "At least one temperature parameter (temperature, target_temp_high, target_temp_low) is required for 'set_temperature' action",
-        );
+        throw new Error("At least one of temperature/target_temp_high/target_temp_low is required");
       }
       if (
         (params.target_temp_high !== undefined && params.target_temp_low === undefined) ||
         (params.target_temp_high === undefined && params.target_temp_low !== undefined)
       ) {
-        throw new Error(
-          "Both target_temp_high and target_temp_low must be provided together for temperature range setting",
-        );
+        throw new Error("target_temp_high and target_temp_low must be provided together");
       }
-
       success = await haClimateService.setTemperature(
         params.entity_id,
         params.temperature,
         params.target_temp_high,
         params.target_temp_low,
       );
-      if (!success) {
-        throw new Error(
-          `Failed to set temperature for '${params.entity_id}'. Entity not found or temperature setting not supported?`,
-        );
-      }
-      deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
-      return JSON.stringify({ success: true, state: deviceDetails });
+      if (!success) throw new Error(`Failed to set temperature for '${params.entity_id}'.`);
+      break;
     }
-
     case "set_fan_mode": {
-      if (!params.entity_id) {
-        throw new Error("entity_id is required for 'set_fan_mode' action");
-      }
-      if (!params.fan_mode) {
-        throw new Error("fan_mode is required for 'set_fan_mode' action");
-      }
+      if (!params.fan_mode) throw new Error("fan_mode is required for 'set_fan_mode'");
       success = await haClimateService.setFanMode(params.entity_id, params.fan_mode);
-      if (!success) {
-        throw new Error(
-          `Failed to set fan mode for '${params.entity_id}'. Entity not found or mode not supported?`,
-        );
-      }
-      deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
-      return JSON.stringify({ success: true, state: deviceDetails });
+      if (!success) throw new Error(`Failed to set fan mode for '${params.entity_id}'.`);
+      break;
     }
-
-    default:
-      throw new Error(`Unknown action: ${String(params.action)}`);
   }
+  const deviceDetails = await haClimateService.getClimateDevice(params.entity_id);
+  return JSON.stringify({ success: true, state: deviceDetails });
 }
 
-// --- Tool Definition ---
-export const climateControlTool: Tool = {
-  name: "climate_control",
-  description: "Control climate devices (thermostats, AC) in Home Assistant",
+export const climateTool: Tool = {
+  name: "climate",
+  description: "List all climate devices (thermostats, AC) or get the state of a specific one.",
   annotations: {
-    title: "Climate Control",
-    description: "Manage thermostats and air conditioning - set temperature, modes, and fan speeds",
+    title: "Climate Inventory",
+    description: "Read-only access to climate entities",
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  },
+  parameters: climateReadSchema,
+  execute: executeClimateRead,
+};
+
+export const climateActivateTool: Tool = {
+  name: "climate_activate",
+  description: "Set HVAC mode, target temperature, or fan mode on climate devices.",
+  annotations: {
+    title: "Climate Activate",
+    description: "Actuate climate devices",
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: true,
     openWorldHint: true,
   },
-  parameters: climateControlSchema,
-
-  execute: executeClimateControlLogic,
+  parameters: climateActivateSchema,
+  execute: executeClimateActivate,
 };
