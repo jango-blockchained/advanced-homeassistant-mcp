@@ -74,7 +74,7 @@ try {
         process.on('SIGTERM', () => serverProcess.kill('SIGTERM'));
     } else {
         // Fall back to full server if available
-        const fullServerPath = path.resolve(__dirname, '../dist/index.js');
+        const fullServerPath = path.resolve(__dirname, '../dist/index.cjs');
 
         if (fs.existsSync(fullServerPath)) {
             const runtime = 'node';

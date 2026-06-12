@@ -42,6 +42,7 @@
     "build:stdio": "mkdir -p dist && esbuild ./src/stdio-server.ts --bundle --platform=node --format=esm --outfile=./dist/stdio-server.mjs --minify --sourcemap=inline --external:winston --external:winston-daily-rotate-file --external:express --external:ws --external:dotenv --external:cors --external:helmet --external:express-rate-limit --external:swagger-ui-express --external:sanitize-html --external:jsonwebtoken --external:fastmcp --external:yaml --external:xsschema --external:effect --external:@valibot/to-json-schema --external:sury --external:arktype",
     "build:http": "mkdir -p dist && esbuild ./src/http-server.ts --bundle --platform=node --format=esm --outfile=./dist/http-server.mjs --minify --sourcemap=inline --external:winston --external:winston-daily-rotate-file --external:express --external:ws --external:dotenv --external:cors --external:helmet --external:express-rate-limit --external:swagger-ui-express --external:sanitize-html --external:jsonwebtoken --external:fastmcp --external:yaml --external:xsschema --external:effect --external:@valibot/to-json-schema --external:sury --external:arktype",
     "build:all": "bun run build && bun run build:stdio && bun run build:http",
+    "postinstall": "bun run build:all || echo '⚠️  Build failed. Run: bun run build:all'",
     "prepare": "husky || true",
     "smithery:build": "npx @smithery/cli build src/smithery-sdk.ts --out dist/smithery.js",
     "smithery:dev": "npx @smithery/cli dev src/smithery-sdk.ts --port 7123",
