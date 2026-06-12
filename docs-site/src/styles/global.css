@@ -39,8 +39,8 @@
   --border: hsl(0 0% 89.8%);
   --input: hsl(0 0% 89.8%);
 
-  /* Single accent: indigo-500 */
-  --ring: hsl(239 84% 67%);
+  /* Single accent: indigo-500 -> violet-600 for a more vibrant look */
+  --ring: hsl(262 83% 58%);
 
   /* Chart spectrum (grayscale gradient) */
   --chart-1: hsl(0 0% 20%);
@@ -57,7 +57,7 @@
   --sidebar-accent: hsl(0 0% 94%);
   --sidebar-accent-foreground: hsl(0 0% 9%);
   --sidebar-border: hsl(0 0% 91%);
-  --sidebar-ring: hsl(239 84% 67%);
+  --sidebar-ring: hsl(262 83% 58%);
 
   --radius: 0.5rem;
 }
@@ -81,7 +81,7 @@
   --destructive-foreground: hsl(0 0% 9%);
   --border: hsl(0 0% 14.9%);
   --input: hsl(0 0% 14.9%);
-  --ring: hsl(239 84% 67%);
+  --ring: hsl(262 83% 58%);
   --chart-1: hsl(0 0% 80%);
   --chart-2: hsl(0 0% 60%);
   --chart-3: hsl(0 0% 40%);
@@ -94,7 +94,7 @@
   --sidebar-accent: hsl(0 0% 14%);
   --sidebar-accent-foreground: hsl(0 0% 98%);
   --sidebar-border: hsl(0 0% 14%);
-  --sidebar-ring: hsl(239 84% 67%);
+  --sidebar-ring: hsl(262 83% 58%);
 }
 
 /* Map CSS variables to Tailwind color tokens. Without this block the
@@ -152,6 +152,11 @@
   }
   body {
     background-color: var(--background);
+    background-image: radial-gradient(
+      hsl(var(--foreground) / 0.05) 1px,
+      transparent 1px
+    );
+    background-size: 24px 24px;
     color: var(--foreground);
     font-family: var(--font-sans);
     font-feature-settings:

@@ -19,21 +19,23 @@ import { link } from "@/lib/link";
   title="Home Assistant MCP"
   description="Bridge your AI assistant and Home Assistant. 40+ tools, three transports, zero config."
 >
-  <div class="mb-8 flex flex-col gap-2">
-    <h1>Home Assistant MCP</h1>
-    <p class="text-muted-foreground text-lg">
+  <div class="mb-12 flex flex-col gap-4 py-8">
+    <h1 class="text-4xl font-extrabold tracking-tight lg:text-5xl bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+      Home Assistant MCP
+    </h1>
+    <p class="text-muted-foreground text-xl max-w-[42rem] leading-relaxed">
       Bridge your AI assistant and your smart home. 40+ tools, three transports,
       zero config.
     </p>
-    <div class="mt-2 flex flex-wrap items-center gap-2">
-      <Badge>v1.0</Badge>
-      <Badge variant="secondary">stable</Badge>
-      <Badge variant="outline">draft docs</Badge>
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <Badge class="px-3 py-1 text-sm">v1.0</Badge>
+      <Badge variant="secondary" class="px-3 py-1 text-sm">stable</Badge>
+      <Badge variant="outline" class="px-3 py-1 text-sm">draft docs</Badge>
     </div>
   </div>
 
-  <div class="grid gap-4 sm:grid-cols-2">
-    <Card>
+  <div class="grid gap-6 sm:grid-cols-2">
+    <Card class="transition-all hover:shadow-md hover:border-ring/50">
       <CardHeader>
         <CardTitle>Getting Started</CardTitle>
         <CardDescription>Install, connect, and start talking to your house.</CardDescription>
@@ -47,7 +49,7 @@ import { link } from "@/lib/link";
       </CardContent>
     </Card>
 
-    <Card>
+    <Card class="transition-all hover:shadow-md hover:border-ring/50">
       <CardHeader>
         <CardTitle>Architecture</CardTitle>
         <CardDescription>How the three entry points, the tool system, and the HA client fit together.</CardDescription>
@@ -61,7 +63,7 @@ import { link } from "@/lib/link";
       </CardContent>
     </Card>
 
-    <Card>
+    <Card class="transition-all hover:shadow-md hover:border-ring/50">
       <CardHeader>
         <CardTitle>Tools Reference</CardTitle>
         <CardDescription>The 40+ tools your AI can call.</CardDescription>
@@ -74,7 +76,7 @@ import { link } from "@/lib/link";
       </CardContent>
     </Card>
 
-    <Card>
+    <Card class="transition-all hover:shadow-md hover:border-ring/50">
       <CardHeader>
         <CardTitle>Deployment</CardTitle>
         <CardDescription>Run the server over HTTP+WS, STDIO, or Smithery.</CardDescription>
@@ -88,7 +90,7 @@ import { link } from "@/lib/link";
       </CardContent>
     </Card>
 
-    <Card>
+    <Card class="transition-all hover:shadow-md hover:border-ring/50">
       <CardHeader>
         <CardTitle>Guides</CardTitle>
         <CardDescription>Advanced features and tutorials.</CardDescription>

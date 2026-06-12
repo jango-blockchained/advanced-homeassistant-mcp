@@ -47,10 +47,10 @@ function isActive(slug: string): boolean {
                   target={item.external ? "_blank" : undefined}
                   rel={item.external ? "noopener noreferrer" : undefined}
                   class={cn(
-                    "block rounded-md px-2 py-1.5 no-underline transition-colors",
+                    "block rounded-md px-3 py-2 no-underline transition-all duration-200",
                     active
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm border border-sidebar-border/50"
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground border border-transparent",
                   )}
                 >
                   {item.label}
