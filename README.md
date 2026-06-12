@@ -1,231 +1,82 @@
 # 🏠 Home Assistant MCP
 
-[![smithery badge](https://smithery.ai/badge/@jango-blockchained/advanced-homeassistant-mcp)](https://smithery.ai/server/@jango-blockchained/advanced-homeassistant-mcp)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![npm version](https://img.shields.io/npm/v/@jango-blockchained/homeassistant-mcp.svg)](https://www.npmjs.com/package/@jango-blockchained/homeassistant-mcp)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/pkgs/container/advanced-homeassistant-mcp)
-[![Bun](https://img.shields.io/badge/bun-%3E%3D1.0.26-black)](https://bun.sh)
-[![TypeScript](https://img.shields.io/badge/typescript-%5E5.0.0-blue.svg)](https://www.typescriptlang.org)
+[![Smithery](https://img.shields.io/badge/smithery-available-7842E8?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTQiIHZpZXdCb3g9IjAgMCAxMiAxNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNiAwTDEyIDNMMTIgMTFMNiAxNEwwIDExTDAgM0w2IDBaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==)](https://smithery.ai/server/@jango-blockchained/advanced-homeassistant-mcp)
+[![Release](https://img.shields.io/github/v/release/jango-blockchained/advanced-homeassistant-mcp?logo=github)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/releases)
+[![npm](https://img.shields.io/npm/v/@jango-blockchained/homeassistant-mcp?logo=npm)](https://www.npmjs.com/package/@jango-blockchained/homeassistant-mcp)
+[![Docker](https://img.shields.io/docker/v/ghcr.io/jango-blockchained/advanced-homeassistant-mcp?logo=docker&label=docker)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/pkgs/container/advanced-homeassistant-mcp)
+[![CI](https://img.shields.io/github/actions/workflow/status/jango-blockchained/advanced-homeassistant-mcp/release.yml?logo=github&label=CI)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/actions)
+[![Bun](https://img.shields.io/badge/runtime-bun-000?logo=bun)](https://bun.sh)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js)](https://nodejs.org)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-> **Bridge the gap between AI assistants and your smart home** 🚀
+> **Talk to your house.** Your AI assistant (Claude, GPT, Cursor, Copilot) — connected to Home Assistant through the Model Context Protocol. 40+ tools, three transports, one `bunx` command.
 
-A powerful, secure, and extensible Model Context Protocol (MCP) server that enables AI assistants like Claude, GPT, and Cursor to seamlessly interact with Home Assistant. Control your lights, climate, automations, and more through natural language commands.
-
----
-
-## ✨ Feature Overview
-
-### 🤖 AI-Powered Smart Home Control
-
-- **Natural Language Processing**: Turn "dim the living room lights to 50%" into actual device commands
-- **Multi-Assistant Support**: Works with Claude, GPT-4, Cursor, and other MCP-compatible assistants
-- **Intelligent Context**: Remembers device states, relationships, and user preferences
-- **Smithery Integration**: One-click installation and deployment via [Smithery.ai](https://smithery.ai)
-
-### 🛡️ Enterprise-Grade Security
-
-- **Rate Limiting**: Protects against abuse with configurable request limits
-- **Input Sanitization**: Prevents XSS and injection attacks
-- **JWT Authentication**: Secure token-based access control
-- **Security Headers**: Comprehensive protection against web vulnerabilities
-
-### ⚡ High-Performance Architecture
-
-- **Bun Runtime**: 4x faster than Node.js with built-in TypeScript support
-- **Streaming Responses**: Real-time updates for long-running operations
-- **Modular Design**: Clean separation of concerns with extensible plugin system
-- **Multiple Transports**: HTTP REST API, WebSocket, and Standard I/O support
-
-### 🏠 Comprehensive Device Control
-
-- **Lighting Control**: Brightness, color temperature, RGB colors, and effects
-- **Climate Management**: Thermostats, HVAC modes, fan control, and scheduling
-- **Automation & Scenes**: Trigger automations, activate scenes, and manage routines
-- **Device Discovery**: Intelligent device listing with filtering and search
-- **Notification System**: Send alerts through Home Assistant's notification channels
-- **Smart Maintenance**: Find orphaned devices, analyze usage patterns, energy monitoring
-- **Intelligent Scenarios**: Auto-detect and manage nobody-home, window/heating conflicts, energy waste
+```bash
+# ⚡ Fastest way to try it
+bunx github:jango-blockchained/advanced-homeassistant-mcp
+```
 
 ---
 
 ## 🚀 Quick Start
 
-Get up and running in minutes:
+You need a **Home Assistant** instance and a **long-lived access token** ([create one here](https://www.home-assistant.io/docs/authentication/#your-account-profile)).
 
-```bash
-# Clone and install
-git clone https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
-cd advanced-homeassistant-mcp
-bun install
+### Claude Desktop
 
-# Configure environment
-cp .env.example .env
-# Edit .env with your Home Assistant details
-
-# Start the server
-bun run start:stdio
-```
-
-That's it! Your AI assistant can now control your smart home. 🤖✨
-
-For the full guide — install paths, configuration, all 40+ tools, deployment topologies, and architecture deep-dives — see the **[project documentation](https://jango-blockchained.github.io/advanced-homeassistant-mcp/)**.
-
----
-
-## 📦 Installation
-
-### Prerequisites
-
-- 🚀 [Bun](https://bun.sh) (v1.0.26+) - _Recommended_
-- 🏠 [Home Assistant](https://www.home-assistant.io/) instance
-
-### Option 1: Smithery.ai (Recommended for Quick Setup)
-
-[Smithery](https://smithery.ai) is a registry for MCP servers that makes installation incredibly easy:
-
-```bash
-# Install to Claude Desktop
-npx @smithery/cli install @jango-blockchained/homeassistant-mcp --client claude
-
-# Install to Cursor
-npx @smithery/cli install @jango-blockchained/homeassistant-mcp --client cursor
-
-# Install to VS Code
-npx @smithery/cli install @jango-blockchained/homeassistant-mcp --client vscode
-```
-
-You'll be prompted to configure:
-
-- Home Assistant URL
-- Long-lived access token
-- Optional settings (port, debug mode)
-
-See the [Smithery Deployment guide](https://jango-blockchained.github.io/advanced-homeassistant-mcp/deployment/smithery/) for details.
-
-### Option 2: NPX (Quick Start)
-
-```bash
-npx @jango-blockchained/homeassistant-mcp@latest
-```
-
-### Option 3: Bunx with GitHub (No NPM Login Required)
-
-If you can't login to npm, use Bunx to run directly from GitHub:
-
-```bash
-# Install Bun first if you don't have it
-curl -fsSL https://bun.sh/install | bash
-
-# Then run from GitHub
-bunx github:jango-blockchained/advanced-homeassistant-mcp
-```
-
-Alternatively, install directly from Git:
-
-```bash
-bun add git+https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
-homeassistant-mcp
-```
-
-### Option 4: Docker (Containerized)
-
-Run the MCP server in a Docker container:
-
-```bash
-# Pull the latest image
-docker pull ghcr.io/jango-blockchained/advanced-homeassistant-mcp:latest
-
-# Run with environment variables
-docker run -d \
-  -e HOME_ASSISTANT_URL=http://your-ha-instance:8123 \
-  -e HOME_ASSISTANT_TOKEN=your_long_lived_access_token \
-  -p 4000:4000 \
-  --name homeassistant-mcp \
-  ghcr.io/jango-blockchained/advanced-homeassistant-mcp:latest
-
-# Or use docker-compose (see docker/ directory for examples)
-```
-
-**Available Docker tags:**
-
-- `latest` - Latest stable release
-- `1.6.1`, `1.6`, `1` - Tagged versions
-- `dev` - Latest development build from main branch
-
-### Option 5: Local Installation
-
-```bash
-# Install globally
-bun add -g @jango-blockchained/homeassistant-mcp
-
-# Or locally
-bun add homeassistant-mcp
-
-# Run
-homeassistant-mcp
-```
-
-### Option 6: From Source (Most Flexible)
-
-```bash
-git clone https://github.com/jango-blockchained/advanced-homeassistant-mcp.git
-cd advanced-homeassistant-mcp
-bun install
-bun run build
-bun run start:stdio
-```
-
----
-
-## 🛠️ Usage
-
-### AI Assistant Integration
-
-#### Claude Desktop
-
-Add to your `claude_desktop_config.json`:
+Add to `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "homeassistant-mcp": {
       "command": "bunx",
-      "args": ["github:jango-blockchained/advanced-homeassistant-mcp"]
+      "args": ["github:jango-blockchained/advanced-homeassistant-mcp"],
+      "env": {
+        "HASS_HOST": "http://your-ha-instance:8123",
+        "HASS_TOKEN": "your_long_lived_access_token"
+      }
     }
   }
 }
 ```
 
-Or use npx:
+**Restart Claude.** You're done. Ask it to turn on the lights.
+
+### Cursor / VS Code
+
+<details>
+<summary><strong>Cursor</strong> — add to <code>.cursor/config/config.json</code></summary>
 
 ```json
 {
   "mcpServers": {
     "homeassistant-mcp": {
-      "command": "npx",
-      "args": ["@jango-blockchained/homeassistant-mcp@latest"]
+      "command": "bunx",
+      "args": ["github:jango-blockchained/advanced-homeassistant-mcp"],
+      "env": {
+        "HASS_HOST": "http://your-ha-instance:8123",
+        "HASS_TOKEN": "your_long_lived_access_token"
+      }
     }
   }
 }
 ```
 
-#### VS Code + Copilot/Claude Extension
+</details>
 
-The `.vscode/mcp.json` is pre-configured for immediate use with the MCP extension. For development:
+<details>
+<summary><strong>VS Code + MCP Extension</strong></summary>
 
-1. Ensure you have built the project: `npm run build:stdio`
-2. Configure your environment variables in `.env`
-3. The MCP server will automatically connect using the configuration in `.vscode/mcp.json`
-
-Alternatively, you can manually configure in your VS Code settings:
+Set your env vars in a `.env` file and use the pre-configured `.vscode/mcp.json`:
 
 ```json
 {
   "mcp.servers": {
     "homeassistant-mcp": {
       "type": "stdio",
-      "command": "node",
-      "args": ["${workspaceFolder}/dist/stdio-server.mjs"],
+      "command": "bun",
+      "args": ["run", "dist/stdio-server.mjs"],
       "env": {
         "HASS_HOST": "${env:HASS_HOST}",
         "HASS_TOKEN": "${env:HASS_TOKEN}"
@@ -235,303 +86,160 @@ Alternatively, you can manually configure in your VS Code settings:
 }
 ```
 
-#### Cursor
+</details>
 
-Add to `.cursor/config/config.json`:
+### Smithery (One-Click)
 
-```json
-{
-  "mcpServers": {
-    "homeassistant-mcp": {
-      "command": "bunx",
-      "args": ["github:jango-blockchained/advanced-homeassistant-mcp"]
-    }
-  }
-}
-```
-
-Or with npx:
-
-```json
-{
-  "mcpServers": {
-    "homeassistant-mcp": {
-      "command": "npx",
-      "args": ["@jango-blockchained/homeassistant-mcp@latest"]
-    }
-  }
-}
-```
-
-### API Usage
-
-Start the HTTP server:
+Install directly from the [Smithery registry](https://smithery.ai/server/@jango-blockchained/advanced-homeassistant-mcp) — no config files needed:
 
 ```bash
-bun run start -- --http
+npx @smithery/cli install @jango-blockchained/homeassistant-mcp --client claude
 ```
 
-Available endpoints:
+---
 
-- `POST /api/tools/call` - Execute tools
-- `GET /api/resources/list` - List resources
-- `GET /api/health` - Health check
-- `WebSocket /api/ws` - Real-time updates
+## 📦 All Install Options
 
-### Configuration
+| Method                 | Command                                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Smithery** (easiest) | `npx @smithery/cli install @jango-blockchained/homeassistant-mcp --client claude`                        |
+| **bunx** (no install)  | `bunx github:jango-blockchained/advanced-homeassistant-mcp`                                              |
+| **npx**                | `npx @jango-blockchained/homeassistant-mcp@latest`                                                       |
+| **Docker**             | `docker run -d -p 7123:7123 --env-file .env ghcr.io/jango-blockchained/advanced-homeassistant-mcp:1.6.1` |
+| **From source**        | `git clone ... && bun install && bun run build && bun run start:stdio`                                   |
+| **npm global**         | `npm add -g @jango-blockchained/homeassistant-mcp && homeassistant-mcp`                                  |
 
-Create a `.env` file:
+> **Docker tags**: `latest`, `1.6.1`, `1.6`, `1`, `dev`
+
+---
+
+## 🎯 What You Can Do
+
+Once connected, you talk to your house like you talk to a human:
+
+```
+"Turn off all lights in the bedroom"
+"Set the thermostat to 72°F"
+"Lock all doors and start the vacuum"
+"Show me energy consumption this week"
+"What's the temperature in the living room?"
+"Activate the movie scene"
+"Notify everyone that dinner is ready"
+"Check my Home Assistant health"
+"Find orphaned devices with low battery"
+"Analyze my light usage patterns"
+```
+
+Every command maps to one of **40+ tools** — lights, climate, media, locks, covers, fans, vacuums, alarms, scenes, automations, notifications, history, energy monitoring, maintenance, and more.
+
+<details>
+<summary><strong>Full tool reference</strong> (all 41 tools)</summary>
+
+| Category            | Tools                                                 |
+| ------------------- | ----------------------------------------------------- |
+| **Lights**          | brightness, color temp, RGB, effects, turn on/off     |
+| **Climate**         | HVAC modes, target temp, fan mode, humidify           |
+| **Media**           | play/pause, volume, source, sound mode, shuffle       |
+| **Covers**          | open/close, position, tilt, garage door               |
+| **Locks**           | lock/unlock with code support                         |
+| **Fans**            | speed, oscillation, direction, preset                 |
+| **Vacuums**         | start/stop/dock, spot clean, fan speed                |
+| **Alarm**           | arm home/away/night, disarm                           |
+| **Scenes**          | activate named scene                                  |
+| **Automations**     | list, toggle, trigger, create/edit/delete             |
+| **Notifications**   | push alerts via HA channels                           |
+| **History**         | query historical states                               |
+| **Add-ons**         | install, configure, control                           |
+| **Maintenance**     | orphaned devices, battery warnings, energy analysis   |
+| **Smart Scenarios** | nobody-home mode, window/heat conflicts, energy waste |
+| **Aurora**          | sound-to-light sync, BPM/beat detection, light shows  |
+
+Full docs: [Tools Reference](https://jango-blockchained.github.io/advanced-homeassistant-mcp/tools/generic-tools/)
+
+</details>
+
+---
+
+## 🧱 Architecture
+
+```
+┌──────────────┐     ┌─────────────────────┐     ┌──────────────────┐
+│  AI Assistant │◄───►│   Home Assistant    │◄───►│  Your Smart Home │
+│ (Claude/GPT)  │     │    MCP Server       │     │  (Home Assistant)│
+└──────────────┘     └─────────────────────┘     └──────────────────┘
+                         │           │
+                    ┌────┘           └────┐
+                    ▼                     ▼
+              ┌────────────┐      ┌──────────────┐
+              │  HTTP/WS   │      │    STDIO     │
+              │ (Express)  │      │ (fastmcp v3) │
+              └────────────┘      └──────────────┘
+```
+
+Three transports, one codebase. Pick the one that fits your setup — all expose the same 40+ tools.
+
+---
+
+## ⚙️ Configuration
+
+Minimal setup. Two variables are required:
 
 ```env
-# Home Assistant
-HASS_HOST=http://your-ha-instance:8123
-HASS_TOKEN=your_long_lived_access_token
+HASS_HOST=http://homeassistant.local:8123
+HASS_TOKEN=eyJ...                          # long-lived access token
+```
 
+Optional:
 
-# Server
-PORT=3000
-NODE_ENV=production
-
-# To expose externally
-HOST=0.0.0.0
-
-
-# Security
-JWT_SECRET=your-secret-key
-RATE_LIMIT_WINDOW=15
-RATE_LIMIT_MAX=50
+```env
+PORT=7123                                  # HTTP server port
+LOG_LEVEL=info                             # debug | info | warn | error
+JWT_SECRET=...                             # for HTTP/WS auth
 ```
 
 ---
 
-## 🏗️ Architecture
+## 🛠️ Development
 
-```text
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   AI Assistant  │◄──►│   MCP Server    │◄──►│ Home Assistant  │
-│  (Claude/GPT)   │    │                 │    │                 │
-└─────────────────┘    │ ┌─────────────┐ │    └─────────────────┘
-                       │ │  Transport  │ │
-                       │ │   Layer     │ │
-                       │ └─────────────┘ │
-                       │ ┌─────────────┐ │
-                       │ │ Middleware  │ │
-                       │ │   Layer     │ │
-                       │ └─────────────┘ │
-                       │ ┌─────────────┐ │
-                       │ │   Tools     │ │
-                       │ │   Layer     │ │
-                       └─────────────────┘
+```bash
+bun install              # install dependencies
+bun run build:all        # build all three entry points
+bun test                 # run test suite (80% coverage threshold)
+bun run lint             # ESLint + Prettier
 ```
 
-### Core Components
+Built with [Bun](https://bun.sh), TypeScript, and [fastmcp](https://github.com/punkpeye/fastmcp). Three entry points:
 
-- **Transport Layer**: HTTP, WebSocket, Stdio
-- **Middleware Layer**: Security, validation, logging
-- **Tools Layer**: Device control, automation, notifications
-- **Resource Manager**: State management and caching
-
-### Built-in Tools (34 Total)
-
-#### 🎨 Aurora Sound-to-Light (10 tools) ✨ NEW!
-
-- 🎵 **Audio Analysis**: Extract BPM, beats, mood, frequency data
-- 🔍 **Device Scanning**: Find Aurora-compatible lights
-- 📊 **Device Profiling**: Measure latency & capabilities for sync
-- 🎬 **Timeline Rendering**: Generate pre-rendered light shows
-- ▶️ **Playback Control**: Play/pause/stop/seek timelines
-- 📋 **Timeline Management**: List, export, import timelines
-- 📈 **Status Monitoring**: System status and statistics
-- 🎯 **Smart Synchronization**: Device-specific timing compensation
-- 🌈 **Capability-Aware**: RGB, tunable white, brightness-only support
-- 🎶 **Beat Detection**: Lights pulse in sync with music
-
-> 🎨 **Aurora** is a complete sound-to-light synchronization system that transforms your Home Assistant lights into a professional light show synchronized to music!
-
-#### 🏠 Device Control (13 tools)
-
-- 🔦 **Lights Control**: Brightness, color temp, RGB, effects
-- 🌡️ **Climate Control**: HVAC modes, temperature, fan control
-- 📺 **Media Players**: Playback, volume, sources, sound modes
-- 🪟 **Covers**: Blinds, curtains, garage doors, position control
-- 🔒 **Locks**: Lock/unlock with code support
-- 💨 **Fans**: Speed, oscillation, direction, presets
-- 🤖 **Vacuums**: Cleaning, docking, spot clean, fan speed
-- 🚨 **Alarm Control**: Arm/disarm modes, security management
-- 🎛️ **Generic Control**: Universal device control interface
-
-#### ⚙️ Automation & Scenes (3 tools)
-
-- 🎬 **Scenes**: Activate predefined scenes
-- ⚙️ **Automations**: List, toggle, trigger automations
-- 🔧 **Automation Config**: Create/update/delete complex automations
-
-#### 🔧 System Management (6 tools)
-
-- 📋 **Device Discovery**: List and filter devices by domain/area
-- 📱 **Notifications**: Multi-channel alert system
-- 📊 **History**: Query historical state data
-- 📦 **Add-on Management**: Install, configure, control add-ons
-- 📦 **Package Management**: HACS integration and custom components
-- 🔔 **Event Subscription**: Real-time SSE event streaming
-
-#### 🧠 Smart Features (2 tools)
-
-- 🔧 **Maintenance Tool**: Spook-like maintenance features
-  - Find orphaned/unavailable devices
-  - Analyze light usage patterns by room
-  - Monitor energy consumption
-  - Device health checks with battery warnings
-  - Entity cleanup recommendations
-- 🧠 **Smart Scenarios**: Intelligent automation detection
-  - Nobody home: Auto turn off lights, reduce climate
-  - Window/heating conflicts: Auto disable heating
-  - Energy saving: Detect daytime lights, standby power
-  - Generate automation configs
-
-> See the [Tools Reference](https://jango-blockchained.github.io/advanced-homeassistant-mcp/tools/generic-tools/) for detailed documentation.
-
-### MCP Features
-
-- 📝 **Prompts**: Pre-defined prompt templates for common home automation tasks
-  - Morning/evening routines
-  - Energy saving suggestions
-  - Security setup
-  - Climate optimization
-  - Media control
-  - Troubleshooting helpers
-- 📊 **Resources**: Direct access to Home Assistant states and configurations
-  - Device lists by type (lights, climate, sensors, etc.)
-  - Area/room configurations
-  - Automation and scene listings
-  - Dashboard summaries with current home status
-
-- 🛠️ **24 Comprehensive Tools**: Full device control and smart automation
-  - See the [Tools Reference](https://jango-blockchained.github.io/advanced-homeassistant-mcp/tools/generic-tools/) for all available tools
-  - Device control, automation, system management, and smart features
-  - Natural language to Home Assistant API translation
+- `dist/index.cjs` — HTTP+WS on a custom Express-based MCP server
+- `dist/stdio-server.mjs` — STDIO via fastmcp v3
+- `dist/http-server.mjs` — HTTP via fastmcp v3
 
 ---
 
-## 🎯 Example Commands
+## 📖 Docs
 
-Once integrated, your AI assistant can understand commands like:
-
-**Device Control:**
-
-> "Turn off all lights in the bedroom"  
-> "Set the thermostat to 72°F"  
-> "Play music on the living room speaker"  
-> "Open the garage door"  
-> "Lock all doors"  
-> "Start the robot vacuum"  
-> "Set the bedroom fan to 50%"
-
-**Automation & Scenes:**
-
-> "Activate the movie scene"  
-> "Trigger the morning routine automation"  
-> "Show me all my automations"
-
-**Information & Monitoring:**
-
-> "What's the current temperature in the living room?"  
-> "Show me all unavailable devices"  
-> "Which lights are currently on?"
-
-**Notifications:**
-
-> "Notify everyone that dinner is ready"  
-> "Send an alert to my phone"
-
-**Smart Maintenance:**
-
-> "Check my Home Assistant health"  
-> "Find orphaned or unavailable devices"  
-> "Analyze my light usage patterns"  
-> "Show me my energy consumption"  
-> "Which devices have low battery?"
-
-**Aurora Sound-to-Light:** ✨ NEW!
-
-> "Analyze this music file and sync my lights"  
-> "Scan for lights that can do Aurora effects"  
-> "Profile my living room lights for synchronization"  
-> "Create a light show for this song"  
-> "Play the timeline I just created"  
-> "Pause the light show"  
-> "Show me Aurora status"
-
-**Smart Scenarios:**
-
-> "I'm leaving home, activate away mode"  
-> "Are any windows open with heating on?"  
-> "Check for energy-wasting issues"  
-> "Turn off everything, I'm going on vacation"  
-> "What can I do to save energy?"
-
-You can also use prompts for guided assistance:
-
-> "Help me set up a morning routine"  
-> "Show me energy saving tips"  
-> "How do I control my media players?"
+Full documentation lives at **[jango-blockchained.github.io/advanced-homeassistant-mcp](https://jango-blockchained.github.io/advanced-homeassistant-mcp/)** — covers installation, configuration, all 41 tools, deployment (HTTP, STDIO, Smithery), architecture deep-dives, and guides.
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how to get involved:
+PRs welcome. Keep it simple — same code style, add tests, update docs if you touch public APIs.
 
-1. 🍴 Fork the repository
-2. 🌿 Create a feature branch
-3. 💻 Make your changes
-4. 🧪 Add tests if applicable
-5. 📝 Update documentation
-6. 🔄 Submit a pull request
-
-### Development Setup
-
-```bash
-bun install
-bun run build
-bun test
-```
-
-### Code Style
-
-- TypeScript with strict mode
-- ESLint for code quality
-- Prettier for formatting
-- Husky for pre-commit hooks
-
-### Releases
-
-This project uses **automated releases** to GitHub, npm, and Docker. See the [Release workflow docs](https://jango-blockchained.github.io/advanced-homeassistant-mcp/) for details.
-
-**How it works:** Every push to `main` is analyzed. Commits with `feat:` trigger a minor bump, `fix:` trigger a patch bump, and any commit with `BREAKING CHANGE` in the body triggers a major bump. `chore:`, `docs:`, `ci:`, `style:`, `refactor:`, `test:`, and `build:` commits do not trigger a release on their own. Once a bump is decided:
-
-- 📦 A GitHub release is created (auto-generated changelog from the commits since the last release)
-- 📤 The package is published to npm with the new version
-- 🐳 The Docker image is built and pushed with the `latest`, `<major>.<minor>`, and `<major>` tags
-
-To force a specific bump type regardless of the commit history, run the **Version Bump** workflow manually from the Actions tab.
+1. Fork it
+2. Branch it
+3. Code it
+4. Test it
+5. PR it
 
 ---
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT — go build something cool.
 
 ---
 
-## 🙏 Acknowledgments
+**Your smart home speaks MCP. Now your AI speaks it too.** 🏠⚡🤖🔋
 
-Built with ❤️ using:
-
-- [Bun](https://bun.sh) - The fast JavaScript runtime
-- [Home Assistant](https://www.home-assistant.io/) - The open-source home automation platform
-- [Model Context Protocol](https://modelcontextprotocol.io/) - The AI integration standard
-
----
-
-Transform your smart home into an AI-powered experience
+> Batteries included. 🔋
