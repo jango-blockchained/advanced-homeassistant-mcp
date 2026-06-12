@@ -4,6 +4,7 @@ import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
+import rehypeBaseUrl from "./src/lib/rehype-base-url.mjs";
 
 // https://astro.build/config
 //
@@ -17,6 +18,7 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
   markdown: {
+    rehypePlugins: [[rehypeBaseUrl, { base: "/advanced-homeassistant-mcp" }]],
     shikiConfig: {
       // Shiki auto-detects languages from the ```lang fence. We don't
       // restrict the langs list here (Astro's TS types expect

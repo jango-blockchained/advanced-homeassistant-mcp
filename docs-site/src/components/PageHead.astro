@@ -6,6 +6,7 @@
  * props.
  */
 import "@/styles/global.css";
+import { link } from "@/lib/link";
 
 interface Props {
   title: string;
@@ -31,7 +32,7 @@ const ogUrl = `${siteUrl}${path}`;
 <meta name="generator" content={Astro.generator} />
 <title>{fullTitle}</title>
 <meta name="description" content={description} />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="icon" type="image/svg+xml" href={link("/favicon.svg")} />
 
 <!-- Open Graph -->
 <meta property="og:type" content="website" />

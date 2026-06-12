@@ -7,6 +7,7 @@
  */
 import { NAV } from "@/nav";
 import { cn } from "@/lib/utils";
+import { link } from "@/lib/link";
 
 interface Props {
   /** Current page URL path (e.g. "/getting-started/installation/"). */
@@ -24,7 +25,7 @@ function isActive(slug: string): boolean {
   aria-label="Documentation navigation"
 >
   <a
-    href="/"
+    href={link("/")}
     class="text-foreground text-base font-semibold tracking-tight no-underline"
   >
     Home Assistant MCP
@@ -42,7 +43,7 @@ function isActive(slug: string): boolean {
             return (
               <li>
                 <a
-                  href={item.external ? undefined : `/${item.slug}/`}
+                  href={item.external ? undefined : link(`/${item.slug}/`)}
                   target={item.external ? "_blank" : undefined}
                   rel={item.external ? "noopener noreferrer" : undefined}
                   class={cn(

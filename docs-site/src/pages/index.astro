@@ -12,6 +12,7 @@ import CardDescription from "@/components/ui/card-description.astro";
 import CardContent from "@/components/ui/card-content.astro";
 import Badge from "@/components/ui/badge.astro";
 import Kbd from "@/components/ui/kbd.astro";
+import { link } from "@/lib/link";
 ---
 
 <BaseLayout
@@ -39,9 +40,9 @@ import Kbd from "@/components/ui/kbd.astro";
       </CardHeader>
       <CardContent>
         <ul class="text-muted-foreground list-inside list-disc text-sm">
-          <li><a href="/getting-started/installation/">Installation</a></li>
-          <li><a href="/getting-started/first-connection/">First Connection</a></li>
-          <li><a href="/getting-started/connect-your-ai/">Connect Your AI</a></li>
+          <li><a href={link("/getting-started/installation/")}>Installation</a></li>
+          <li><a href={link("/getting-started/first-connection/")}>First Connection</a></li>
+          <li><a href={link("/getting-started/connect-your-ai/")}>Connect Your AI</a></li>
         </ul>
       </CardContent>
     </Card>
@@ -53,9 +54,9 @@ import Kbd from "@/components/ui/kbd.astro";
       </CardHeader>
       <CardContent>
         <ul class="text-muted-foreground list-inside list-disc text-sm">
-          <li><a href="/architecture/overview/">Overview</a></li>
-          <li><a href="/architecture/entry-points/">Entry Points</a></li>
-          <li><a href="/architecture/tool-system/">Tool System</a></li>
+          <li><a href={link("/architecture/overview/")}>Overview</a></li>
+          <li><a href={link("/architecture/entry-points/")}>Entry Points</a></li>
+          <li><a href={link("/architecture/tool-system/")}>Tool System</a></li>
         </ul>
       </CardContent>
     </Card>
@@ -67,8 +68,8 @@ import Kbd from "@/components/ui/kbd.astro";
       </CardHeader>
       <CardContent>
         <ul class="text-muted-foreground list-inside list-disc text-sm">
-          <li><a href="/tools/ha-tools/">HA Tools</a></li>
-          <li><a href="/tools/generic-tools/">Generic Tools</a></li>
+          <li><a href={link("/tools/ha-tools/")}>HA Tools</a></li>
+          <li><a href={link("/tools/generic-tools/")}>Generic Tools</a></li>
         </ul>
       </CardContent>
     </Card>
@@ -80,9 +81,9 @@ import Kbd from "@/components/ui/kbd.astro";
       </CardHeader>
       <CardContent>
         <ul class="text-muted-foreground list-inside list-disc text-sm">
-          <li><a href="/deployment/http/">HTTP+WS</a></li>
-          <li><a href="/deployment/stdio/">STDIO</a></li>
-          <li><a href="/deployment/smithery/">Smithery</a></li>
+          <li><a href={link("/deployment/http/")}>HTTP+WS</a></li>
+          <li><a href={link("/deployment/stdio/")}>STDIO</a></li>
+          <li><a href={link("/deployment/smithery/")}>Smithery</a></li>
         </ul>
       </CardContent>
     </Card>
