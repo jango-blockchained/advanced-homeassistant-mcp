@@ -1,13 +1,13 @@
 # 🏠 Home Assistant MCP
 
-[![Smithery](https://img.shields.io/badge/smithery-available-7842E8?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTQiIHZpZXdCb3g9IjAgMCAxMiAxNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNiAwTDEyIDNMMTIgMTFMNiAxNEwwIDExTDAgM0w2IDBaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==)](https://smithery.ai/server/@jango-blockchained/advanced-homeassistant-mcp)
-[![Release](https://img.shields.io/github/v/release/jango-blockchained/advanced-homeassistant-mcp?logo=github)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/releases)
-[![npm](https://img.shields.io/npm/v/@jango-blockchained/homeassistant-mcp?logo=npm)](https://www.npmjs.com/package/@jango-blockchained/homeassistant-mcp)
-[![Docker](https://img.shields.io/docker/v/ghcr.io/jango-blockchained/advanced-homeassistant-mcp?logo=docker&label=docker)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/pkgs/container/advanced-homeassistant-mcp)
-[![CI](https://img.shields.io/github/actions/workflow/status/jango-blockchained/advanced-homeassistant-mcp/release.yml?logo=github&label=CI)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/actions)
-[![Bun](https://img.shields.io/badge/runtime-bun-000?logo=bun)](https://bun.sh)
-[![Node](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js)](https://nodejs.org)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Smithery](https://shieldcn.dev/badge/smithery-available-7842E8.png?size=xs)](https://smithery.ai/server/@jango-blockchained/advanced-homeassistant-mcp)
+[![Release](https://shieldcn.dev/github/release/jango-blockchained/advanced-homeassistant-mcp.png?size=xs)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/releases)
+[![npm](https://shieldcn.dev/npm/v/@jango-blockchained/homeassistant-mcp.png?size=xs)](https://www.npmjs.com/package/@jango-blockchained/homeassistant-mcp)
+[![Docker](https://shieldcn.dev/badge/docker-ghcr.io-2496ED.png?size=xs)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/pkgs/container/advanced-homeassistant-mcp)
+[![CI](https://shieldcn.dev/github/ci/jango-blockchained/advanced-homeassistant-mcp.png?size=xs)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/actions)
+[![Bun](https://shieldcn.dev/badge/runtime-bun-000000.png?size=xs)](https://bun.sh)
+[![Node](https://shieldcn.dev/badge/node-%3E18-339933.png?size=xs)](https://nodejs.org)
+[![License](https://shieldcn.dev/github/license/jango-blockchained/advanced-homeassistant-mcp.png?size=xs)](LICENSE)
 
 > **Talk to your house.** Your AI assistant (Claude, GPT, Cursor, Copilot) — connected to Home Assistant through the Model Context Protocol. 40+ tools, three transports, one `bunx` command.
 
@@ -153,10 +153,29 @@ Every command maps to one of **40+ tools** — lights, climate, media, locks, co
 | **Maintenance**     | orphaned devices, battery warnings, energy analysis   |
 | **Smart Scenarios** | nobody-home mode, window/heat conflicts, energy waste |
 | **Aurora**          | sound-to-light sync, BPM/beat detection, light shows  |
+| **Speech**          | wake word detection, speech-to-text, voice commands   |
 
 Full docs: [Tools Reference](https://jango-blockchained.github.io/advanced-homeassistant-mcp/tools/generic-tools/)
 
 </details>
+
+---
+
+## 🎙️ Speech Features (Voice Control)
+
+Transform your setup into a fully voice-controlled smart home assistant. The speech integration provides local, privacy-focused voice processing.
+
+- **Wake Word Detection**: Powered by `wyoming-openwakeword` (default: "Hey Jarvis").
+- **Speech-to-Text**: Fast, local transcription using `faster-whisper`.
+- **Audio Integration**: Direct PulseAudio integration for seamless microphone access.
+
+To enable speech features, use the dedicated Docker Compose file:
+
+```bash
+docker-compose -f docker-compose.speech.yml up -d
+```
+
+See the [Speech Features Guide](https://jango-blockchained.github.io/advanced-homeassistant-mcp/guides/speech-features/) for detailed configuration and setup instructions.
 
 ---
 

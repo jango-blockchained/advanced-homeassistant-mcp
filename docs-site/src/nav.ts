@@ -75,6 +75,7 @@ export const NAV: NavSection[] = [
     items: [
       { label: "Adding a Tool", slug: "guides/adding-a-tool" },
       { label: "Testing", slug: "guides/testing" },
+      { label: "Speech Features", slug: "guides/speech-features" },
     ],
   },
 ];

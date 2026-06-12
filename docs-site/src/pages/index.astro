@@ -87,10 +87,24 @@ import { link } from "@/lib/link";
         </ul>
       </CardContent>
     </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Guides</CardTitle>
+        <CardDescription>Advanced features and tutorials.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul class="text-muted-foreground list-inside list-disc text-sm">
+          <li><a href={link("/guides/speech-features/")}>Speech Features</a></li>
+          <li><a href={link("/guides/adding-a-tool/")}>Adding a Tool</a></li>
+          <li><a href={link("/guides/testing/")}>Testing</a></li>
+        </ul>
+      </CardContent>
+    </Card>
   </div>
 
   <p class="text-muted-foreground mt-12 text-sm">
-    Use the sidebar to browse all 19 pages, or press
+    Use the sidebar to browse all 20 pages, or press
     <Kbd>Cmd</Kbd> + <Kbd>K</Kbd> for search.
   </p>
 </BaseLayout>

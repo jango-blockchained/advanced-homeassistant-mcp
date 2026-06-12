@@ -1,0 +1,100 @@
+---
+title: "Speech Features"
+description: "Configure local wake word detection and speech-to-text for voice control."
+section: "Guides"
+order: 3
+---
+
+# 🎙️ Speech Features (Voice Control)
+
+Transform your Home Assistant MCP server into a fully voice-controlled smart assistant. The speech integration provides local, privacy-focused voice processing without relying on cloud services for transcription.
+
+## Overview
+
+The speech stack consists of three main components:
+
+1. **Wake Word Detection**: Powered by `wyoming-openwakeword` (default: "Hey Jarvis").
+2. **Speech-to-Text (STT)**: Fast, local transcription using `faster-whisper`.
+3. **Audio Integration**: Direct PulseAudio integration for seamless microphone access.
+
+## Prerequisites
+
+- A working microphone connected to your host machine.
+- PulseAudio or PipeWire (with PulseAudio emulation) running on the host.
+- Docker and Docker Compose installed.
+
+## Quick Start
+
+To launch the MCP server with the complete speech stack, use the dedicated Docker Compose file:
+
+```bash
+docker-compose -f docker-compose.speech.yml up -d
+```
+
+This will start three containers:
+
+- `homeassistant-mcp`: The main MCP server.
+- `fast-whisper`: The local speech-to-text engine.
+- `wake-word`: The wake word detection service.
+
+## Configuration
+
+Speech features are configured via environment variables in your `.env` file.
+
+### Feature Flags
+
+```env
+ENABLE_SPEECH_FEATURES=true
+ENABLE_WAKE_WORD=true
+ENABLE_SPEECH_TO_TEXT=true
+```
+
+### Audio Settings
+
+Configure these to match your microphone and environment:
+
+```env
+NOISE_THRESHOLD=0.05
+MIN_SPEECH_DURATION=1.0
+SILENCE_DURATION=0.5
+SAMPLE_RATE=16000
+CHANNELS=1
+CHUNK_SIZE=1024
+```
+
+### PulseAudio Integration
+
+The containers need access to your host's PulseAudio server. The default configuration assumes user ID 1000:
+
+```env
+PULSE_SERVER=unix:/run/user/1000/pulse/native
+AUDIO_GID=29 # The 'audio' group ID on your host machine
+```
+
+_Note: You may need to adjust `AUDIO_GID` to match the `audio` group ID on your host system (find it by running `getent group audio`)._
+
+### Whisper Configuration
+
+Configure the local speech-to-text engine:
+
+```env
+ASR_MODEL=base
+ASR_ENGINE=faster_whisper
+WHISPER_BEAM_SIZE=5
+COMPUTE_TYPE=float32
+LANGUAGE=en
+```
+
+## Troubleshooting
+
+### Microphone Not Detected
+
+Ensure the `AUDIO_GID` matches your host system and that the PulseAudio socket path is correct. You can test microphone access inside the container:
+
+```bash
+docker exec -it wake-word arecord -l
+```
+
+### High CPU Usage
+
+The `fast-whisper` container can be CPU intensive during transcription. You can limit its resources in the `docker-compose.speech.yml` file or switch to a smaller model (e.g., `tiny` instead of `base`).
