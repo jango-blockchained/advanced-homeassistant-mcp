@@ -1,0 +1,64 @@
+---
+import { NAV } from "@/nav";
+import { link } from "@/lib/link";
+
+interface Props {
+  currentSlug: string;
+}
+const { currentSlug } = Astro.props;
+
+const flatNav = NAV.flatMap((section) =>
+  section.items.filter((item) => !item.external)
+);
+const currentIndex = flatNav.findIndex((item) => item.slug === currentSlug);
+
+const prev = currentIndex > 0 ? flatNav[currentIndex - 1] : null;
+const next =
+  currentIndex >= 0 && currentIndex < flatNav.length - 1
+    ? flatNav[currentIndex + 1]
+    : null;
+---
+
+{
+  (prev || next) && (
+    <div class="mt-16 flex flex-col sm:flex-row justify-between gap-4 pt-8 border-t border-border/40">
+      {prev ? (
+        <a
+          href={link(`/${prev.slug}/`)}
+          class="group flex w-full flex-col gap-2 rounded-xl border border-border/50 bg-card p-5 transition-all hover:border-ring/60 hover:bg-muted/20 hover:shadow-sm sm:w-1/2"
+        >
+          <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Previous
+          </span>
+          <span class="flex items-center gap-2 font-medium text-foreground transition-colors group-hover:text-ring">
+            <span class="text-muted-foreground transition-colors group-hover:text-ring">
+              &larr;
+            </span>{" "}
+            {prev.label}
+          </span>
+        </a>
+      ) : (
+        <div class="hidden w-full sm:block sm:w-1/2" />
+      )}
+
+      {next ? (
+        <a
+          href={link(`/${next.slug}/`)}
+          class="group flex w-full flex-col items-end gap-2 rounded-xl border border-border/50 bg-card p-5 text-right transition-all hover:border-ring/60 hover:bg-muted/20 hover:shadow-sm sm:w-1/2"
+        >
+          <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Next
+          </span>
+          <span class="flex items-center gap-2 font-medium text-foreground transition-colors group-hover:text-ring">
+            {next.label}{" "}
+            <span class="text-muted-foreground transition-colors group-hover:text-ring">
+              &rarr;
+            </span>
+          </span>
+        </a>
+      ) : (
+        <div class="hidden w-full sm:block sm:w-1/2" />
+      )}
+    </div>
+  )
+}

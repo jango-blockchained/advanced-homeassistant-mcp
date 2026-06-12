@@ -24,6 +24,7 @@ import PageHead from "@/components/PageHead.astro";
 import Sidebar from "@/components/Sidebar.astro";
 import TopNav from "@/components/TopNav.astro";
 import SearchModal from "@/components/SearchModal.tsx";
+import Footer from "@/components/Footer.astro";
 
 interface Props {
   title: string;
@@ -46,15 +47,18 @@ const currentPath = Astro.url.pathname;
       path={path}
     />
   </head>
-  <body class="bg-background text-foreground min-h-screen">
+  <body class="bg-background text-foreground min-h-screen selection:bg-ring/30">
     <div class="flex min-h-screen">
       <Sidebar currentPath={currentPath} />
       <div class="flex min-h-screen min-w-0 flex-1 flex-col">
         <TopNav currentSection={currentSection} />
-        <main class="flex-1 px-6 py-10">
-          <article class="mx-auto max-w-3xl">
-            <slot />
-          </article>
+        <main class="flex-1 px-6 py-10 lg:px-10">
+          <div class="mx-auto flex min-h-[calc(100vh-8.5rem)] max-w-3xl flex-col">
+            <div class="flex-1">
+              <slot />
+            </div>
+            <Footer />
+          </div>
         </main>
       </div>
     </div>

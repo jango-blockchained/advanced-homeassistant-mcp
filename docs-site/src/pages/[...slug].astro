@@ -11,6 +11,7 @@
 import { getCollection, render, type CollectionEntry } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Prose from "@/components/Prose.astro";
+import PageNav from "@/components/PageNav.astro";
 
 export async function getStaticPaths() {
   const entries = await getCollection("docs", ({ data }) => {
@@ -41,8 +42,9 @@ const { title, description, section } = entry.data;
 >
   <Prose>
     <h1>{title}</h1>
-    <p class="text-muted-foreground">{description}</p>
-    <hr />
+    <p class="text-muted-foreground text-lg">{description}</p>
+    <hr class="my-8" />
     <Content />
   </Prose>
+  <PageNav currentSlug={entry.id} />
 </BaseLayout>
