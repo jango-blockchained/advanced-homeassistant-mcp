@@ -165,6 +165,7 @@ jobs:
           fi
 
           echo "Publishing to npm..."
+          npm config set //registry.npmjs.org/:_authToken "$NODE_AUTH_TOKEN"
           npm publish --access public
 
   # Job 3: Build and Push Docker Image
