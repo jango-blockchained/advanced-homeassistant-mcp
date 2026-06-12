@@ -99,12 +99,12 @@ router.post("/control", middleware.authenticate, async (req, res) => {
 });
 
 // SSE endpoints
-router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
+router.get("/subscribe_events", middleware.wsRateLimiter, async (req, res) => {
   try {
     // Get token from query parameter
     const token = req.query.token?.toString();
 
-    if (!token || !TokenManager.validateToken(token)) {
+    if (!token || !(await TokenManager.validateToken(token)).valid) {
       res.status(401).json({
         success: false,
         message: "Unauthorized - Invalid token",
@@ -141,7 +141,7 @@ router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
     // intentionally minimal (id, send); addClient fills in the rest
     // (ip, connectedAt, connectionTime) at runtime. Cast through
     // unknown to satisfy the input type without restructuring.
-    const sseClient = sseManager.addClient(
+    const sseClient = await sseManager.addClient(
       client as unknown as Parameters<typeof sseManager.addClient>[0],
       token,
     );

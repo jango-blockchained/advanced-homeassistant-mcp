@@ -6,9 +6,10 @@ import {
   handleError,
   checkRateLimit,
 } from "../../src/security/index.js";
-import jwt from "jsonwebtoken";
+import { SignJWT } from "jose";
 
 const TEST_SECRET = "test-secret-that-is-long-enough-for-testing-purposes";
+const encoder = new TextEncoder();
 
 describe("Security Module", () => {
   // Capture the real validateToken once, bound to TokenManager so the
@@ -43,60 +44,68 @@ describe("Security Module", () => {
       expect(decrypted).toBe(testToken);
     });
 
-    test("should validate tokens correctly", () => {
-      const validToken = jwt.sign({ data: "test" }, TEST_SECRET, { expiresIn: "1h" });
-      const result = TokenManager.validateToken(validToken);
+    test("should validate tokens correctly", async () => {
+      const validToken = await new SignJWT({ data: "test" })
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("1h")
+        .sign(encoder.encode(TEST_SECRET));
+      const result = await TokenManager.validateToken(validToken);
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
     });
 
-    test("should handle empty tokens", () => {
-      const result = TokenManager.validateToken("");
+    test("should handle empty tokens", async () => {
+      const result = await TokenManager.validateToken("");
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Invalid token format");
     });
 
-    test("should handle expired tokens", () => {
+    test("should handle expired tokens", async () => {
       const now = Math.floor(Date.now() / 1000);
       const payload = {
         data: "test",
         iat: now - 7200, // 2 hours ago
         exp: now - 3600, // expired 1 hour ago
       };
-      const token = jwt.sign(payload, TEST_SECRET);
-      const result = TokenManager.validateToken(token);
+      const token = await new SignJWT(payload)
+        .setProtectedHeader({ alg: "HS256" })
+        .sign(encoder.encode(TEST_SECRET));
+      const result = await TokenManager.validateToken(token);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Token has expired");
     });
 
-    test("should handle invalid token format", () => {
-      const result = TokenManager.validateToken("a".repeat(32)); // 32 chars but invalid JWT
+    test("should handle invalid token format", async () => {
+      const result = await TokenManager.validateToken("a".repeat(32)); // 32 chars but invalid JWT
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Invalid token signature");
     });
 
-    test("should handle missing JWT secret", () => {
+    test("should handle missing JWT secret", async () => {
       delete process.env.JWT_SECRET;
       const payload = { data: "test" };
-      const token = jwt.sign(payload, "some-secret");
-      const result = TokenManager.validateToken(token);
+      const token = await new SignJWT(payload)
+        .setProtectedHeader({ alg: "HS256" })
+        .sign(encoder.encode("some-secret"));
+      const result = await TokenManager.validateToken(token);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("JWT secret not configured");
     });
 
-    test("should handle rate limiting for failed attempts", () => {
+    test("should handle rate limiting for failed attempts", async () => {
       const invalidToken = "x".repeat(64);
       const testIp = "127.0.0.1";
 
       // 5 failed attempts (MAX_FAILED_ATTEMPTS) all return the verify
       // error; the 6th sees count==MAX and returns the rate-limit error.
       for (let i = 0; i < 5; i++) {
-        const result = TokenManager.validateToken(invalidToken, testIp);
+        const result = await TokenManager.validateToken(invalidToken, testIp);
         expect(result.valid).toBe(false);
         expect(result.error).toBe("Invalid token signature");
       }
 
-      const limitedResult = TokenManager.validateToken(invalidToken, testIp);
+      const limitedResult = await TokenManager.validateToken(invalidToken, testIp);
       expect(limitedResult.valid).toBe(false);
       expect(limitedResult.error).toBe("Too many failed attempts. Please try again later.");
     });
@@ -123,34 +132,34 @@ describe("Security Module", () => {
       };
     });
 
-    test("should pass valid requests", () => {
+    test("should pass valid requests", async () => {
       mockRequest.headers.authorization = "Bearer valid-token";
       // The outer afterEach restores validateToken; safe to overwrite here.
-      TokenManager.validateToken = mock(() => ({
+      TokenManager.validateToken = mock(async () => ({
         valid: true,
       })) as unknown as typeof TokenManager.validateToken;
 
-      expect(() => validateRequestHeaders(mockRequest as never)).not.toThrow();
+      await expect(validateRequestHeaders(mockRequest as never)).resolves.toBe(true);
     });
 
-    test("should reject invalid content type", () => {
+    test("should reject invalid content type", async () => {
       const invalidRequest = {
         method: "POST",
         headers: { "content-type": "text/plain" },
       };
 
-      expect(() => validateRequestHeaders(invalidRequest as never)).toThrow(
+      await expect(validateRequestHeaders(invalidRequest as never)).rejects.toThrow(
         "Content-Type must be application/json",
       );
     });
 
-    test("should reject missing token", () => {
+    test("should reject missing token", async () => {
       const noAuthRequest = {
         method: "POST",
         headers: { "content-type": "application/json" },
       };
 
-      expect(() => validateRequestHeaders(noAuthRequest as never)).not.toThrow(); // No auth header is ok, auth is optional
+      await expect(validateRequestHeaders(noAuthRequest as never)).resolves.toBe(true); // No auth header is ok, auth is optional
     });
   });
 

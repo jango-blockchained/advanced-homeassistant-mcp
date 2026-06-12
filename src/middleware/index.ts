@@ -34,7 +34,7 @@ export const wsRateLimiter = rateLimit({
 });
 
 // Authentication middleware with enhanced security
-export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({
@@ -48,7 +48,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   const token = authHeader.replace("Bearer ", "");
   const clientIp = req.ip || req.socket.remoteAddress || "";
 
-  const validationResult = TokenManager.validateToken(token, clientIp);
+  const validationResult = await TokenManager.validateToken(token, clientIp);
 
   if (!validationResult.valid) {
     return res.status(401).json({
@@ -136,11 +136,11 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
 /**
  * Validates incoming requests for proper authentication and content type
  */
-export const validateRequest = (
+export const validateRequest = async (
   req: Request,
   res: Response,
   next: NextFunction,
-): Response | void => {
+): Promise<Response | void> => {
   // Skip validation for health and MCP schema endpoints
   if (req.path === "/health" || req.path === "/mcp") {
     return next();
@@ -172,7 +172,7 @@ export const validateRequest = (
 
   // Validate token
   const token = authHeader.replace("Bearer ", "");
-  const validationResult = TokenManager.validateToken(token, req.ip);
+  const validationResult = await TokenManager.validateToken(token, req.ip);
   if (!validationResult.valid) {
     return res.status(401).json({
       success: false,

@@ -8,12 +8,12 @@ import { logger } from "../utils/logger.js";
 const router = Router();
 
 // SSE endpoints
-router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
+router.get("/subscribe_events", middleware.wsRateLimiter, async (req, res) => {
   try {
     // Get token from query parameter and validate
     const token = req.query.token?.toString() || "";
     const clientIp = req.ip || req.socket.remoteAddress || "";
-    const validationResult = TokenManager.validateToken(token, clientIp);
+    const validationResult = await TokenManager.validateToken(token, clientIp);
 
     if (!validationResult.valid) {
       return res.status(401).json({
@@ -56,7 +56,7 @@ router.get("/subscribe_events", middleware.wsRateLimiter, (req, res) => {
     };
 
     // Add client to SSE manager with enhanced tracking
-    const sseClient = sseManager.addClient(client, token);
+    const sseClient = await sseManager.addClient(client, token);
     if (!sseClient || !sseClient.authenticated) {
       const errorMessage = JSON.stringify({
         type: "error",

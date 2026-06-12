@@ -1,12 +1,10 @@
 import { describe, expect, it, beforeEach } from "bun:test";
 import { TokenManager } from "../index";
-import jwt from "jsonwebtoken";
+import { SignJWT, jwtVerify } from "jose";
 
 const validSecret = "test_secret_that_is_at_least_32_chars_long";
 const testIp = "127.0.0.1";
-
-// Mock the rate limit window for faster tests
-const MOCK_RATE_LIMIT_WINDOW = 100; // 100ms instead of 15 minutes
+const encoder = new TextEncoder();
 
 describe("Security Module", () => {
   beforeEach(() => {
@@ -29,47 +27,57 @@ describe("Security Module", () => {
       expect(decryptedToken).toBe(originalToken);
     });
 
-    it("should validate tokens correctly", () => {
-      const payload = { userId: "123", role: "user" };
-      const token = jwt.sign(payload, validSecret, { expiresIn: "1h" });
-      const result = TokenManager.validateToken(token, testIp);
+    it("should validate tokens correctly", async () => {
+      const payload: Record<string, unknown> = { userId: "123", role: "user" };
+      const token = await new SignJWT(payload)
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("1h")
+        .sign(encoder.encode(validSecret));
+      const result = await TokenManager.validateToken(token, testIp);
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
 
       // Verify payload separately
-      const decoded = jwt.verify(token, validSecret) as typeof payload;
+      const { payload: decoded } = await jwtVerify(token, encoder.encode(validSecret));
       expect(decoded.userId).toBe(payload.userId);
       expect(decoded.role).toBe(payload.role);
     });
 
-    it("should handle empty tokens", () => {
-      const result = TokenManager.validateToken("", testIp);
+    it("should handle empty tokens", async () => {
+      const result = await TokenManager.validateToken("", testIp);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Invalid token format");
     });
 
-    it("should handle expired tokens", () => {
+    it("should handle expired tokens", async () => {
       const now = Math.floor(Date.now() / 1000);
-      const payload = {
+      const payload: Record<string, unknown> = {
         userId: "123",
         role: "user",
         iat: now - 3600, // issued 1 hour ago
         exp: now - 1800, // expired 30 minutes ago
       };
-      const token = jwt.sign(payload, validSecret);
-      const result = TokenManager.validateToken(token, testIp);
+      const token = await new SignJWT(payload)
+        .setProtectedHeader({ alg: "HS256" })
+        .sign(encoder.encode(validSecret));
+      const result = await TokenManager.validateToken(token, testIp);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Token has expired");
     });
 
-    it("should handle token tampering", () => {
+    it("should handle token tampering", async () => {
       // Use a different IP for this test to avoid rate limiting
       const uniqueIp = "192.168.1.1";
-      const payload = { userId: "123", role: "user" };
-      const token = jwt.sign(payload, validSecret);
+      const payload: Record<string, unknown> = { userId: "123", role: "user" };
+      const token = await new SignJWT(payload)
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("1h")
+        .sign(encoder.encode(validSecret));
       const tamperedToken = token.slice(0, -5) + "xxxxx"; // Tamper with signature
 
-      const result = TokenManager.validateToken(tamperedToken, uniqueIp);
+      const result = await TokenManager.validateToken(tamperedToken, uniqueIp);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Invalid token signature");
     });
@@ -104,14 +112,14 @@ describe("Security Module", () => {
       TokenManager.failedAttempts.clear();
     });
 
-    it("should track failed attempts by IP", () => {
+    it("should track failed attempts by IP", async () => {
       const invalidToken = "x".repeat(64);
       const ip1 = "1.1.1.1";
       const ip2 = "2.2.2.2";
 
       // Make a single failed attempt for each IP
-      TokenManager.validateToken(invalidToken, ip1);
-      TokenManager.validateToken(invalidToken, ip2);
+      await TokenManager.validateToken(invalidToken, ip1);
+      await TokenManager.validateToken(invalidToken, ip2);
 
       const attempts = (TokenManager as any).failedAttempts;
       expect(attempts.has(ip1)).toBe(true);
@@ -122,7 +130,7 @@ describe("Security Module", () => {
       expect(attempts.get(ip2).lastAttempt).toBeGreaterThan(0);
     });
 
-    it("should handle rate limiting for failed attempts", () => {
+    it("should handle rate limiting for failed attempts", async () => {
       const invalidToken = "x".repeat(64);
       const uniqueIp = "10.0.0.1";
 
@@ -132,12 +140,12 @@ describe("Security Module", () => {
       // returns the rate-limit error instead. With MAX_FAILED_ATTEMPTS=5,
       // attempts 1-5 fail with the signature error and #6 is rate limited.
       for (let i = 0; i < 5; i++) {
-        const result = TokenManager.validateToken(invalidToken, uniqueIp);
+        const result = await TokenManager.validateToken(invalidToken, uniqueIp);
         expect(result.valid).toBe(false);
         expect(result.error).toBe("Invalid token signature");
       }
 
-      const sixth = TokenManager.validateToken(invalidToken, uniqueIp);
+      const sixth = await TokenManager.validateToken(invalidToken, uniqueIp);
       expect(sixth.valid).toBe(false);
       expect(sixth.error).toBe("Too many failed attempts. Please try again later.");
 
@@ -147,18 +155,18 @@ describe("Security Module", () => {
       record.lastAttempt = Date.now() - (15 * 60 * 1000 + 1000);
 
       // After window expires, should get the normal verify error again.
-      const finalResult = TokenManager.validateToken(invalidToken, uniqueIp);
+      const finalResult = await TokenManager.validateToken(invalidToken, uniqueIp);
       expect(finalResult.valid).toBe(false);
       expect(finalResult.error).toBe("Invalid token signature");
     });
 
-    it("should reset rate limits after window expires", () => {
+    it("should reset rate limits after window expires", async () => {
       const invalidToken = "x".repeat(64);
       const uniqueIp = "172.16.0.1";
 
       // Make some failed attempts (still under the limit).
       for (let i = 0; i < 3; i++) {
-        const result = TokenManager.validateToken(invalidToken, uniqueIp);
+        const result = await TokenManager.validateToken(invalidToken, uniqueIp);
         expect(result.valid).toBe(false);
         expect(result.error).toBe("Invalid token signature");
       }
@@ -168,7 +176,7 @@ describe("Security Module", () => {
       const record = TokenManager.failedAttempts.get(uniqueIp)!;
       record.lastAttempt = Date.now() - (15 * 60 * 1000 + 1000);
 
-      const result = TokenManager.validateToken(invalidToken, uniqueIp);
+      const result = await TokenManager.validateToken(invalidToken, uniqueIp);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Invalid token signature");
 

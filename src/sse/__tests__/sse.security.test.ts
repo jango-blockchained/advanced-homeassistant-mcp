@@ -7,7 +7,9 @@ describe("SSE Security Features", () => {
   const TEST_IP = "127.0.0.1";
   const validToken = "valid_token";
   let sseManager: SSEManager;
-  let validateTokenMock: Mock<(token: string, ip: string) => { valid: boolean; error?: string }>;
+  let validateTokenMock: Mock<
+    (token: string, ip: string) => Promise<{ valid: boolean; error?: string }>
+  >;
   // Capture the real implementation so afterEach can put it back. Without
   // this, the assignment to TokenManager.validateToken below leaks into
   // other test files in the same bun process and breaks security tests.
@@ -29,7 +31,7 @@ describe("SSE Security Features", () => {
       },
     });
 
-    validateTokenMock = mock((token: string) => ({
+    validateTokenMock = mock(async (token: string) => ({
       valid: token === validToken,
       error: token !== validToken ? "Invalid token" : undefined,
     }));
@@ -53,48 +55,48 @@ describe("SSE Security Features", () => {
   }
 
   describe("Client Authentication", () => {
-    it("should authenticate valid clients", () => {
+    it("should authenticate valid clients", async () => {
       const client = createTestClient("test-client-1");
-      const result = sseManager.addClient(client, validToken);
+      const result = await sseManager.addClient(client, validToken);
 
       expect(result).toBeTruthy();
       expect(validateTokenMock).toHaveBeenCalledWith(validToken, TEST_IP);
       expect(result?.authenticated).toBe(true);
     });
 
-    it("should reject invalid tokens", () => {
+    it("should reject invalid tokens", async () => {
       const client = createTestClient("test-client-2");
-      const result = sseManager.addClient(client, "invalid_token");
+      const result = await sseManager.addClient(client, "invalid_token");
 
       expect(result).toBeNull();
       expect(validateTokenMock).toHaveBeenCalledWith("invalid_token", TEST_IP);
     });
 
-    it("should enforce maximum client limit", () => {
+    it("should enforce maximum client limit", async () => {
       // Add max number of clients
       const client1 = createTestClient("test-client-0");
       const client2 = createTestClient("test-client-1");
       const client3 = createTestClient("test-client-2");
 
-      expect(sseManager.addClient(client1, validToken)).toBeTruthy();
-      expect(sseManager.addClient(client2, validToken)).toBeTruthy();
-      expect(sseManager.addClient(client3, validToken)).toBeNull();
+      expect(await sseManager.addClient(client1, validToken)).toBeTruthy();
+      expect(await sseManager.addClient(client2, validToken)).toBeTruthy();
+      expect(await sseManager.addClient(client3, validToken)).toBeNull();
     });
   });
 
   describe("Client Management", () => {
-    it("should track client connections", () => {
+    it("should track client connections", async () => {
       const client = createTestClient("test-client");
-      sseManager.addClient(client, validToken);
+      await sseManager.addClient(client, validToken);
 
       const stats = sseManager.getStatistics();
       expect(stats.totalClients).toBe(1);
       expect(stats.authenticatedClients).toBe(1);
     });
 
-    it("should remove disconnected clients", () => {
+    it("should remove disconnected clients", async () => {
       const client = createTestClient("test-client");
-      sseManager.addClient(client, validToken);
+      await sseManager.addClient(client, validToken);
       sseManager.removeClient("test-client");
 
       const stats = sseManager.getStatistics();
@@ -113,7 +115,7 @@ describe("SSE Security Features", () => {
       });
 
       const client = createTestClient("test-client");
-      const added = fastManager.addClient(client, validToken)!;
+      const added = (await fastManager.addClient(client, validToken))!;
       // Make the client look stale: lastPingAt older than 2 * pingInterval.
       added.lastPingAt = new Date(Date.now() - 10 * 60_000);
 
@@ -125,9 +127,9 @@ describe("SSE Security Features", () => {
   });
 
   describe("Rate Limiting", () => {
-    it("should enforce rate limits for message sending", () => {
+    it("should enforce rate limits for message sending", async () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken);
+      const sseClient = await sseManager.addClient(client, validToken);
       expect(sseClient).toBeTruthy();
 
       // Send messages up to the limit
@@ -152,7 +154,7 @@ describe("SSE Security Features", () => {
 
     it("should reset rate limits after window expires", async () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken);
+      const sseClient = await sseManager.addClient(client, validToken);
       expect(sseClient).toBeTruthy();
 
       // Send messages up to the limit
@@ -180,12 +182,12 @@ describe("SSE Security Features", () => {
   });
 
   describe("Event Broadcasting", () => {
-    it("should only send events to authenticated clients", () => {
+    it("should only send events to authenticated clients", async () => {
       const client1 = createTestClient("client1");
       const client2 = createTestClient("client2");
 
-      const sseClient1 = sseManager.addClient(client1, validToken);
-      const sseClient2 = sseManager.addClient(client2, "invalid_token");
+      const sseClient1 = await sseManager.addClient(client1, validToken);
+      const sseClient2 = await sseManager.addClient(client2, "invalid_token");
 
       expect(sseClient1).toBeTruthy();
       expect(sseClient2).toBeNull();
@@ -209,9 +211,9 @@ describe("SSE Security Features", () => {
       expect(client2SendMock.mock.calls.length).toBe(0);
     });
 
-    it("should respect subscription filters", () => {
+    it("should respect subscription filters", async () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken);
+      const sseClient = await sseManager.addClient(client, validToken);
       expect(sseClient).toBeTruthy();
 
       sseClient!.subscriptions.add("event:test_event");

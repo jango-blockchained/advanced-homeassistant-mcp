@@ -45,13 +45,15 @@ describe("Security Middleware", () => {
   });
 
   describe("validateRequest", () => {
-    it("should pass valid requests with bearer token", () => {
+    it("should pass valid requests with bearer token", async () => {
       mockRequest.headers.authorization = "Bearer valid-token";
       // Stub TokenManager.validateToken so the middleware accepts the token.
       const originalValidate = TokenManager.validateToken.bind(TokenManager);
-      TokenManager.validateToken = mock(() => ({ valid: true })) as unknown as typeof TokenManager.validateToken;
+      TokenManager.validateToken = mock(async () => ({
+        valid: true,
+      })) as unknown as typeof TokenManager.validateToken;
       try {
-        validateRequest(
+        await validateRequest(
           mockRequest as unknown as Request,
           mockResponse as unknown as Response,
           nextFunction as unknown as NextFunction,
@@ -62,8 +64,8 @@ describe("Security Middleware", () => {
       }
     });
 
-    it("should reject requests without authorization header", () => {
-      validateRequest(
+    it("should reject requests without authorization header", async () => {
+      await validateRequest(
         mockRequest as unknown as Request,
         mockResponse as unknown as Response,
         nextFunction as unknown as NextFunction,
@@ -71,9 +73,9 @@ describe("Security Middleware", () => {
       expect(mockResponse.status).toHaveBeenCalledWith(401);
     });
 
-    it("should reject requests with non-Bearer authorization", () => {
+    it("should reject requests with non-Bearer authorization", async () => {
       mockRequest.headers.authorization = "invalid-format";
-      validateRequest(
+      await validateRequest(
         mockRequest as unknown as Request,
         mockResponse as unknown as Response,
         nextFunction as unknown as NextFunction,
@@ -110,7 +112,7 @@ describe("Security Middleware", () => {
         nextFunction as unknown as NextFunction,
       );
       expect((mockRequest.body as Record<string, string>).text).toBe("Hello");
-      expect(((mockRequest.body as Record<string, Record<string, string>>).nested).html).toBe(
+      expect((mockRequest.body as Record<string, Record<string, string>>).nested.html).toBe(
         "World",
       );
       expect(nextFunction).toHaveBeenCalled();

@@ -41,14 +41,16 @@ describe("Security Middleware", () => {
   });
 
   describe("Request Validation", () => {
-    it("should pass valid requests", () => {
+    it("should pass valid requests", async () => {
       mockRequest.headers = {
         authorization: "Bearer valid-token",
         "content-type": "application/json",
       };
-      TokenManager.validateToken = mock(() => ({ valid: true })) as unknown as typeof TokenManager.validateToken;
+      TokenManager.validateToken = mock(async () => ({
+        valid: true,
+      })) as unknown as typeof TokenManager.validateToken;
 
-      validateRequest(
+      await validateRequest(
         mockRequest as Request,
         mockResponse as Response,
         nextFunction as unknown as NextFunction,
@@ -56,12 +58,12 @@ describe("Security Middleware", () => {
       expect(nextFunction).toHaveBeenCalled();
     });
 
-    it("should reject requests without authorization header", () => {
+    it("should reject requests without authorization header", async () => {
       // Source enforces content-type FIRST (returns 415 if missing) and only
       // then checks the auth header — supply a valid content-type so we
       // exercise the auth branch.
       mockRequest.headers = { "content-type": "application/json" };
-      validateRequest(
+      await validateRequest(
         mockRequest as Request,
         mockResponse as Response,
         nextFunction as unknown as NextFunction,
@@ -69,12 +71,12 @@ describe("Security Middleware", () => {
       expect(mockResponse.status).toHaveBeenCalledWith(401);
     });
 
-    it("should reject requests with invalid authorization format", () => {
+    it("should reject requests with invalid authorization format", async () => {
       mockRequest.headers = {
         authorization: "invalid-format",
         "content-type": "application/json",
       };
-      validateRequest(
+      await validateRequest(
         mockRequest as Request,
         mockResponse as Response,
         nextFunction as unknown as NextFunction,

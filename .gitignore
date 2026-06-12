@@ -115,6 +115,7 @@ docs-site/node_modules/
 # task JSONs that the opencode agent uses to coordinate work.
 # These are local-dev artifacts and should not be shared in git.
 .opencode/
+opencode.jsonc
 
 # Other local-dev / agent artifacts (used during development only)
 .tmp/

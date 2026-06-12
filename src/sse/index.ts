@@ -156,12 +156,12 @@ export class SSEManager extends EventEmitter {
     return SSEManager.instance;
   }
 
-  addClient(
+  async addClient(
     client: Omit<SSEClient, "authenticated" | "subscriptions" | "rateLimit">,
     token: string,
-  ): SSEClient | null {
+  ): Promise<SSEClient | null> {
     // Validate token
-    const validationResult = TokenManager.validateToken(token, client.ip);
+    const validationResult = await TokenManager.validateToken(token, client.ip);
     if (!validationResult.valid) {
       logger.warn(
         `Invalid token for client ${client.id} from IP ${client.ip}: ${validationResult.error}`,

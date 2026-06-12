@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import helmet from "helmet";
 import { HelmetOptions } from "helmet";
-import jwt from "jsonwebtoken";
+import { SignJWT, jwtVerify, errors as joseErrors } from "jose";
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import { logger } from "../utils/logger.js";
 
@@ -116,10 +116,10 @@ export function getSecurityHeaders(): HelmetOptions {
 export const securityHeadersMiddleware = helmet(getSecurityHeaders());
 
 // Extracted request validation logic
-export function validateRequestHeaders(
+export async function validateRequestHeaders(
   request: Request,
   requiredContentType = "application/json",
-): boolean {
+): Promise<boolean> {
   // Validate content type for POST/PUT/PATCH requests
   if (["POST", "PUT", "PATCH"].includes(request.method)) {
     const contentType = request.headers["content-type"];
@@ -143,7 +143,7 @@ export function validateRequestHeaders(
     }
 
     const ip = request.headers["x-forwarded-for"] as string | undefined;
-    const validation = TokenManager.validateToken(token, ip);
+    const validation = await TokenManager.validateToken(token, ip);
     if (!validation.valid) {
       throw new Error(validation.error || "Invalid token");
     }
@@ -153,13 +153,13 @@ export function validateRequestHeaders(
 }
 
 // Request validation middleware for Express
-export const validateRequestMiddleware: RequestHandler = (
+export const validateRequestMiddleware: RequestHandler = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    validateRequestHeaders(req);
+    await validateRequestHeaders(req);
     next();
   } catch (error) {
     res.status(400).json({
@@ -248,7 +248,7 @@ export const errorHandlerMiddleware = (
   res: Response,
   _next: NextFunction,
 ): void => {
-  if (error instanceof jwt.JsonWebTokenError) {
+  if (error instanceof joseErrors.JWTInvalid) {
     res.status(401).json(handleError(error));
     return;
   }
@@ -269,6 +269,18 @@ const SECURITY_CONFIG = {
 
 // Track failed authentication attempts
 const failedAttempts = new Map<string, { count: number; lastAttempt: number }>();
+
+/**
+ * Get a Uint8Array key for jose from the JWT_SECRET env variable.
+ * jose requires keys as Uint8Array; the secret is encoded as UTF-8.
+ */
+function getJwtSecretKey(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT secret not configured");
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export class TokenManager {
   /**
@@ -342,10 +354,10 @@ export class TokenManager {
   /**
    * Validates a JWT token with enhanced security checks
    */
-  static validateToken(
+  static async validateToken(
     token: string | undefined | null,
     ip?: string,
-  ): { valid: boolean; error?: string } {
+  ): Promise<{ valid: boolean; error?: string }> {
     // Check basic token format
     if (!token || typeof token !== "string") {
       return { valid: false, error: "Invalid token format" };
@@ -365,45 +377,40 @@ export class TokenManager {
       };
     }
 
-    // Get JWT secret
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      return { valid: false, error: "JWT secret not configured" };
-    }
-
     try {
-      // Verify token signature and decode
-      const decoded = jwt.verify(token, secret, {
-        algorithms: ["HS256"],
-        clockTolerance: 0, // No clock skew tolerance
-        ignoreExpiration: false, // Always check expiration
-      }) as jwt.JwtPayload;
+      const secretKey = getJwtSecretKey();
+
+      // Verify token signature and decode using jose
+      const { payload } = await jwtVerify(token, secretKey);
 
       // Verify token structure
-      if (!decoded || typeof decoded !== "object") {
+      if (!payload || typeof payload !== "object") {
         if (ip) this.recordFailedAttempt(ip);
         return { valid: false, error: "Invalid token structure" };
       }
 
       // Check required claims
-      if (!decoded.exp || !decoded.iat) {
+      if (!payload.exp || !payload.iat) {
         if (ip) this.recordFailedAttempt(ip);
         return { valid: false, error: "Token missing required claims" };
       }
 
       const now = Math.floor(Date.now() / 1000);
 
-      // Check expiration
-      if (decoded.exp <= now) {
+      // Check expiration (jose handles this, but double-check for safety)
+      if (payload.exp <= now) {
         if (ip) this.recordFailedAttempt(ip);
         return { valid: false, error: "Token has expired" };
       }
 
-      // Check token age
-      const tokenAge = (now - decoded.iat) * 1000;
-      if (tokenAge > SECURITY_CONFIG.MAX_TOKEN_AGE) {
-        if (ip) this.recordFailedAttempt(ip);
-        return { valid: false, error: "Token exceeds maximum age limit" };
+      // Check token age (iat is a number in jose's JWTPayload)
+      const iat = payload.iat as number | undefined;
+      if (iat) {
+        const tokenAge = (now - iat) * 1000;
+        if (tokenAge > SECURITY_CONFIG.MAX_TOKEN_AGE) {
+          if (ip) this.recordFailedAttempt(ip);
+          return { valid: false, error: "Token exceeds maximum age limit" };
+        }
       }
 
       // Reset failed attempts on successful validation
@@ -413,16 +420,31 @@ export class TokenManager {
 
       return { valid: true };
     } catch (error) {
-      // Don't trigger failed-attempt lockout for expired tokens — the user
-      // is legitimate, their token just aged out. Only record failures for
-      // actual signature/format errors which suggest tampering or forgery.
-      if (error instanceof jwt.TokenExpiredError) {
+      // jose throws JWTExpired for expired tokens
+      if (error instanceof joseErrors.JWTExpired) {
         return { valid: false, error: "Token has expired" };
       }
-      if (ip) this.recordFailedAttempt(ip);
-      if (error instanceof jwt.JsonWebTokenError) {
+      // JWSSignatureVerificationFailed is thrown when the signature doesn't match
+      if (error instanceof joseErrors.JWSSignatureVerificationFailed) {
+        if (ip) this.recordFailedAttempt(ip);
         return { valid: false, error: "Invalid token signature" };
       }
+      // JWTInvalid is thrown for malformed/invalid JWT structures
+      if (error instanceof joseErrors.JWTInvalid) {
+        if (ip) this.recordFailedAttempt(ip);
+        return { valid: false, error: "Invalid token signature" };
+      }
+      // JWSInvalid is thrown for invalid JWS format (e.g. no dots, bad base64)
+      if (error instanceof joseErrors.JWSInvalid) {
+        if (ip) this.recordFailedAttempt(ip);
+        return { valid: false, error: "Invalid token signature" };
+      }
+      // getJwtSecretKey() throws a plain Error when JWT_SECRET is not set
+      if (error instanceof Error && error.message === "JWT secret not configured") {
+        return { valid: false, error: "JWT secret not configured" };
+      }
+      // Record failed attempts for other errors
+      if (ip) this.recordFailedAttempt(ip);
       return { valid: false, error: "Token validation failed" };
     }
   }
@@ -461,22 +483,16 @@ export class TokenManager {
   /**
    * Generates a new JWT token
    */
-  static generateToken(payload: Record<string, any>): string {
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new Error("JWT secret not configured");
-    }
+  static async generateToken(payload: Record<string, any>): Promise<string> {
+    const secretKey = getJwtSecretKey();
 
     // Add required claims
     const now = Math.floor(Date.now() / 1000);
-    const tokenPayload = {
-      ...payload,
-      iat: now,
-      exp: now + Math.floor(TOKEN_EXPIRY / 1000),
-    };
 
-    return jwt.sign(tokenPayload, secret, {
-      algorithm: "HS256",
-    });
+    return new SignJWT(payload)
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt(now)
+      .setExpirationTime(now + Math.floor(TOKEN_EXPIRY / 1000))
+      .sign(secretKey);
   }
 }

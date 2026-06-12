@@ -23,7 +23,7 @@ export const subscribeEventsTool: Tool = {
     entity_id: z.string().optional().describe("Specific entity ID to monitor for state changes"),
     domain: z.string().optional().describe('Domain to monitor (e.g., "light", "switch", etc.)'),
   }),
-  execute: (params: SSEParams) => {
+  execute: async (params: SSEParams) => {
     const clientId = uuidv4();
 
     // Set up SSE headers
@@ -49,16 +49,16 @@ export const subscribeEventsTool: Tool = {
     // `client` object is intentionally minimal (id, send); addClient
     // fills in the rest (ip, connectedAt, connectionTime) at runtime.
     // Cast through unknown to satisfy the input type.
-    const sseClient = sseManager.addClient(
+    const sseClient = await sseManager.addClient(
       client as unknown as Parameters<typeof sseManager.addClient>[0],
       params.token,
     );
 
     if (!sseClient || !sseClient.authenticated) {
-      return Promise.resolve({
+      return {
         success: false,
         message: sseClient ? "Authentication failed" : "Maximum client limit reached",
-      });
+      };
     }
 
     // Subscribe to specific events if provided
@@ -81,7 +81,7 @@ export const subscribeEventsTool: Tool = {
       sseManager.subscribeToDomain(clientId, params.domain);
     }
 
-    return Promise.resolve({
+    return {
       headers: responseHeaders,
       body: `data: ${JSON.stringify({
         type: "connection",
@@ -96,6 +96,6 @@ export const subscribeEventsTool: Tool = {
         timestamp: new Date().toISOString(),
       })}\n\n`,
       keepAlive: true,
-    });
+    };
   },
 };

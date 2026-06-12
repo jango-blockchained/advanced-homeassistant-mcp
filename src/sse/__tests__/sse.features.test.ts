@@ -8,7 +8,9 @@ describe("SSE Core Features", () => {
   let sseManager: SSEManager;
   const TEST_IP = "127.0.0.1";
   const validToken = "valid_token_that_meets_minimum_length_requirement_123456";
-  let validateTokenMock: Mock<(token: string, ip?: string) => { valid: boolean; error?: string }>;
+  let validateTokenMock: Mock<
+    (token: string, ip?: string) => Promise<{ valid: boolean; error?: string }>
+  >;
   // Capture the real impl so afterEach can restore it. Otherwise the
   // assignment to TokenManager.validateToken below leaks across files in
   // the same bun process and breaks security tests downstream.
@@ -24,7 +26,7 @@ describe("SSE Core Features", () => {
     });
 
     // Mock token validation to always succeed with our test token
-    validateTokenMock = mock((token: string) => ({
+    validateTokenMock = mock(async (token: string) => ({
       valid: token === validToken,
       error: token !== validToken ? "Invalid token" : undefined,
     }));
@@ -48,12 +50,12 @@ describe("SSE Core Features", () => {
   }
 
   describe("State Management", () => {
-    it("should track and update entity states", () => {
+    it("should track and update entity states", async () => {
       const client = createTestClient("test-client");
       // addClient can return null (e.g. invalid token); the truthy
       // assertion below confirms it, and the cast asserts to TS that
       // we treat the success path as the only path in this test.
-      const sseClient = sseManager.addClient(client, validToken) as SSEClient;
+      const sseClient = (await sseManager.addClient(client, validToken)) as SSEClient;
       expect(sseClient).toBeTruthy();
 
       const entityId = "light.living_room";
@@ -81,9 +83,9 @@ describe("SSE Core Features", () => {
       expect(sentData.data.state).toBe("off");
     });
 
-    it("should handle state updates and notify subscribers", () => {
+    it("should handle state updates and notify subscribers", async () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken) as SSEClient;
+      const sseClient = (await sseManager.addClient(client, validToken)) as SSEClient;
       expect(sseClient).toBeTruthy();
 
       const entityId = "light.living_room";
@@ -132,9 +134,9 @@ describe("SSE Core Features", () => {
   });
 
   describe("Domain Subscriptions", () => {
-    it("should handle domain-wide subscriptions", () => {
+    it("should handle domain-wide subscriptions", async () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken) as SSEClient;
+      const sseClient = (await sseManager.addClient(client, validToken)) as SSEClient;
       expect(sseClient).toBeTruthy();
 
       const domain = "light";
@@ -173,7 +175,7 @@ describe("SSE Core Features", () => {
   describe("Connection Maintenance", () => {
     it("should send periodic pings to keep connections alive", async () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken) as SSEClient;
+      const sseClient = (await sseManager.addClient(client, validToken)) as SSEClient;
       expect(sseClient).toBeTruthy();
 
       // Wait for ping interval
@@ -189,7 +191,7 @@ describe("SSE Core Features", () => {
 
     it("should cleanup inactive connections", async () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken) as SSEClient;
+      const sseClient = (await sseManager.addClient(client, validToken)) as SSEClient;
       expect(sseClient).toBeTruthy();
 
       // Simulate connection age exceeding limit
@@ -212,7 +214,7 @@ describe("SSE Core Features", () => {
       });
       client.send = errorMock;
 
-      const sseClient = sseManager.addClient(client, validToken);
+      const sseClient = await sseManager.addClient(client, validToken);
       if (!sseClient) {
         throw new Error("Failed to add client");
       }
@@ -248,9 +250,9 @@ describe("SSE Core Features", () => {
       expect(finalCount).toBe(0);
     });
 
-    it("should handle invalid entity updates", () => {
+    it("should handle invalid entity updates", async () => {
       const client = createTestClient("test-client");
-      const sseClient = sseManager.addClient(client, validToken) as SSEClient;
+      const sseClient = (await sseManager.addClient(client, validToken)) as SSEClient;
       expect(sseClient).toBeTruthy();
 
       // Subscribe to entity
@@ -294,19 +296,21 @@ describe("SSE Core Features", () => {
   });
 
   describe("Concurrent Operations", () => {
-    it("should handle multiple simultaneous subscriptions", () => {
+    it("should handle multiple simultaneous subscriptions", async () => {
       // Create and add clients
       const rawClients = Array.from({ length: 5 }, (_, i) => createTestClient(`client_${i}`));
-      const clients = rawClients
-        .map((client) => sseManager.addClient(client, validToken))
-        .filter((client): client is SSEClient => client !== null);
+      const clients: SSEClient[] = [];
+      for (const client of rawClients) {
+        const result = await sseManager.addClient(client, validToken);
+        if (result) clients.push(result);
+      }
 
       expect(clients.length).toBe(5);
 
       // Subscribe all clients to same entity
       const entityId = "light.test";
-      clients.forEach((client) => {
-        sseManager.subscribeToEntity(client.id, entityId);
+      clients.forEach((c) => {
+        sseManager.subscribeToEntity(c.id, entityId);
       });
 
       // Update entity state
