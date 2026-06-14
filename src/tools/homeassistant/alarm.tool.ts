@@ -103,13 +103,31 @@ async function executeAlarmsRead(params: AlarmsReadParams): Promise<string> {
 
 async function executeAlarmsActivate(params: AlarmsActivateParams): Promise<string> {
   try {
+    // Verify entity exists before calling service
+    const existingAlarm = await haAlarmService.getAlarm(params.entity_id);
+    if (!existingAlarm) {
+      return JSON.stringify({
+        success: false,
+        error: `Alarm ${params.entity_id} not found`,
+      });
+    }
+
     const serviceData = params.code ? { code: params.code } : {};
     const success = await haAlarmService.callService(params.action, params.entity_id, serviceData);
+
+    if (!success) {
+      return JSON.stringify({
+        success: false,
+        message: `Failed to execute ${params.action} on ${params.entity_id}`,
+      });
+    }
+
+    // Read back state after service call to verify
+    const updatedAlarm = await haAlarmService.getAlarm(params.entity_id);
     return JSON.stringify({
-      success,
-      message: success
-        ? `Successfully executed ${params.action} on ${params.entity_id}`
-        : `Failed to execute ${params.action} on ${params.entity_id}`,
+      success: true,
+      message: `Successfully executed ${params.action} on ${params.entity_id}`,
+      state: updatedAlarm,
     });
   } catch (error) {
     logger.error("Error in alarm activate tool:", error);
@@ -132,6 +150,27 @@ export const alarmsTool: Tool = {
     openWorldHint: true,
   },
   parameters: alarmsReadSchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.literal(true),
+      alarms: z.array(
+        z.object({
+          entity_id: z.string(),
+          state: z.string(),
+          attributes: z.record(z.unknown()),
+        }),
+      ),
+      count: z.number(),
+    }),
+    z.object({
+      success: z.literal(true),
+      alarm: z.object({
+        entity_id: z.string(),
+        state: z.string(),
+        attributes: z.record(z.unknown()),
+      }),
+    }),
+  ]),
   execute: executeAlarmsRead,
 };
 
@@ -148,5 +187,15 @@ export const alarmsActivateTool: Tool = {
     openWorldHint: true,
   },
   parameters: alarmsActivateSchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.boolean(),
+      message: z.string(),
+    }),
+    z.object({
+      success: z.literal(false),
+      error: z.string(),
+    }),
+  ]),
   execute: executeAlarmsActivate,
 };

@@ -42,12 +42,12 @@ async function executePackageRead(params: PackageReadParams) {
     }
 
     const data = (await response.json()) as HacsResponse;
-    return { success: true, packages: data.repositories };
+    return JSON.stringify({ success: true, packages: data.repositories });
   } catch (error) {
-    return {
+    return JSON.stringify({
       success: false,
       message: error instanceof Error ? error.message : "Unknown error occurred",
-    };
+    });
   }
 }
 
@@ -88,15 +88,15 @@ async function executePackageModify(params: PackageModifyParams) {
       throw new Error(`Failed to ${params.action} package: ${response.statusText}`);
     }
 
-    return {
+    return JSON.stringify({
       success: true,
       message: `Successfully ${params.action}ed package ${params.repository}`,
-    };
+    });
   } catch (error) {
-    return {
+    return JSON.stringify({
       success: false,
       message: error instanceof Error ? error.message : "Unknown error occurred",
-    };
+    });
   }
 }
 
@@ -112,6 +112,16 @@ export const packageTool: Tool = {
     openWorldHint: true,
   },
   parameters: packageReadSchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.literal(true),
+      packages: z.array(z.record(z.unknown())),
+    }),
+    z.object({
+      success: z.literal(false),
+      message: z.string(),
+    }),
+  ]),
   execute: executePackageRead,
 };
 
@@ -127,5 +137,15 @@ export const packageModifyTool: Tool = {
     openWorldHint: true,
   },
   parameters: packageModifySchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.literal(true),
+      message: z.string(),
+    }),
+    z.object({
+      success: z.literal(false),
+      message: z.string(),
+    }),
+  ]),
   execute: executePackageModify,
 };

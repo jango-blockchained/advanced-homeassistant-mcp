@@ -137,6 +137,18 @@ async function executeMediaPlayersActivate(params: MediaPlayersActivateParams): 
   } = params;
 
   try {
+    // Verify entity exists before calling service
+    const existingPlayer = await haMediaPlayerService.getMediaPlayer(entity_id);
+    if (!existingPlayer) {
+      return JSON.stringify({
+        success: false,
+        error: `Media player ${entity_id} not found`,
+      });
+    }
+
+    let success = false;
+    let serviceData: Record<string, unknown> = {};
+
     switch (action) {
       case "turn_on":
       case "turn_off":
@@ -147,102 +159,79 @@ async function executeMediaPlayersActivate(params: MediaPlayersActivateParams): 
       case "media_next_track":
       case "media_previous_track":
       case "volume_up":
-      case "volume_down": {
-        const success = await haMediaPlayerService.callService(action, entity_id);
-        return JSON.stringify({
-          success,
-          message: success
-            ? `Successfully executed ${action} on ${entity_id}`
-            : `Failed to execute ${action} on ${entity_id}`,
-        });
-      }
-      case "volume_set": {
+      case "volume_down":
+        success = await haMediaPlayerService.callService(action, entity_id);
+        break;
+      case "volume_set":
         if (volume_level === undefined) {
           return JSON.stringify({
             success: false,
             error: "volume_level is required for volume_set action",
           });
         }
-        const success = await haMediaPlayerService.callService("volume_set", entity_id, {
-          volume_level,
-        });
-        return JSON.stringify({
-          success,
-          message: success
-            ? `Successfully set volume to ${volume_level} on ${entity_id}`
-            : `Failed to set volume on ${entity_id}`,
-        });
-      }
-      case "volume_mute": {
+        serviceData = { volume_level };
+        success = await haMediaPlayerService.callService("volume_set", entity_id, serviceData);
+        break;
+      case "volume_mute":
         if (is_volume_muted === undefined) {
           return JSON.stringify({
             success: false,
             error: "is_volume_muted is required for volume_mute action",
           });
         }
-        const success = await haMediaPlayerService.callService("volume_mute", entity_id, {
-          is_volume_muted,
-        });
-        return JSON.stringify({
-          success,
-          message: success
-            ? `Successfully ${is_volume_muted ? "muted" : "unmuted"} ${entity_id}`
-            : `Failed to mute/unmute ${entity_id}`,
-        });
-      }
-      case "play_media": {
+        serviceData = { is_volume_muted };
+        success = await haMediaPlayerService.callService("volume_mute", entity_id, serviceData);
+        break;
+      case "play_media":
         if (!media_content_id || !media_content_type) {
           return JSON.stringify({
             success: false,
             error: "media_content_id and media_content_type are required for play_media action",
           });
         }
-        const success = await haMediaPlayerService.callService("play_media", entity_id, {
-          media_content_id,
-          media_content_type,
-        });
-        return JSON.stringify({
-          success,
-          message: success
-            ? `Successfully started playing media on ${entity_id}`
-            : `Failed to play media on ${entity_id}`,
-        });
-      }
-      case "select_source": {
+        serviceData = { media_content_id, media_content_type };
+        success = await haMediaPlayerService.callService("play_media", entity_id, serviceData);
+        break;
+      case "select_source":
         if (!source) {
           return JSON.stringify({
             success: false,
             error: "source is required for select_source action",
           });
         }
-        const success = await haMediaPlayerService.callService("select_source", entity_id, {
-          source,
-        });
-        return JSON.stringify({
-          success,
-          message: success
-            ? `Successfully selected source ${source} on ${entity_id}`
-            : `Failed to select source on ${entity_id}`,
-        });
-      }
-      case "select_sound_mode": {
+        serviceData = { source };
+        success = await haMediaPlayerService.callService("select_source", entity_id, serviceData);
+        break;
+      case "select_sound_mode":
         if (!sound_mode) {
           return JSON.stringify({
             success: false,
             error: "sound_mode is required for select_sound_mode action",
           });
         }
-        const success = await haMediaPlayerService.callService("select_sound_mode", entity_id, {
-          sound_mode,
-        });
-        return JSON.stringify({
-          success,
-          message: success
-            ? `Successfully selected sound mode ${sound_mode} on ${entity_id}`
-            : `Failed to select sound mode on ${entity_id}`,
-        });
-      }
+        serviceData = { sound_mode };
+        success = await haMediaPlayerService.callService(
+          "select_sound_mode",
+          entity_id,
+          serviceData,
+        );
+        break;
     }
+
+    if (!success) {
+      return JSON.stringify({
+        success: false,
+        message: `Failed to execute ${action} on ${entity_id}`,
+      });
+    }
+
+    // Read back state after service call to verify
+    const updatedPlayer = await haMediaPlayerService.getMediaPlayer(entity_id);
+    return JSON.stringify({
+      success: true,
+      message: `Successfully executed ${action} on ${entity_id}`,
+      state: updatedPlayer,
+    });
   } catch (error) {
     logger.error("Error in media player activate tool:", error);
     return JSON.stringify({
@@ -264,6 +253,31 @@ export const mediaPlayersTool: Tool = {
     openWorldHint: true,
   },
   parameters: mediaPlayersReadSchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.literal(true),
+      media_players: z.array(
+        z.object({
+          entity_id: z.string(),
+          state: z.string(),
+          attributes: z.record(z.unknown()),
+        }),
+      ),
+      count: z.number(),
+    }),
+    z.object({
+      success: z.literal(true),
+      media_player: z.object({
+        entity_id: z.string(),
+        state: z.string(),
+        attributes: z.record(z.unknown()),
+      }),
+    }),
+    z.object({
+      success: z.literal(false),
+      error: z.string(),
+    }),
+  ]),
   execute: executeMediaPlayersRead,
 };
 
@@ -280,5 +294,15 @@ export const mediaPlayersActivateTool: Tool = {
     openWorldHint: true,
   },
   parameters: mediaPlayersActivateSchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.boolean(),
+      message: z.string(),
+    }),
+    z.object({
+      success: z.literal(false),
+      error: z.string(),
+    }),
+  ]),
   execute: executeMediaPlayersActivate,
 };

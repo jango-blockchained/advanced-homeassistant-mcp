@@ -93,13 +93,31 @@ async function executeLocksRead(params: LocksReadParams): Promise<string> {
 
 async function executeLocksActivate(params: LocksActivateParams): Promise<string> {
   try {
+    // Verify entity exists before calling service
+    const existingLock = await haLockService.getLock(params.entity_id);
+    if (!existingLock) {
+      return JSON.stringify({
+        success: false,
+        error: `Lock ${params.entity_id} not found`,
+      });
+    }
+
     const serviceData = params.code ? { code: params.code } : {};
     const success = await haLockService.callService(params.action, params.entity_id, serviceData);
+
+    if (!success) {
+      return JSON.stringify({
+        success: false,
+        message: `Failed to execute ${params.action} on ${params.entity_id}`,
+      });
+    }
+
+    // Read back state after service call to verify
+    const updatedLock = await haLockService.getLock(params.entity_id);
     return JSON.stringify({
-      success,
-      message: success
-        ? `Successfully executed ${params.action} on ${params.entity_id}`
-        : `Failed to execute ${params.action} on ${params.entity_id}`,
+      success: true,
+      message: `Successfully executed ${params.action} on ${params.entity_id}`,
+      state: updatedLock,
     });
   } catch (error) {
     logger.error("Error in lock activate tool:", error);
@@ -122,6 +140,31 @@ export const locksTool: Tool = {
     openWorldHint: true,
   },
   parameters: locksReadSchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.literal(true),
+      locks: z.array(
+        z.object({
+          entity_id: z.string(),
+          state: z.string(),
+          attributes: z.record(z.unknown()),
+        }),
+      ),
+      count: z.number(),
+    }),
+    z.object({
+      success: z.literal(true),
+      lock: z.object({
+        entity_id: z.string(),
+        state: z.string(),
+        attributes: z.record(z.unknown()),
+      }),
+    }),
+    z.object({
+      success: z.literal(false),
+      error: z.string(),
+    }),
+  ]),
   execute: executeLocksRead,
 };
 
@@ -138,5 +181,15 @@ export const locksActivateTool: Tool = {
     openWorldHint: true,
   },
   parameters: locksActivateSchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.boolean(),
+      message: z.string(),
+    }),
+    z.object({
+      success: z.literal(false),
+      error: z.string(),
+    }),
+  ]),
   execute: executeLocksActivate,
 };

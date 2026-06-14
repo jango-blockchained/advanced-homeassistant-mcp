@@ -24,6 +24,16 @@ export const lightAnimationActivateTool: Tool = {
   description:
     "Execute custom light animation sequences (e.g., police lights, alerts) on any RGB light.",
   parameters: LightAnimationParamsSchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.literal(true),
+      message: z.string(),
+    }),
+    z.object({
+      success: z.literal(false),
+      error: z.string(),
+    }),
+  ]),
   annotations: {
     title: "Light Animation",
     description: "Run custom animation sequences on lights",
@@ -39,6 +49,16 @@ export const lightAnimationActivateTool: Tool = {
     logger.info(`Starting animation on ${entity_id} (${loops} loops, ${sequence.length} steps)`);
 
     try {
+      // Verify entity exists before starting animation
+      const states = await hass.getStates();
+      const entityExists = states.some((s) => s.entity_id === entity_id);
+      if (!entityExists) {
+        return JSON.stringify({
+          success: false,
+          error: `Light entity ${entity_id} not found`,
+        });
+      }
+
       for (let i = 0; i < loops; i++) {
         for (const step of sequence) {
           const serviceData: Record<string, unknown> = { entity_id };
@@ -56,9 +76,16 @@ export const lightAnimationActivateTool: Tool = {
         }
       }
 
+      // Read back final state
+      const finalState = await hass.getState(entity_id);
       return JSON.stringify({
         success: true,
         message: `Completed animation on ${entity_id} (${loops} loops)`,
+        state: {
+          entity_id: finalState.entity_id,
+          state: finalState.state,
+          attributes: finalState.attributes,
+        },
       });
     } catch (err: any) {
       logger.error(`Animation failed: ${err.message}`);

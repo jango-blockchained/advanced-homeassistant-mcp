@@ -53,6 +53,17 @@ async function executeSceneRead(_params: SceneReadParams): Promise<string> {
 async function executeSceneActivate(params: SceneActivateParams): Promise<string> {
   try {
     const hass = await get_hass();
+
+    // Verify scene exists before calling service
+    const states = await hass.getStates();
+    const sceneExists = states.some((s) => s.entity_id === params.scene_id);
+    if (!sceneExists) {
+      return JSON.stringify({
+        success: false,
+        message: `Scene ${params.scene_id} not found`,
+      });
+    }
+
     await hass.callService("scene", "turn_on", { entity_id: params.scene_id });
     return JSON.stringify({
       success: true,
@@ -82,6 +93,23 @@ export const sceneTool: Tool = {
     openWorldHint: true,
   },
   parameters: sceneReadSchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.literal(true),
+      scenes: z.array(
+        z.object({
+          entity_id: z.string(),
+          name: z.string(),
+          description: z.string().optional(),
+        }),
+      ),
+      total_count: z.number(),
+    }),
+    z.object({
+      success: z.literal(false),
+      message: z.string(),
+    }),
+  ]),
   execute: executeSceneRead,
 };
 
@@ -98,5 +126,16 @@ export const sceneActivateTool: Tool = {
     openWorldHint: true,
   },
   parameters: sceneActivateSchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.literal(true),
+      message: z.string(),
+      scene_id: z.string(),
+    }),
+    z.object({
+      success: z.literal(false),
+      message: z.string(),
+    }),
+  ]),
   execute: executeSceneActivate,
 };

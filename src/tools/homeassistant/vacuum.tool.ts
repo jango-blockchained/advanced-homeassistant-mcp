@@ -107,6 +107,17 @@ async function executeVacuumsRead(params: VacuumsReadParams): Promise<string> {
 async function executeVacuumsActivate(params: VacuumsActivateParams): Promise<string> {
   const { action, entity_id, fan_speed, command, params: commandParams } = params;
   try {
+    // Verify entity exists before calling service
+    const existingVacuum = await haVacuumService.getVacuum(entity_id);
+    if (!existingVacuum) {
+      return JSON.stringify({
+        success: false,
+        error: `Vacuum ${entity_id} not found`,
+      });
+    }
+
+    let success = false;
+
     if (action === "set_fan_speed") {
       if (!fan_speed) {
         return JSON.stringify({
@@ -114,15 +125,8 @@ async function executeVacuumsActivate(params: VacuumsActivateParams): Promise<st
           error: "fan_speed is required for set_fan_speed action",
         });
       }
-      const success = await haVacuumService.callService("set_fan_speed", entity_id, { fan_speed });
-      return JSON.stringify({
-        success,
-        message: success
-          ? `Successfully set fan speed to ${fan_speed} on ${entity_id}`
-          : `Failed to set fan speed on ${entity_id}`,
-      });
-    }
-    if (action === "send_command") {
+      success = await haVacuumService.callService("set_fan_speed", entity_id, { fan_speed });
+    } else if (action === "send_command") {
       if (!command) {
         return JSON.stringify({
           success: false,
@@ -130,20 +134,24 @@ async function executeVacuumsActivate(params: VacuumsActivateParams): Promise<st
         });
       }
       const serviceData = commandParams ? { command, params: commandParams } : { command };
-      const success = await haVacuumService.callService("send_command", entity_id, serviceData);
+      success = await haVacuumService.callService("send_command", entity_id, serviceData);
+    } else {
+      success = await haVacuumService.callService(action, entity_id);
+    }
+
+    if (!success) {
       return JSON.stringify({
-        success,
-        message: success
-          ? `Successfully sent command ${command} to ${entity_id}`
-          : `Failed to send command to ${entity_id}`,
+        success: false,
+        message: `Failed to execute ${action} on ${entity_id}`,
       });
     }
-    const success = await haVacuumService.callService(action, entity_id);
+
+    // Read back state after service call to verify
+    const updatedVacuum = await haVacuumService.getVacuum(entity_id);
     return JSON.stringify({
-      success,
-      message: success
-        ? `Successfully executed ${action} on ${entity_id}`
-        : `Failed to execute ${action} on ${entity_id}`,
+      success: true,
+      message: `Successfully executed ${action} on ${entity_id}`,
+      state: updatedVacuum,
     });
   } catch (error) {
     logger.error("Error in vacuum activate tool:", error);
@@ -166,6 +174,31 @@ export const vacuumsTool: Tool = {
     openWorldHint: true,
   },
   parameters: vacuumsReadSchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.literal(true),
+      vacuums: z.array(
+        z.object({
+          entity_id: z.string(),
+          state: z.string(),
+          attributes: z.record(z.unknown()),
+        }),
+      ),
+      count: z.number(),
+    }),
+    z.object({
+      success: z.literal(true),
+      vacuum: z.object({
+        entity_id: z.string(),
+        state: z.string(),
+        attributes: z.record(z.unknown()),
+      }),
+    }),
+    z.object({
+      success: z.literal(false),
+      error: z.string(),
+    }),
+  ]),
   execute: executeVacuumsRead,
 };
 
@@ -182,5 +215,15 @@ export const vacuumsActivateTool: Tool = {
     openWorldHint: true,
   },
   parameters: vacuumsActivateSchema,
+  outputSchema: z.union([
+    z.object({
+      success: z.boolean(),
+      message: z.string(),
+    }),
+    z.object({
+      success: z.literal(false),
+      error: z.string(),
+    }),
+  ]),
   execute: executeVacuumsActivate,
 };
