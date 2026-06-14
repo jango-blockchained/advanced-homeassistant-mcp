@@ -112,7 +112,7 @@ npx @smithery/cli install @jango-blockchained/advanced-homeassistant-mcp --clien
 **Available Docker tags:**
 
 - `latest` - Latest stable release
-- `1.7.1`, `1.7`, `1` - Tagged versions
+- `1.7.2`, `1.7`, `1` - Tagged versions
 - `dev` - Latest development build from main branch
 
 ---
