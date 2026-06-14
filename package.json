@@ -34,19 +34,18 @@
     "homeassistant-mcp": "bin/npx-entry.cjs"
   },
   "scripts": {
-    "start": "node dist/index.cjs",
-    "start:stdio": "node dist/stdio-server.mjs",
-    "start:http": "node dist/http-server.mjs",
-    "dev": "tsx --watch src/index.ts",
+    "start": "bun run dist/index.cjs",
+    "start:stdio": "bun run dist/stdio-server.mjs",
+    "start:http": "bun run dist/http-server.mjs",
+    "dev": "bun --watch src/index.ts",
     "build": "mkdir -p dist && esbuild ./src/index.ts --bundle --platform=node --format=cjs --outfile=./dist/index.cjs --minify --sourcemap=inline --external:winston --external:winston-daily-rotate-file --external:express --external:ws --external:dotenv --external:cors --external:helmet --external:express-rate-limit --external:swagger-ui-express --external:sanitize-html --external:jose --external:yaml --external:synckit --external:mcp-proxy --external:@modelcontextprotocol/sdk --external:fastmcp --external:xsschema --external:effect --external:@valibot/to-json-schema --external:sury --external:arktype",
-    "build:stdio": "mkdir -p dist && esbuild ./src/stdio-server.ts --bundle --platform=node --format=esm --outfile=./dist/stdio-server.mjs --minify --sourcemap=inline --external:winston --external:winston-daily-rotate-file --external:express --external:ws --external:dotenv --external:cors --external:helmet --external:express-rate-limit --external:swagger-ui-express --external:sanitize-html --external:jose --external:fastmcp --external:yaml --external:xsschema --external:effect --external:@valibot/to-json-schema --external:sury --external:arktype",
-    "build:http": "mkdir -p dist && esbuild ./src/http-server.ts --bundle --platform=node --format=esm --outfile=./dist/http-server.mjs --minify --sourcemap=inline --external:winston --external:winston-daily-rotate-file --external:express --external:ws --external:dotenv --external:cors --external:helmet --external:express-rate-limit --external:swagger-ui-express --external:sanitize-html --external:jose --external:fastmcp --external:yaml --external:xsschema --external:effect --external:@valibot/to-json-schema --external:sury --external:arktype",
+    "build:stdio": "mkdir -p dist && esbuild ./src/stdio-server.ts --bundle --platform=node --format=esm --outfile=./dist/stdio-server.mjs --minify --sourcemap=inline --external:winston --external:winston-daily-rotate-file --external:express --external:ws --external:dotenv --external:cors --external:helmet --external:express-rate-limit --external:swagger-ui-express --external:sanitize-html --external:jose --external:yaml --external:fastmcp --external:xsschema --external:effect --external:@valibot/to-json-schema --external:sury --external:arktype",
+    "build:http": "mkdir -p dist && esbuild ./src/http-server.ts --bundle --platform=node --format=esm --outfile=./dist/http-server.mjs --minify --sourcemap=inline --external:winston --external:winston-daily-rotate-file --external:express --external:ws --external:dotenv --external:cors --external:helmet --external:express-rate-limit --external:swagger-ui-express --external:sanitize-html --external:jose --external:yaml --external:fastmcp --external:xsschema --external:effect --external:@valibot/to-json-schema --external:sury --external:arktype",
     "build:all": "bun run build && bun run build:stdio && bun run build:http",
     "postinstall": "bun run build:all || echo '⚠️  Build failed. Run: bun run build:all'",
     "prepare": "husky || true",
-    "smithery:build": "npx @smithery/cli build src/smithery-sdk.ts --out dist/smithery.js",
-    "smithery:dev": "npx @smithery/cli dev src/smithery-sdk.ts --port 7123",
-    "smithery:playground": "npx @smithery/cli playground --port 7123",
+    "smithery:build": "bunx esbuild src/stdio-server.ts --bundle --platform=node --target=node18 --format=esm --minify --outfile=dist/smithery.js --external:winston --external:winston-daily-rotate-file --external:better-sqlite3 --external:fsevents --external:bufferutil --external:utf-8-validate --external:@anthropic-ai/sdk --define:process.env.npm_package_version='\"1.7.0\"'",
+    "smithery:publish": "bunx @smithery/cli mcp publish -n jango-blockchained/advanced-homeassistant-mcp",
     "test": "bun test --preload ./test/setup.ts",
     "test:watch": "bun test --watch --preload ./test/setup.ts",
     "test:coverage": "bun test --coverage --preload ./test/setup.ts",
@@ -55,11 +54,11 @@
     "test:clear": "bun test --clear-cache",
     "test:staged": "bun test --findRelatedTests",
     "test:e2e": "bun test __tests__/integration",
-    "lint": "eslint . --ext .ts --cache",
-    "format": "prettier --write \"src/**/*.ts\" --cache",
+    "lint": "bunx eslint . --ext .ts --cache",
+    "format": "bunx prettier --write \"src/**/*.ts\" --cache",
     "profile": "bun --inspect src/index.ts",
     "clean": "rm -rf dist dist-ts .bun coverage .eslintcache .prettierignore bin/*.js",
-    "typecheck": "bun x tsc --noEmit",
+    "typecheck": "bunx tsc --noEmit",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
@@ -108,14 +107,13 @@
     "husky": "^9.0.11",
     "prettier": "^3.2.5",
     "supertest": "^7.1.0",
-    "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   },
   "overrides": {
     "fast-uri": "^4.0.0"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "bun": ">=1.0.0"
   },
   "publishConfig": {
     "access": "public"
