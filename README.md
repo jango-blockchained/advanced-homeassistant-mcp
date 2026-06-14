@@ -9,7 +9,7 @@
 [![Node](https://shieldcn.dev/badge/node-%3E18-339933.png?size=xs)](https://nodejs.org)
 [![License](https://shieldcn.dev/github/license/jango-blockchained/advanced-homeassistant-mcp.png?size=xs)](LICENSE)
 
-> **Talk to your house.** Your AI assistant (Claude, GPT, Cursor, Copilot) — connected to Home Assistant through the Model Context Protocol. 40+ tools, three transports, one `bunx` command.
+> **Talk to your house.** Your AI assistant (Claude, GPT, Cursor, Copilot) — connected to Home Assistant through the Model Context Protocol. 50+ tools, three transports, one `bunx` command.
 
 ```bash
 # ⚡ Fastest way to try it
@@ -46,7 +46,7 @@ Add to `claude_desktop_config.json`:
 ### Cursor / VS Code
 
 <details>
-<summary><strong>Cursor</strong> — add to <code>.cursor/config/config.json</code></summary>
+<summary><strong>Cursor</strong> — add to <code>.cursor/mcp.json</code></summary>
 
 ```json
 {
@@ -93,7 +93,7 @@ Set your env vars in a `.env` file and use the pre-configured `.vscode/mcp.json`
 Install directly from the [Smithery registry](https://smithery.ai/server/@jango-blockchained/advanced-homeassistant-mcp) — no config files needed:
 
 ```bash
-npx @smithery/cli install @jango-blockchained/homeassistant-mcp --client claude
+npx @smithery/cli install @jango-blockchained/advanced-homeassistant-mcp --client claude
 ```
 
 ---
@@ -102,14 +102,18 @@ npx @smithery/cli install @jango-blockchained/homeassistant-mcp --client claude
 
 | Method                 | Command                                                                                                  |
 | ---------------------- | -------------------------------------------------------------------------------------------------------- |
-| **Smithery** (easiest) | `npx @smithery/cli install @jango-blockchained/homeassistant-mcp --client claude`                        |
+| **Smithery** (easiest) | `npx @smithery/cli install @jango-blockchained/advanced-homeassistant-mcp --client claude`               |
 | **bunx** (no install)  | `bunx github:jango-blockchained/advanced-homeassistant-mcp`                                              |
 | **npx**                | `npx @jango-blockchained/homeassistant-mcp@latest`                                                       |
-| **Docker**             | `docker run -d -p 7123:7123 --env-file .env ghcr.io/jango-blockchained/advanced-homeassistant-mcp:1.6.1` |
-| **From source**        | `git clone ... && bun install && bun run build && bun run start:stdio`                                   |
+| **Docker**             | `docker run -d -p 7123:7123 --env-file .env ghcr.io/jango-blockchained/advanced-homeassistant-mcp:1.7.0` |
+| **From source**        | `git clone ... && bun install && bun run build:all && bun run start:stdio`                               |
 | **npm global**         | `npm add -g @jango-blockchained/homeassistant-mcp && homeassistant-mcp`                                  |
 
-> **Docker tags**: `latest`, `1.6.1`, `1.6`, `1`, `dev`
+**Available Docker tags:**
+
+- `latest` - Latest stable release
+- `1.7.1`, `1.7`, `1` - Tagged versions
+- `dev` - Latest development build from main branch
 
 ---
 
@@ -130,32 +134,41 @@ Once connected, you talk to your house like you talk to a human:
 "Analyze my light usage patterns"
 ```
 
-Every command maps to one of **40+ tools** — lights, climate, media, locks, covers, fans, vacuums, alarms, scenes, automations, notifications, history, energy monitoring, maintenance, and more.
+Every command maps to one of **50+ tools** — lights, climate, media, locks, covers, fans, vacuums, alarms, scenes, automations, notifications, history, energy monitoring, maintenance, and more.
 
 <details>
-<summary><strong>Full tool reference</strong> (all 41 tools)</summary>
+<summary><strong>Full tool reference</strong> (all 50+ tools)</summary>
 
-| Category            | Tools                                                 |
-| ------------------- | ----------------------------------------------------- |
-| **Lights**          | brightness, color temp, RGB, effects, turn on/off     |
-| **Climate**         | HVAC modes, target temp, fan mode, humidify           |
-| **Media**           | play/pause, volume, source, sound mode, shuffle       |
-| **Covers**          | open/close, position, tilt, garage door               |
-| **Locks**           | lock/unlock with code support                         |
-| **Fans**            | speed, oscillation, direction, preset                 |
-| **Vacuums**         | start/stop/dock, spot clean, fan speed                |
-| **Alarm**           | arm home/away/night, disarm                           |
-| **Scenes**          | activate named scene                                  |
-| **Automations**     | list, toggle, trigger, create/edit/delete             |
-| **Notifications**   | push alerts via HA channels                           |
-| **History**         | query historical states                               |
-| **Add-ons**         | install, configure, control                           |
-| **Maintenance**     | orphaned devices, battery warnings, energy analysis   |
-| **Smart Scenarios** | nobody-home mode, window/heat conflicts, energy waste |
-| **Aurora**          | sound-to-light sync, BPM/beat detection, light shows  |
-| **Speech**          | wake word detection, speech-to-text, voice commands   |
+| Category            | Tools                                                        |
+| ------------------- | ------------------------------------------------------------ |
+| **Lights**          | list, get, turn on/off, brightness, color temp, RGB, effects |
+| **Climate**         | list, get, HVAC modes, target temp, fan mode, humidify       |
+| **Media**           | list, get, play/pause, volume, source, sound mode, shuffle   |
+| **Covers**          | list, get, open/close, position, tilt, garage door           |
+| **Locks**           | list, get, lock/unlock with code support                     |
+| **Fans**            | list, get, speed, oscillation, direction, preset             |
+| **Vacuums**         | list, get, start/stop/dock, spot clean, fan speed            |
+| **Alarm**           | list, get, arm home/away/night, disarm                       |
+| **Switches**        | list, get, turn on/off/toggle                                |
+| **Scenes**          | list, activate named scene                                   |
+| **Automations**     | list, toggle, trigger, create/edit/delete                    |
+| **Notifications**   | push alerts via HA channels                                  |
+| **History**         | query historical states                                      |
+| **Add-ons**         | install, configure, control                                  |
+| **Packages**        | HACS integrations and custom components                      |
+| **Maintenance**     | orphaned devices, battery warnings, energy analysis          |
+| **Smart Scenarios** | nobody-home mode, window/heat conflicts, energy waste        |
+| **Lighting**        | animations, scenarios, showcase, BPM/beat detection          |
+| **Voice**           | wake word detection, speech-to-text, voice commands          |
+| **Dashboard**       | query and manage Lovelace dashboards                         |
+| **Templates**       | render Jinja2 templates via HA                               |
+| **To-Do Lists**     | add, update, remove items                                    |
+| **Traces**          | automation/script execution traces                           |
+| **Search**          | full-text entity search with filters                         |
+| **Entity State**    | get current state of any entity                              |
+| **Error Log**       | query HA error logs with filtering                           |
 
-Full docs: [Tools Reference](https://jango-blockchained.github.io/advanced-homeassistant-mcp/tools/generic-tools/)
+Full docs: [Tools Reference](https://jango-blockchained.github.io/advanced-homeassistant-mcp/tools/ha-tools/)
 
 </details>
 
@@ -195,7 +208,11 @@ See the [Speech Features Guide](https://jango-blockchained.github.io/advanced-ho
               └────────────┘      └──────────────┘
 ```
 
-Three transports, one codebase. Pick the one that fits your setup — all expose the same 40+ tools.
+Three transports, one codebase. Pick the one that fits your setup — all expose the same 50+ tools.
+
+- **STDIO** — for Claude Desktop, Cursor, VS Code (local editor integrations)
+- **HTTP+WS** — for remote AI hosts, with JWT auth, rate limiting, and WebSocket streaming
+- **HTTP (fastmcp)** — lightweight HTTP transport without bespoke middleware
 
 ---
 
@@ -211,10 +228,12 @@ HASS_TOKEN=eyJ...                          # long-lived access token
 Optional:
 
 ```env
-PORT=7123                                  # HTTP server port
+PORT=7123                                  # HTTP server port (default: 4000)
 LOG_LEVEL=info                             # debug | info | warn | error
-JWT_SECRET=...                             # for HTTP/WS auth
+JWT_SECRET=...                             # for HTTP/WS auth (min 32 chars)
 ```
+
+For the full list of 20+ environment variables, see the [Configuration docs](https://jango-blockchained.github.io/advanced-homeassistant-mcp/configuration/environment/).
 
 ---
 
@@ -225,6 +244,7 @@ bun install              # install dependencies
 bun run build:all        # build all three entry points
 bun test                 # run test suite (80% coverage threshold)
 bun run lint             # ESLint + Prettier
+bun run typecheck        # TypeScript type checking
 ```
 
 Built with [Bun](https://bun.sh), TypeScript, and [fastmcp](https://github.com/punkpeye/fastmcp). Three entry points:
@@ -237,7 +257,7 @@ Built with [Bun](https://bun.sh), TypeScript, and [fastmcp](https://github.com/p
 
 ## 📖 Docs
 
-Full documentation lives at **[jango-blockchained.github.io/advanced-homeassistant-mcp](https://jango-blockchained.github.io/advanced-homeassistant-mcp/)** — covers installation, configuration, all 41 tools, deployment (HTTP, STDIO, Smithery), architecture deep-dives, and guides.
+Full documentation lives at **[jango-blockchained.github.io/advanced-homeassistant-mcp](https://jango-blockchained.github.io/advanced-homeassistant-mcp/)** — covers installation, configuration, all 50+ tools, deployment (HTTP, STDIO, Smithery), architecture deep-dives, and guides.
 
 ---
 
@@ -250,6 +270,8 @@ PRs welcome. Keep it simple — same code style, add tests, update docs if you t
 3. Code it
 4. Test it
 5. PR it
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guidelines.
 
 ---
 
