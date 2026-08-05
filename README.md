@@ -1,5 +1,7 @@
 # 🏠 Home Assistant MCP
 
+[![MCP Toplist](https://mcptoplist.com/badge/smithery%2Fjango-blockchained%2Fadvanced-homeassistant-mcp.svg)](https://mcptoplist.com/server/smithery%2Fjango-blockchained%2Fadvanced-homeassistant-mcp)
+
 [![Smithery](https://shieldcn.dev/badge/smithery-available-7842E8.png?size=xs)](https://smithery.ai/server/@jango-blockchained/advanced-homeassistant-mcp)
 [![Release](https://shieldcn.dev/github/release/jango-blockchained/advanced-homeassistant-mcp.png?size=xs)](https://github.com/jango-blockchained/advanced-homeassistant-mcp/releases)
 [![npm](https://shieldcn.dev/npm/v/@jango-blockchained/homeassistant-mcp.png?size=xs)](https://www.npmjs.com/package/@jango-blockchained/homeassistant-mcp)
