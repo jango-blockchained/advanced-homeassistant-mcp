@@ -1,0 +1,141 @@
+---
+title: Code Mode
+description: Replace the flat tool list with two tools — search and execute — that let the model write JavaScript against a sandboxed Home Assistant SDK.
+section: Guides
+order: 4
+---
+
+Code Mode is the pattern from [Cloudflare's Code Mode MCP post](https://blog.cloudflare.com/code-mode-mcp/): instead of advertising every operation as its own tool, the server exposes two tools, `search` and `execute`. The model writes a short JavaScript program, the server runs it in a sandbox, and only the result comes back. The full tool catalog never enters the model's context.
+
+## Enable it
+
+Set `CODE_MODE` in your environment or `.env`:
+
+| Value            | Effect                                                                 |
+| ---------------- | ---------------------------------------------------------------------- |
+| `off` (default)  | Classic tools only. Code Mode is not exposed.                          |
+| `only`           | Expose just `search` + `execute`. Best context savings.                |
+| `both`           | Expose the classic tools and `search` + `execute` while you migrate.   |
+
+```env
+CODE_MODE=only
+```
+
+`true`, `1`, `yes`, and `on` are accepted as aliases for `only`. Unknown values fall back to `off`, so a typo cannot take the server down.
+
+## The two tools
+
+Both tools take one argument:
+
+```json
+{
+  "code": "async () => { /* JavaScript */ }"
+}
+```
+
+The code must be an async arrow function. It receives no arguments; it uses globals supplied by the server.
+
+### `search`
+
+`search` is offline. It exposes `spec`, a JSON object describing the server:
+
+- `spec.tools` — every classic tool with `name`, `description`, `inputSchema`, `annotations`, and optional `outputSchema`.
+- `spec.hass` — signatures for the `execute` SDK.
+- `spec.toolsApi` — the `tools.list` / `tools.call` API.
+- `spec.helpers` — `sleep` and `console`.
+- `spec.notes` — short usage notes.
+
+Example — find every light-related tool without loading the catalog:
+
+```js
+async () => {
+  return spec.tools
+    .filter((tool) => /light/i.test(tool.name + " " + tool.description))
+    .map(({ name, description }) => ({ name, description }));
+};
+```
+
+The result is whatever your function returns. The full `spec` stays on the server.
+
+### `execute`
+
+`execute` runs against Home Assistant in a sandboxed QuickJS VM. Available globals:
+
+| Global                         | Description                                                                 |
+| ------------------------------ | --------------------------------------------------------------------------- |
+| `hass.getStates()`             | Every entity state.                                                         |
+| `hass.getState(entity_id)`     | One entity by ID.                                                           |
+| `hass.callService(domain, service, data)` | Call any Home Assistant service.                                  |
+| `hass.request({ method, path, body })` | Raw REST under `/api/`; the host is pinned to `HASS_HOST`.           |
+| `hass.getServices()`           | `GET /api/services`.                                                        |
+| `hass.getConfig()`             | `GET /api/config`.                                                          |
+| `hass.getHistory({ entity_id, start_time?, end_time? })` | State history.                                    |
+| `tools.list()`                 | Names and descriptions of the classic tools.                                |
+| `tools.call(name, args)`       | Invoke any classic tool, with Zod validation. JSON-string results are parsed. |
+| `sleep(ms)`                    | Wait; capped at 10 seconds and by the execution deadline.                   |
+| `console.log(...)`             | Write to the server log. Output is not returned to the model.               |
+
+Example — find lights that are on and return only their names:
+
+```js
+async () => {
+  const states = await hass.getStates();
+  return states
+    .filter((state) => state.entity_id.startsWith("light.") && state.state === "on")
+    .map((state) => state.entity_id);
+};
+```
+
+Example — compose several calls in one execution:
+
+```js
+async () => {
+  const lights = await tools.call("lights", { action: "list" });
+  const result = await hass.callService("light", "turn_on", {
+    entity_id: "light.kitchen",
+    brightness: 128,
+  });
+  return { lights, result };
+};
+```
+
+## Why two tools?
+
+The classic server advertises 50+ tools. Every one of those descriptions and JSON schemas is sent to the model on every turn. In `only` mode the manifest is `search` + `execute`, so the fixed cost is a few hundred tokens no matter how many classic tools exist. The model discovers the rest progressively through `search`, or just calls `tools.call` when it already knows the name.
+
+## Security model
+
+Generated code runs in a QuickJS WebAssembly VM, not in the Node/Bun process. The sandbox has:
+
+- no filesystem access,
+- no environment variables (so no `HASS_TOKEN`),
+- no `require` / `import`,
+- no `fetch`, `WebSocket`, or timers beyond `sleep`,
+- no host object references: the only host capability is a JSON-in/JSON-out bridge.
+
+`hass.request` is restricted to the configured `HASS_HOST` origin and to paths under `/api/`. Paths that traverse (`..`) or point at another host are rejected. `tools.call` cannot invoke `search` or `execute` recursively.
+
+Each execution gets its own QuickJS WebAssembly module. That keeps concurrent MCP requests isolated and lets an interrupted or timed-out execution be discarded safely.
+
+## Limits and tuning
+
+| Variable                         | Default   | Purpose                                              |
+| -------------------------------- | --------- | ---------------------------------------------------- |
+| `CODE_MODE`                      | `off`     | `off`, `only`, or `both`.                            |
+| `CODE_MODE_TIMEOUT_MS`           | `30000`   | Wall-clock budget for one call.                      |
+| `CODE_MODE_MAX_OUTPUT_BYTES`     | `262144`  | Maximum JSON result returned to the model.           |
+| `CODE_MODE_MEMORY_LIMIT_BYTES`   | `67108864`| QuickJS heap limit per execution.                    |
+| `CODE_MODE_MAX_STACK_BYTES`      | `1048576` | QuickJS stack limit per execution.                   |
+| `CODE_MODE_ALLOW_TOOL_CALLS`     | `true`    | Allow `tools.call` from sandboxed code.              |
+| `CODE_MODE_ALLOW_RAW_HTTP`       | `true`    | Allow `hass.request` from sandboxed code.            |
+
+Timeouts and oversized results are reported as tool errors. `console.log` output is logged at debug level on the server, so set `LOG_LEVEL=debug` while developing a script.
+
+## When not to use it
+
+Code Mode is a poor fit if your client cannot display or debug JavaScript, or if you rely on MCP clients that discover capabilities only through `tools/list`. In those cases leave `CODE_MODE=off` and keep the classic tools.
+
+## Next
+
+- [Configuration > Tools](/configuration/tools/) — annotations and per-tool toggles.
+- [Architecture > Tool System](/architecture/tool-system/) — how classic tools are defined and registered.

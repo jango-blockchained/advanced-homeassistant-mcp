@@ -48,6 +48,8 @@ import { searchEntitiesTool } from "./search-entities.tool";
 import { errorLogTool } from "./error-log.tool";
 import { dashboardTool, dashboardModifyTool } from "./dashboard.tool";
 import { renderTemplateTool } from "./template.tool";
+import { codeModeTools } from "../codemode/tools.js";
+import { getCodeModeMode } from "../codemode/config.js";
 
 // Tool category types
 export enum ToolCategory {
@@ -171,6 +173,24 @@ export function getAllTools(): Tool[] {
   return [...tools];
 }
 
+/**
+ * Tools the server should advertise to MCP clients.
+ *
+ * `CODE_MODE=off` (default) keeps the classic list unchanged.
+ * `CODE_MODE=only` exposes just `search` + `execute` (~1k tokens of context,
+ * regardless of how many classic tools exist).
+ * `CODE_MODE=both` exposes both surfaces while you migrate.
+ *
+ * The classic `tools` array is always complete so `tools.call()` can reach
+ * every tool from inside `execute`, even in `only` mode.
+ */
+export function getExposedTools(): Tool[] {
+  const mode = getCodeModeMode();
+  if (mode === "only") return [...codeModeTools];
+  if (mode === "both") return [...tools, ...codeModeTools];
+  return [...tools];
+}
+
 // Export all tools individually
 export {
   controlActivateTool,
@@ -235,4 +255,6 @@ export {
   dashboardModifyTool,
   // Template evaluation
   renderTemplateTool,
+  // Code Mode
+  codeModeTools,
 };

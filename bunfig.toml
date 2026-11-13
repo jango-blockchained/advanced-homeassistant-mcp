@@ -34,10 +34,7 @@ sourcemap = "external"
 entry = ["./src/index.ts", "./src/stdio-server.ts"]
 splitting = false
 naming = "[dir]/[name].[ext]"
-define = {
-  "process.env.NODE_ENV": "process.env.NODE_ENV",
-  "process.env.DEBUG_MODE": "false"
-}
+define = { "process.env.NODE_ENV" = "process.env.NODE_ENV", "process.env.DEBUG_MODE" = "false" }
 
 [build.javascript]
 platform = "node"

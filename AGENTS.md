@@ -22,6 +22,7 @@
   - `src/http-server.ts` → `dist/http-server.mjs` — HTTP, `fastmcp` v3
 - **MCP core**: `src/mcp/MCPServer.ts` (custom) + `src/mcp/transports/` (transport layers)
 - **Tools**: `src/tools/homeassistant/` (domain-specific), `src/tools/` (generic) — **not** under `src/mcp/`
+- **Code Mode**: `src/codemode/` — `search`/`execute` tools, QuickJS sandbox, host bridge. Opt in with `CODE_MODE=only|both`; see `docs-site/src/content/docs/guides/code-mode.mdx`
 - **HA client**: `src/hass/` (WebSocket API client)
 - **Build output**: `dist/` with external deps (esbuild config in `package.json` scripts)
 

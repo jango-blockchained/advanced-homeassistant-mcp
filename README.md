@@ -172,6 +172,21 @@ Full docs: [Tools Reference](https://jango-blockchained.github.io/advanced-homea
 
 </details>
 
+### Code Mode (optional)
+
+Instead of sending 50+ tool schemas on every turn, set `CODE_MODE=only` to expose just two tools:
+
+- **`search`** — write JavaScript against the server's tool catalog (`spec`) and return only the matches you need.
+- **`execute`** — write JavaScript against a sandboxed Home Assistant SDK (`hass.getStates()`, `hass.callService()`, `hass.request()`, `tools.call()`, …).
+
+Generated code runs in a QuickJS WebAssembly sandbox with no filesystem, environment, or arbitrary network access. `CODE_MODE=both` adds the two tools alongside the classic list while you migrate.
+
+```bash
+CODE_MODE=only bun run start:stdio
+```
+
+See [Guides > Code Mode](https://jango-blockchained.github.io/advanced-homeassistant-mcp/guides/code-mode/) for the SDK and security model.
+
 ---
 
 ## 🎙️ Speech Features (Voice Control)

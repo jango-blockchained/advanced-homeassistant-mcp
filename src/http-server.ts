@@ -16,7 +16,8 @@
 
 import { logger } from "./utils/logger";
 import { FastMCP } from "fastmcp";
-import { tools } from "./tools/index";
+import { getExposedTools } from "./tools/index";
+import { getCodeModeMode } from "./codemode/config.js";
 import { listResources, getResource } from "./mcp/resources";
 import { getAllPrompts, renderPrompt } from "./mcp/prompts";
 
@@ -119,11 +120,15 @@ async function main(): Promise<void> {
 
     logger.info(`FastMCP server instance created (v3.24.0)`);
 
-    // Add tools from the tools registry with proper annotations
-    const toolCount = tools.length;
-    for (const tool of tools) {
+    // Add tools from the tools registry with proper annotations. In Code
+    // Mode this may be just `search` + `execute`.
+    const exposedTools = getExposedTools();
+    const codeMode = getCodeModeMode();
+    const toolCount = exposedTools.length;
+    logger.info(`Code mode: ${codeMode}; exposing ${toolCount} tool(s)`);
+    for (const tool of exposedTools) {
       try {
-        const annotations = getToolAnnotations(tool.name);
+        const annotations = tool.annotations ?? getToolAnnotations(tool.name);
 
         server.addTool({
           name: tool.name,
@@ -179,6 +184,7 @@ async function main(): Promise<void> {
               stateless: isStateless,
               hassHost,
               connected: hasToken,
+              codeMode,
               toolCount: toolCount + 1,
               capabilities: ["tools", "resources", "prompts"],
             },

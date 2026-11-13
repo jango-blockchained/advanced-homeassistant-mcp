@@ -13,7 +13,8 @@ import { HttpTransport } from "./mcp/transports/http.transport";
 import { APP_CONFIG } from "./config/app.config";
 import { logger } from "./utils/logger";
 import { openApiConfig } from "./openapi";
-import { tools } from "./tools/index";
+import { getExposedTools } from "./tools/index";
+import { getCodeModeMode } from "./codemode/config.js";
 import {
   securityHeadersMiddleware,
   rateLimiterMiddleware,
@@ -53,8 +54,12 @@ async function main(): Promise<void> {
   // Get the server instance (singleton)
   const server = MCPServer.getInstance();
 
-  // Register all tools from tools/index.ts
-  tools.forEach((tool) => {
+  // Register all tools from tools/index.ts. In Code Mode this may be just
+  // `search` + `execute`, or the classic list plus those two tools.
+  const exposedTools = getExposedTools();
+  const codeMode = getCodeModeMode();
+  logger.info(`Registering ${exposedTools.length} tool(s) (code mode: ${codeMode})`);
+  exposedTools.forEach((tool) => {
     server.registerTool(tool);
   });
 
