@@ -11,17 +11,17 @@ Code Mode is the pattern from [Cloudflare's Code Mode MCP post](https://blog.clo
 
 Set `CODE_MODE` in your environment or `.env`:
 
-| Value            | Effect                                                                 |
-| ---------------- | ---------------------------------------------------------------------- |
-| `off` (default)  | Classic tools only. Code Mode is not exposed.                          |
-| `only`           | Expose just `search` + `execute`. Best context savings.                |
-| `both`           | Expose the classic tools and `search` + `execute` while you migrate.   |
+| Value           | Effect                                                               |
+| --------------- | -------------------------------------------------------------------- |
+| `off` (default) | Classic tools only. Code Mode is not exposed.                        |
+| `only`          | Expose just `search` + `execute`. Best context savings.              |
+| `both`          | Expose the classic tools and `search` + `execute` while you migrate. |
 
 ```env
 CODE_MODE=only
 ```
 
-`true`, `1`, `yes`, and `on` are accepted as aliases for `only`. Unknown values fall back to `off`, so a typo cannot take the server down.
+`true`, `1`, `yes`, `on`, and `code` are accepted as aliases for `only`; `all` and `add` are accepted for `both`. Unknown values fall back to `off`, so a typo cannot take the server down.
 
 ## The two tools
 
@@ -113,25 +113,25 @@ Generated code runs in a QuickJS WebAssembly VM, not in the Node/Bun process. Th
 - no `fetch`, `WebSocket`, or timers beyond `sleep`,
 - no host object references: the only host capability is a JSON-in/JSON-out bridge.
 
-`hass.request` is restricted to the configured `HASS_HOST` origin and to paths under `/api/`. Paths that traverse (`..`) or point at another host are rejected. `tools.call` cannot invoke `search` or `execute` recursively.
+`hass.request` is restricted to the configured `HASS_HOST` origin and to paths under `/api/`. Paths that traverse (`..`) or point at another host are rejected, and outbound redirects are rejected (`redirect: "error"`), so a redirect cannot smuggle the request — or the token — to another host. `tools.call` cannot invoke `search` or `execute` recursively.
 
-Each execution gets its own QuickJS WebAssembly module. That keeps concurrent MCP requests isolated and lets an interrupted or timed-out execution be discarded safely.
+Each execution gets its own QuickJS WebAssembly module. That keeps concurrent MCP requests isolated and lets an interrupted or timed-out execution be discarded safely. Executions are capped at `CODE_MODE_MAX_HOST_CALLS` (default 100) host-bridge calls per run, and at most `CODE_MODE_MAX_CONCURRENT` (default 4) sandboxes run at a time; executions beyond the cap wait for a free slot before their wall-clock deadline is set.
 
 ## Limits and tuning
 
-| Variable                         | Default   | Purpose                                              |
-| -------------------------------- | --------- | ---------------------------------------------------- |
-| `CODE_MODE`                      | `off`     | `off`, `only`, or `both`.                            |
-| `CODE_MODE_TIMEOUT_MS`           | `30000`   | Wall-clock budget for one call.                      |
-| `CODE_MODE_MAX_OUTPUT_BYTES`     | `262144`  | Maximum JSON result returned to the model; larger results are rejected with an error. |
+| Variable                       | Default    | Purpose                                    |
+| ------------------------------ | ---------- | ------------------------------------------ |
+| `CODE_MODE`                    | `off`      | `off`, `only`, or `both`.                  |
+| `CODE_MODE_TIMEOUT_MS`         | `30000`    | Wall-clock budget for one call.            |
+| `CODE_MODE_MAX_OUTPUT_BYTES`   | `262144`   | Maximum JSON result returned to the model, measured in UTF-8 bytes; larger results are rejected with an error, not truncated. |
 | `CODE_MODE_MAX_HOST_CALLS`     | `100`      | Maximum host bridge calls per execution.     |
 | `CODE_MODE_MAX_CONCURRENT`     | `4`        | Maximum sandboxes running concurrently.      |
-| `CODE_MODE_MEMORY_LIMIT_BYTES`   | `67108864`| QuickJS heap limit per execution.                    |
-| `CODE_MODE_MAX_STACK_BYTES`      | `1048576` | QuickJS stack limit per execution.                   |
-| `CODE_MODE_ALLOW_TOOL_CALLS`     | `true`    | Allow `tools.call` from sandboxed code.              |
-| `CODE_MODE_ALLOW_RAW_HTTP`       | `true`    | Allow `hass.request` from sandboxed code.            |
+| `CODE_MODE_MEMORY_LIMIT_BYTES` | `67108864` | QuickJS heap limit per execution.          |
+| `CODE_MODE_MAX_STACK_BYTES`    | `1048576`  | QuickJS stack limit per execution.         |
+| `CODE_MODE_ALLOW_TOOL_CALLS`   | `true`     | Allow `tools.call` from sandboxed code.    |
+| `CODE_MODE_ALLOW_RAW_HTTP`     | `true`     | Allow `hass.request` from sandboxed code.  |
 
-Timeouts and oversized results are reported as tool errors. `console.log` output is logged at debug level on the server, so set `LOG_LEVEL=debug` while developing a script.
+Timeouts and oversized results are reported as tool errors. `console.log` output is logged at debug level on the server, so set `LOG_LEVEL=debug` while developing a script. Values above the built-in ceilings are clamped (`CODE_MODE_TIMEOUT_MS` ≤ 300000, `CODE_MODE_MAX_OUTPUT_BYTES` ≤ 4194304, `CODE_MODE_MEMORY_LIMIT_BYTES` ≤ 536870912, `CODE_MODE_MAX_STACK_BYTES` ≤ 16777216, `CODE_MODE_MAX_HOST_CALLS` ≤ 10000, `CODE_MODE_MAX_CONCURRENT` ≤ 16); unrecognized boolean values are treated as `true`.
 
 ## When not to use it
 

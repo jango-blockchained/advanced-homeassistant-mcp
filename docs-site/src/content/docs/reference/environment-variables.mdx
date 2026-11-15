@@ -78,7 +78,7 @@ Per-tool disable, e.g. `TOOL_TEXT_TO_SPEECH_DISABLED=true`, `TOOL_VOICE_COMMAND_
 | `CODE_MODE_ALLOW_TOOL_CALLS`   | boolean | `true`     |
 | `CODE_MODE_ALLOW_RAW_HTTP`     | boolean | `true`     |
 
-`CODE_MODE=only` exposes just `search` + `execute`; `both` adds them to the classic tool list. See [Guides > Code Mode](/guides/code-mode/).
+`CODE_MODE=only` exposes just `search` + `execute`; `both` adds them to the classic tool list. `off` is the default; `true`/`1`/`yes`/`on`/`code` alias `only`, `all`/`add` alias `both`, and unknown values fall back to `off`. Results larger than `CODE_MODE_MAX_OUTPUT_BYTES` (measured in UTF-8 bytes) are rejected, not truncated. Each execution is limited to `CODE_MODE_MAX_HOST_CALLS` host bridge calls and runs inside one of at most `CODE_MODE_MAX_CONCURRENT` concurrent sandboxes. See [Guides > Code Mode](/guides/code-mode/).
 
 ## Worked example
 

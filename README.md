@@ -179,10 +179,24 @@ Instead of sending 50+ tool schemas on every turn, set `CODE_MODE=only` to expos
 - **`search`** — write JavaScript against the server's tool catalog (`spec`) and return only the matches you need.
 - **`execute`** — write JavaScript against a sandboxed Home Assistant SDK (`hass.getStates()`, `hass.callService()`, `hass.request()`, `tools.call()`, …).
 
-Generated code runs in a QuickJS WebAssembly sandbox with no filesystem, environment, or arbitrary network access. `CODE_MODE=both` adds the two tools alongside the classic list while you migrate.
+Generated code is model-written JavaScript run in a QuickJS WebAssembly sandbox: no filesystem, no environment variables, no `require`/`import`, and no network of its own — the only host capability is a JSON-in/JSON-out bridge, and `hass.request` is pinned to the configured `HASS_HOST`. Each execution gets a per-execution host-call budget (default 100 bridge calls) and the server caps concurrent sandboxes (default 4). `CODE_MODE=both` adds the two tools alongside the classic list while you migrate. Code Mode is off by default.
 
 ```bash
 CODE_MODE=only bun run start:stdio
+```
+
+Tuning knobs (all optional; defaults shown):
+
+```env
+CODE_MODE=off                     # off (default) | only | both
+CODE_MODE_TIMEOUT_MS=30000        # wall-clock budget per call
+CODE_MODE_MAX_OUTPUT_BYTES=262144 # larger results are rejected, not truncated
+CODE_MODE_MEMORY_LIMIT_BYTES=67108864
+CODE_MODE_MAX_STACK_BYTES=1048576
+CODE_MODE_MAX_HOST_CALLS=100      # host bridge calls per execution
+CODE_MODE_MAX_CONCURRENT=4        # sandboxes running at once
+CODE_MODE_ALLOW_TOOL_CALLS=true   # allow tools.call from sandboxed code
+CODE_MODE_ALLOW_RAW_HTTP=true     # allow hass.request from sandboxed code
 ```
 
 See [Guides > Code Mode](https://jango-blockchained.github.io/advanced-homeassistant-mcp/guides/code-mode/) for the SDK and security model.
