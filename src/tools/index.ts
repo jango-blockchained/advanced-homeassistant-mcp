@@ -181,14 +181,23 @@ export function getAllTools(): Tool[] {
  * regardless of how many classic tools exist).
  * `CODE_MODE=both` exposes both surfaces while you migrate.
  *
+ * `TOOL_<NAME>_DISABLED=true` removes an individual tool from the exposed list.
  * The classic `tools` array is always complete so `tools.call()` can reach
  * every tool from inside `execute`, even in `only` mode.
  */
-export function getExposedTools(): Tool[] {
-  const mode = getCodeModeMode();
-  if (mode === "only") return [...codeModeTools];
-  if (mode === "both") return [...tools, ...codeModeTools];
-  return [...tools];
+export function getExposedTools(
+  mode: ReturnType<typeof getCodeModeMode> = getCodeModeMode(),
+): Tool[] {
+  const exposed =
+    mode === "only"
+      ? [...codeModeTools]
+      : mode === "both"
+        ? [...tools, ...codeModeTools]
+        : [...tools];
+
+  return exposed.filter(
+    (tool) => process.env[`TOOL_${tool.name.toUpperCase()}_DISABLED`] !== "true",
+  );
 }
 
 // Export all tools individually

@@ -130,6 +130,7 @@ async function hassRequest(options: unknown, context: HostCallContext): Promise<
     headers,
     body,
     signal: context.signal,
+    redirect: "error",
   });
 
   const text = await response.text();
@@ -289,7 +290,15 @@ async function sleep(payload: unknown, context: HostCallContext): Promise<null> 
  * contain entity data, so they are not logged).
  */
 export function createHostBridge(config: CodeModeConfig): HostBridge {
+  // Per-execution budget: createHostBridge is called fresh for every execute,
+  // so this counter only tracks calls within one execution.
+  let hostCalls = 0;
   return async (operation, payload, context) => {
+    hostCalls += 1;
+    if (hostCalls > config.maxHostCalls) {
+      throw new Error(`host call limit (${config.maxHostCalls}) exceeded for this execution`);
+    }
+
     if (context.signal.aborted) {
       throw new Error("execution aborted");
     }

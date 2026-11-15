@@ -2,11 +2,15 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { getExposedTools, tools } from "../../src/tools/index.js";
 import { codeModeExecuteTool, codeModeSearchTool } from "../../src/codemode/tools.js";
 import { getCodeModeConfig, getCodeModeMode } from "../../src/codemode/config.js";
+import type { CodeModeConfig } from "../../src/codemode/config.js";
+import { createHostBridge } from "../../src/codemode/bridge.js";
 import { CodeModeTimeoutError, runInSandbox } from "../../src/codemode/sandbox.js";
 
 const ORIGINAL_CODE_MODE = process.env.CODE_MODE;
 const ORIGINAL_TIMEOUT = process.env.CODE_MODE_TIMEOUT_MS;
 const ORIGINAL_MAX_OUTPUT = process.env.CODE_MODE_MAX_OUTPUT_BYTES;
+const ORIGINAL_MAX_HOST_CALLS = process.env.CODE_MODE_MAX_HOST_CALLS;
+const ORIGINAL_MAX_CONCURRENT = process.env.CODE_MODE_MAX_CONCURRENT;
 
 interface FetchCall {
   url: string;
@@ -92,6 +96,10 @@ describe("Code Mode", () => {
     else process.env.CODE_MODE_TIMEOUT_MS = ORIGINAL_TIMEOUT;
     if (ORIGINAL_MAX_OUTPUT === undefined) delete process.env.CODE_MODE_MAX_OUTPUT_BYTES;
     else process.env.CODE_MODE_MAX_OUTPUT_BYTES = ORIGINAL_MAX_OUTPUT;
+    if (ORIGINAL_MAX_HOST_CALLS === undefined) delete process.env.CODE_MODE_MAX_HOST_CALLS;
+    else process.env.CODE_MODE_MAX_HOST_CALLS = ORIGINAL_MAX_HOST_CALLS;
+    if (ORIGINAL_MAX_CONCURRENT === undefined) delete process.env.CODE_MODE_MAX_CONCURRENT;
+    else process.env.CODE_MODE_MAX_CONCURRENT = ORIGINAL_MAX_CONCURRENT;
   });
 
   describe("configuration", () => {
@@ -122,9 +130,23 @@ describe("Code Mode", () => {
     test("reads limits from the environment", () => {
       process.env.CODE_MODE_TIMEOUT_MS = "1234";
       process.env.CODE_MODE_MAX_OUTPUT_BYTES = "2048";
+      process.env.CODE_MODE_MAX_HOST_CALLS = "7";
+      process.env.CODE_MODE_MAX_CONCURRENT = "2";
       const config = getCodeModeConfig();
       expect(config.timeoutMs).toBe(1234);
       expect(config.maxOutputBytes).toBe(2048);
+      expect(config.maxHostCalls).toBe(7);
+      expect(config.maxConcurrent).toBe(2);
+    });
+
+    test("filters tools disabled by TOOL_<NAME>_DISABLED", () => {
+      process.env.CODE_MODE = "off";
+      process.env.TOOL_LIGHTS_DISABLED = "true";
+      try {
+        expect(getExposedTools().some((tool) => tool.name === "lights")).toBe(false);
+      } finally {
+        delete process.env.TOOL_LIGHTS_DISABLED;
+      }
     });
   });
 
@@ -245,6 +267,51 @@ describe("Code Mode", () => {
       ).rejects.toThrow(/limit is 100 bytes/);
     });
 
+    test("measures the output limit in UTF-8 bytes, not characters", async () => {
+      // "é" is 2 bytes in UTF-8: 6 chars = 12 bytes, which exceeds a
+      // 10-byte limit even though the string length is only 6.
+      await expect(
+        runInSandbox({
+          ...baseOptions,
+          maxOutputBytes: 10,
+          code: `async () => "é".repeat(6)`,
+        }),
+      ).rejects.toThrow(/limit is 10 bytes/);
+    });
+
+    test("rejects host calls beyond the per-execution budget", async () => {
+      const config: CodeModeConfig = {
+        mode: "only",
+        timeoutMs: 2_000,
+        maxOutputBytes: 10_000,
+        memoryLimitBytes: 32 * 1024 * 1024,
+        maxStackSizeBytes: 1024 * 1024,
+        allowToolCalls: true,
+        allowRawHttp: true,
+        maxHostCalls: 2,
+        maxConcurrent: 4,
+      };
+      const bridge = createHostBridge(config);
+      const context = { deadline: Date.now() + 2_000, signal: new AbortController().signal };
+
+      await expect(bridge("nope.op", null, context)).rejects.toThrow(/Unknown Code Mode operation/);
+      await expect(bridge("nope.op", null, context)).rejects.toThrow(/Unknown Code Mode operation/);
+      await expect(bridge("nope.op", null, context)).rejects.toThrow(
+        /host call limit \(2\) exceeded for this execution/,
+      );
+    });
+
+    test("surfaces CodeModeTimeoutError for in-flight host calls at the deadline", async () => {
+      await expect(
+        runInSandbox({
+          ...baseOptions,
+          timeoutMs: 150,
+          bridge: () => new Promise(() => {}),
+          code: `async () => sleep(10_000)`,
+        }),
+      ).rejects.toBeInstanceOf(CodeModeTimeoutError);
+    });
+
     test("times out infinite loops", async () => {
       await expect(
         runInSandbox({
@@ -263,6 +330,73 @@ describe("Code Mode", () => {
           code: `async () => new Promise(() => {})`,
         }),
       ).rejects.toBeInstanceOf(CodeModeTimeoutError);
+    });
+
+    test("completes many sequential host calls without corrupting the sandbox", async () => {
+      // Regression: sequential asyncified host calls unwind through whatever
+      // export executes them. Draining QuickJS jobs through the synchronous
+      // executePendingJobs FFI corrupted the asyncify state machine after a
+      // few iterations (timeouts / OOB / context ref-count aborts).
+      let bridgeCalls = 0;
+      const bridge = () => {
+        bridgeCalls += 1;
+        return Promise.resolve([{ entity_id: "light.kitchen", state: "on", attributes: {} }]);
+      };
+      const result = await runInSandbox({
+        ...baseOptions,
+        timeoutMs: 5_000,
+        bridge,
+        code: `async () => {
+          let total = 0;
+          for (let i = 0; i < 10; i++) {
+            const states = await hass.getStates();
+            total += states.length;
+          }
+          return total;
+        }`,
+      });
+      expect(result.value).toBe(10);
+      expect(bridgeCalls).toBe(10);
+    });
+
+    test("completes many sequential host calls on a macrotask bridge", async () => {
+      let bridgeCalls = 0;
+      const bridge = () =>
+        new Promise((resolve) => {
+          setTimeout(() => {
+            bridgeCalls += 1;
+            resolve([{ entity_id: "light.kitchen", state: "on", attributes: {} }]);
+          }, 1);
+        });
+      const result = await runInSandbox({
+        ...baseOptions,
+        timeoutMs: 5_000,
+        bridge,
+        code: `async () => {
+          let total = 0;
+          for (let i = 0; i < 10; i++) {
+            const states = await hass.getStates();
+            total += states.length;
+          }
+          return total;
+        }`,
+      });
+      expect(result.value).toBe(10);
+      expect(bridgeCalls).toBe(10);
+    });
+
+    test("completes CPU-bound pure-JS work", async () => {
+      const result = await runInSandbox({
+        ...baseOptions,
+        code: `async () => {
+          let x = 0;
+          for (let i = 0; i < 200000; i++) {
+            x = (x * 31 + i) % 1000003;
+          }
+          return x;
+        }`,
+      });
+      expect(typeof result.value).toBe("number");
     });
   });
 });

@@ -123,7 +123,9 @@ Each execution gets its own QuickJS WebAssembly module. That keeps concurrent MC
 | -------------------------------- | --------- | ---------------------------------------------------- |
 | `CODE_MODE`                      | `off`     | `off`, `only`, or `both`.                            |
 | `CODE_MODE_TIMEOUT_MS`           | `30000`   | Wall-clock budget for one call.                      |
-| `CODE_MODE_MAX_OUTPUT_BYTES`     | `262144`  | Maximum JSON result returned to the model.           |
+| `CODE_MODE_MAX_OUTPUT_BYTES`     | `262144`  | Maximum JSON result returned to the model; larger results are rejected with an error. |
+| `CODE_MODE_MAX_HOST_CALLS`     | `100`      | Maximum host bridge calls per execution.     |
+| `CODE_MODE_MAX_CONCURRENT`     | `4`        | Maximum sandboxes running concurrently.      |
 | `CODE_MODE_MEMORY_LIMIT_BYTES`   | `67108864`| QuickJS heap limit per execution.                    |
 | `CODE_MODE_MAX_STACK_BYTES`      | `1048576` | QuickJS stack limit per execution.                   |
 | `CODE_MODE_ALLOW_TOOL_CALLS`     | `true`    | Allow `tools.call` from sandboxed code.              |

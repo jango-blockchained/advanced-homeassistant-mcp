@@ -64,6 +64,10 @@ export interface CodeModeConfig {
   allowToolCalls: boolean;
   /** Allow `hass.request(...)` (raw Home Assistant REST) from sandboxed code. */
   allowRawHttp: boolean;
+  /** Maximum number of host bridge calls allowed per execution. */
+  maxHostCalls: number;
+  /** Maximum number of sandboxes executing concurrently. */
+  maxConcurrent: number;
 }
 
 /** Read Code Mode settings from the environment. */
@@ -80,5 +84,7 @@ export function getCodeModeConfig(): CodeModeConfig {
     maxStackSizeBytes: readPositiveInt("CODE_MODE_MAX_STACK_BYTES", 1024 * 1024, 16 * 1024 * 1024),
     allowToolCalls: readBoolean("CODE_MODE_ALLOW_TOOL_CALLS", true),
     allowRawHttp: readBoolean("CODE_MODE_ALLOW_RAW_HTTP", true),
+    maxHostCalls: readPositiveInt("CODE_MODE_MAX_HOST_CALLS", 100, 10_000),
+    maxConcurrent: readPositiveInt("CODE_MODE_MAX_CONCURRENT", 4, 16),
   };
 }

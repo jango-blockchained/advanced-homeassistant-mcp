@@ -11,6 +11,7 @@
 
 import { newQuickJSAsyncWASMModule, type QuickJSHandle } from "quickjs-emscripten";
 import { logger } from "../utils/logger.js";
+import { getCodeModeConfig } from "./config.js";
 import { safeJsonStringify, type HostBridge } from "./bridge.js";
 
 export interface SandboxOptions {
@@ -22,6 +23,8 @@ export interface SandboxOptions {
   maxOutputBytes: number;
   memoryLimitBytes: number;
   maxStackSizeBytes: number;
+  /** Maximum sandboxes running concurrently; defaults to config `CODE_MODE_MAX_CONCURRENT`. */
+  maxConcurrent?: number;
 }
 
 export interface SandboxResult {
@@ -42,6 +45,110 @@ export class CodeModeSandboxError extends Error {
     super(message);
     this.name = "CodeModeSandboxError";
   }
+}
+
+type PendingJobsResult =
+  | { ok: true; executed: number }
+  | { ok: false; handle: QuickJSHandle };
+
+interface MutablePointerArray {
+  value: { ptr: number; typedArray: Int32Array };
+  dispose(): void;
+}
+
+/**
+ * Build an async drain for QuickJS's pending job queue (`JS_ExecutePendingJob`).
+ *
+ * Guest promise continuations only run when the host pumps them. Guest jobs
+ * may call the asyncified `__codemode_host` bridge, which unwinds the Wasm
+ * stack via Asyncify. Such a job can therefore never be executed through the
+ * library's synchronous `executePendingJobs()`: the unwind returns a dummy
+ * value through the sync FFI and the caller cannot tell the call suspended,
+ * so it reads a garbage out-parameter (or, with the asyncify debug build,
+ * trips the "is running asynchronously" assertion) and corrupts the runtime.
+ *
+ * The fix funnels the drain through the module's `cwrap` with `{async: true}`,
+ * the same path `evalCodeAsync` uses for `QTS_Eval_MaybeAsync`. Emscripten
+ * then routes the call through `ccall`, which detects the Asyncify unwind and
+ * returns a Promise that resolves once the host call settles and the Wasm
+ * stack is replayed; when nothing suspends, it resolves with the plain value.
+ * Without this, no unwind information reaches the caller.
+ *
+ * `newQuickJSAsyncWASMModule().module.cwrap` and friends are marked
+ * `protected`/`private` in the type declarations but are stable at runtime
+ * for this pinned dependency; the shape is verified defensively here and a
+ * missing piece throws a CodeModeSandboxError instead of corrupting state.
+ */
+function createPendingJobsRunner(
+  quickJS: unknown,
+  runtime: unknown,
+  vm: {
+    typeof(handle: QuickJSHandle): string;
+    getNumber(handle: QuickJSHandle): number;
+    getMemory(rt: number): { heapValueHandle(ptr: number): QuickJSHandle };
+  },
+): (maxJobsToExecute: number) => Promise<PendingJobsResult> {
+  const internalsOf = quickJS as {
+    module?: {
+      cwrap?: (
+        name: string,
+        returnType: string,
+        argTypes: string[],
+        options?: { async?: boolean },
+      ) => (rtPtr: number, maxJobs: number, ctxPtrOut: number) => number | Promise<number>;
+    };
+    ffi?: { QTS_FreeValuePointerRuntime?: (rt: number, ptr: number) => void };
+  };
+  const module_ = internalsOf.module;
+  const freeValuePointer = internalsOf.ffi?.QTS_FreeValuePointerRuntime;
+  const internals = runtime as {
+    rt: { value: number };
+    memory: { newMutablePointerArray(length: number): MutablePointerArray };
+  };
+  if (
+    typeof module_?.cwrap !== "function" ||
+    typeof freeValuePointer !== "function" ||
+    !internals.rt ||
+    typeof internals.rt.value !== "number" ||
+    typeof internals.memory?.newMutablePointerArray !== "function"
+  ) {
+    throw new CodeModeSandboxError(
+      "quickjs-emscripten asyncify internals are unavailable; cannot pump pending jobs safely",
+    );
+  }
+  const call = module_.cwrap(
+    "QTS_ExecutePendingJob",
+    "number",
+    ["number", "number", "number"],
+    { async: true },
+  );
+  const rtPtr = internals.rt.value;
+
+  return async function runPendingJobs(maxJobsToExecute) {
+    const ctxPtrOut = internals.memory.newMutablePointerArray(1);
+    let valuePtr: number;
+    try {
+      valuePtr = Number(await call(rtPtr, maxJobsToExecute, ctxPtrOut.value.ptr));
+    } catch (error) {
+      ctxPtrOut.dispose();
+      throw error;
+    }
+    const ctxPtr = ctxPtrOut.value.typedArray[0];
+    ctxPtrOut.dispose();
+
+    if (ctxPtr === 0) {
+      // No job ran (or nothing to report); the returned value is ours to free.
+      freeValuePointer(rtPtr, valuePtr);
+      return { ok: true, executed: 0 };
+    }
+    const handle = vm.getMemory(rtPtr).heapValueHandle(valuePtr);
+    if (vm.typeof(handle) === "number") {
+      const executed = vm.getNumber(handle);
+      handle.dispose();
+      return { ok: true, executed };
+    }
+    return { ok: false, handle };
+  };
 }
 
 /**
@@ -134,12 +241,55 @@ function normalizeError(raw: string, timeoutMs: number): Error {
 }
 
 /**
+ * Module-level semaphore capping concurrent sandbox executions. Each execution
+ * owns a WASM module, so unbounded concurrency would multiply memory usage.
+ * Queued executions wait for a slot; the wait happens before the deadline is
+ * set, so time spent queued does not eat the execution budget.
+ */
+let activeSandboxes = 0;
+const sandboxWaiters: Array<() => void> = [];
+
+async function acquireSandboxSlot(limit: number): Promise<void> {
+  if (activeSandboxes < limit) {
+    activeSandboxes += 1;
+    return;
+  }
+  // The slot is handed off directly by releaseSandboxSlot (no decrement),
+  // so this continuation resumes owning a slot already counted.
+  await new Promise<void>((resolve) => {
+    sandboxWaiters.push(resolve);
+  });
+}
+
+function releaseSandboxSlot(): void {
+  const next = sandboxWaiters.shift();
+  if (next) {
+    next();
+    return;
+  }
+  activeSandboxes -= 1;
+}
+
+/** Number of interrupted modules discarded so far (see runInSandbox cleanup). */
+let interruptedModuleCount = 0;
+
+/**
  * Execute an async arrow function in the sandbox.
  *
  * The function receives the globals installed by the bootstrap and must return
  * a JSON-serializable value. `undefined` is normalized to `null`.
  */
 export async function runInSandbox(options: SandboxOptions): Promise<SandboxResult> {
+  const maxConcurrent = options.maxConcurrent ?? getCodeModeConfig().maxConcurrent;
+  await acquireSandboxSlot(maxConcurrent);
+  try {
+    return await runInSandboxInner(options);
+  } finally {
+    releaseSandboxSlot();
+  }
+}
+
+async function runInSandboxInner(options: SandboxOptions): Promise<SandboxResult> {
   const { code, bridge, spec, timeoutMs, maxOutputBytes, memoryLimitBytes, maxStackSizeBytes } =
     options;
 
@@ -210,7 +360,7 @@ export async function runInSandbox(options: SandboxOptions): Promise<SandboxResu
 
         let onAbort: (() => void) | undefined;
         const aborted = new Promise<never>((_resolve, reject) => {
-          onAbort = (): void => reject(new Error("execution aborted"));
+          onAbort = (): void => reject(new CodeModeTimeoutError(timeoutMs));
           if (controller.signal.aborted) {
             onAbort();
           } else {
@@ -242,7 +392,8 @@ export async function runInSandbox(options: SandboxOptions): Promise<SandboxResu
     if (logs.length >= 200) return;
     const line: unknown = vm.dump(lineHandle);
     if (typeof line === "string") {
-      logs.push(line.length > 4_000 ? `${line.slice(0, 4_000)}…` : line);
+      const clean = line.replace(/[\r\n]+/g, " ");
+      logs.push(clean.length > 4_000 ? `${clean.slice(0, 4_000)}…` : clean);
     }
   });
   vm.setProp(vm.global, "__codemode_log", logFunction);
@@ -255,9 +406,10 @@ export async function runInSandbox(options: SandboxOptions): Promise<SandboxResu
       settle({ error: "Code Mode result must be JSON-serializable" });
       return;
     }
-    if (raw.length > maxOutputBytes) {
+    const rawByteLength = new TextEncoder().encode(raw).length;
+    if (rawByteLength > maxOutputBytes) {
       settle({
-        error: `Code Mode result is ${raw.length} bytes; the limit is ${maxOutputBytes} bytes`,
+        error: `Code Mode result is ${rawByteLength} bytes; the limit is ${maxOutputBytes} bytes`,
       });
       return;
     }
@@ -311,25 +463,49 @@ export async function runInSandbox(options: SandboxOptions): Promise<SandboxResu
 
   deadline = Date.now() + timeoutMs;
 
-  // QuickJS jobs (promise continuations) only run when the host pumps them.
-  // The asyncified call suspends the VM stack while a host call is in flight;
-  // after it resumes, the continuation is queued as a job.
-  const pump = setInterval(() => {
-    if (sandboxSettled) return;
+  // QuickJS jobs (promise continuations) only run while the host pumps them.
+  // The asyncified host bridge suspends the Wasm stack while a host call is
+  // in flight, so any job may itself unwind out of whatever export executes
+  // it. Pumping through the synchronous `executePendingJobs()` lets such a
+  // job unwind through an export that cannot report the suspension, which
+  // corrupts the Asyncify state machine. Drain jobs through an asyncified
+  // call instead, and never pump re-entrantly.
+  let runPendingJobs: (maxJobsToExecute: number) => Promise<PendingJobsResult>;
+  try {
+    runPendingJobs = createPendingJobsRunner(quickJS, runtime, vm);
+  } catch (error) {
+    disposeVm();
+    throw error;
+  }
+  let drainRunning = false;
+  const drainJobs = async (): Promise<void> => {
+    if (drainRunning) return;
+    drainRunning = true;
     try {
-      const result = vm.runtime.executePendingJobs();
-      if ("error" in result && result.error) {
-        const message = dumpError(vm, result.error);
-        result.dispose();
-        settle({ error: message });
-        return;
+      for (;;) {
+        if (sandboxSettled) return;
+        if (!runtime.hasPendingJob()) return;
+        let result: PendingJobsResult;
+        try {
+          result = await runPendingJobs(-1);
+        } catch (error) {
+          settle({ error: error instanceof Error ? error.message : String(error) });
+          return;
+        }
+        if (!result.ok) {
+          const message = dumpError(vm, result.handle);
+          result.handle.dispose();
+          settle({ error: message });
+          return;
+        }
+        if (result.executed === 0) return;
       }
-      result.dispose();
-    } catch (error) {
-      settle({
-        error: error instanceof Error ? error.message : String(error),
-      });
+    } finally {
+      drainRunning = false;
     }
+  };
+  const pump = setInterval(() => {
+    void drainJobs();
   }, 1);
   pump.unref?.();
 
@@ -385,7 +561,10 @@ export async function runInSandbox(options: SandboxOptions): Promise<SandboxResu
   if (!interrupted || sandboxSettled) {
     disposeVm();
   } else {
-    logger.debug("[code-mode] execution interrupted; discarding sandbox module");
+    interruptedModuleCount += 1;
+    logger.warn(
+      `[code-mode] discarding interrupted QuickJS module (total ${interruptedModuleCount})`,
+    );
   }
 
   const durationMs = Date.now() - startTime;

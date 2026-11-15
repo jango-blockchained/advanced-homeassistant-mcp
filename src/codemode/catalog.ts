@@ -145,7 +145,7 @@ export function buildCodeModeSpec(tools: Tool[]): CodeModeSpec {
     notes: [
       "Pass an async arrow function, e.g. async () => { ... }.",
       "Use search to discover tools and their input schemas before calling them.",
-      "Return only the data you need; large results are truncated at CODE_MODE_MAX_OUTPUT_BYTES.",
+      "Return only the data you need; results larger than CODE_MODE_MAX_OUTPUT_BYTES are rejected with an error.",
       "execute is sandboxed: no filesystem, no environment variables, no arbitrary network access.",
     ],
   };
